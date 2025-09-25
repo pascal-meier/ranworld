@@ -1,5 +1,20 @@
+@font-face{
+    font-family: "PokemonG1";
+    src: url("./assets/fonts/Early GameBoy.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "PokemonG3";
+    src: url("./assets/fonts/pokemon-emerald.otf") format("opentype");
+    font-weight: bold;
+    font-style: normal;
+
+}
+
 :root{
-    font-family: "Comic Sans MS", system-ui, "Arial Black", Webdings, sans-serif;
+    font-family:"PokemonG1", system-ui, "Arial Black", Webdings, sans-serif;
     --dClr:#181818;
     --lClr:whitesmoke;
     --aClr:#0D0D35;
