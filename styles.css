@@ -1,0 +1,42 @@
+:root{
+    font-family: "Comic Sans MS", system-ui, "Arial Black", Webdings, sans-serif;
+    --dClr:#181818;
+    --lClr:whitesmoke;
+    --aClr:#0D0D35;
+}
+
+html,body{
+    height:100%;
+}
+
+body{
+    background: var(--dClr);
+    color: var(--lClr);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header, footer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    //border: 5px solid blue;
+    z-index: 2;
+}
+
+main{
+    flex:1;
+    display: flex;
+}
+
+#gameCanvas{
+    position: absolute;
+    top:50%;
+    left:50%;
+    transform: translate(-50%,-50%);
+    display: flex;
+    z-index:1;
+    width: 100%;
+    height: 100%;
+}
