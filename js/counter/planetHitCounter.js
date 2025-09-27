@@ -17,7 +17,7 @@ export default class HitCounter {
         });
 
         // Starte die Zählerlogik sofort, wenn die Klasse instanziiert wird
-        this.incrementAndDisplay();
+        this.getCount();
     }
 
     /**
