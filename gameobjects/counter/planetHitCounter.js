@@ -10,7 +10,7 @@ export default class HitCounter {
         this.API_URL = api_url;
 
         // Erstelle das Phaser Text-Objekt
-        this.counterText = scene.add.text(x, y, 'Lade Zähler...', {
+        this.counterText = scene.add.text(x, y, 'Load...', {
             fontSize: '32px',
             fill: '#ffffff',
             fontFamily: 'PokemonG3'
@@ -50,7 +50,7 @@ export default class HitCounter {
      */
     async incrementAndDisplay() {
         try {
-            this.counterText.setText('Zähle...');
+            this.counterText.setText('Load...');
 
             const response = await fetch(this.API_URL, {
                 method: 'POST',
@@ -73,7 +73,7 @@ export default class HitCounter {
 
         } catch (error) {
             console.error('Fehler beim Inkrementieren des Zählers:', error);
-            this.counterText.setText('Zähl-Fehler!');
+            this.counterText.setText('Error!');
         }
     }
 }

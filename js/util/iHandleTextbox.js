@@ -18,6 +18,4 @@ export function textbox(scene, text) {
 
     };
     scene.add.text(boxWidth, boxHeight, text, style).setOrigin(0.5);
-
-    console.log("--- iHandleTextbox.js loaded", scene.text);
 }
