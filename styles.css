@@ -14,7 +14,7 @@
 }
 
 :root{
-    font-family:"PokemonG1", system-ui, "Arial Black", Webdings, sans-serif;
+    font-family:"PokemonG1", "PokemonG3", "Arial Black", Webdings, sans-serif;
     --dClr:#181818;
     --lClr:whitesmoke;
     --aClr:#0D0D35;
