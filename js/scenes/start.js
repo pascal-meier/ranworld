@@ -1,11 +1,15 @@
 import {gW, gH} from "../../main.js";
 import {textbox} from "../util/iHandleTextbox.js";
 import {rngPoint} from "../rng/randomPoint.js";
+import HitCounter from "../counter/planetHitCounter.js";
+
+const COUNTER_API_URL = "https://r44pno55t2.execute-api.eu-central-1.amazonaws.com/api/counter";
 
 export class Start extends Phaser.Scene
 {
     constructor() {
         super({ key: 'Start' });
+        this.hitCounter = null;
     }
 
     preload ()
@@ -31,6 +35,20 @@ export class Start extends Phaser.Scene
             scale: { start: (gW/300), end: 0 },
             blendMode: 'ADD'
         });
+        // Planet Hit Counter
+        this.add.text(gW/10, gH/12, "Planet Hits:", {
+            fontSize: '24px',
+            fill: '#ffffff',
+            fontFamily: 'PokemonG3'
+        });//,
+
+        this.hitCounter = new HitCounter(
+            this,                 // Die aktuelle Szene
+            gW/10,                   // X-Koordinate (z.B. links oben)
+            gH/10,                   // Y-Koordinate
+            COUNTER_API_URL       // Deine API URL
+        );
+
         //Logo
         const logo = this.physics.add.image(rngPoint(gW,gH).x, rngPoint(gW,gH).y, 'logo');
         logo.displayWidth = gW/3;
@@ -43,7 +61,7 @@ export class Start extends Phaser.Scene
 
         logo.setInteractive();
         logo.on('pointerdown', () => {
-            this.scene.start('Menu');
+            this.hitCounter.incrementAndDisplay();
         });
     }
 
