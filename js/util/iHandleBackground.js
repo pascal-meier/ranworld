@@ -9,7 +9,7 @@ export default class BackgroundHandler{
     preload(){
         let key = this.scene.scene.key;
         console.log("--- Loading background:", key);
-        this.scene.load.image('bg-img',`/assets/backgrounds/${key}.png`);
+        this.scene.load.image('bg-img',`assets/backgrounds/${key}.png`);
     }
 
     create(){
