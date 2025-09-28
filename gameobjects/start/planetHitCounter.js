@@ -50,7 +50,7 @@ export default class HitCounter {
      */
     async incrementAndDisplay() {
         try {
-            this.counterText.setText('Load...');
+            //this.counterText.setText('Load...');
 
             const response = await fetch(this.API_URL, {
                 method: 'POST',
