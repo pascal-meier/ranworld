@@ -49,7 +49,7 @@ export default class gameStart {
         particles.startFollow(logo);
 
         // Speed-Anzeige
-        this.speedText = this.scene.add.text(gW*0.8, gH/10, "Speed: 0", {
+        this.speedText = this.scene.add.text(gW*0.7, gH/10, "Speed: 0", {
             fontSize: '24px',
             fill: '#ffffff',
             fontFamily: 'PokemonG3'
