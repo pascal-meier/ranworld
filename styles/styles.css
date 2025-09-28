@@ -1,16 +1,15 @@
 @font-face{
     font-family: "PokemonG1";
-    src: url("./assets/fonts/Early GameBoy.ttf") format("truetype");
+    src: url("fonts/Early GameBoy.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "PokemonG3";
-    src: url("./assets/fonts/pokemon-emerald.otf") format("opentype");
-    font-weight: bold;
+    src: url("fonts/pokemon-emerald.otf") format("opentype");
+    font-weight: normal;
     font-style: normal;
-
 }
 
 :root{
@@ -36,7 +35,6 @@ header, footer{
     display: flex;
     justify-content: center;
     align-items: center;
-    //border: 5px solid blue;
     z-index: 2;
 }
 
