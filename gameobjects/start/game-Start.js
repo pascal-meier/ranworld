@@ -48,8 +48,8 @@ export default class gameStart {
         logo.setCollideWorldBounds(true);
         particles.startFollow(logo);
 
-        // Speed-Anzeige vorbereiten
-        this.speedText = this.scene.add.text(gW*0.9, gH/10, "Speed: 0", {
+        // Speed-Anzeige
+        this.speedText = this.scene.add.text(gW*0.8, gH/10, "Speed: 0", {
             fontSize: '24px',
             fill: '#ffffff',
             fontFamily: 'PokemonG3'
