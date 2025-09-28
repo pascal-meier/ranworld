@@ -4,14 +4,14 @@ import { Menu } from './js/scenes/menu.js';
 import { Start } from './js/scenes/start.js';
 
 
-const canvasHeight = document.getElementById("gameCanvas").height;
-const canvasWidth = document.getElementById("gameCanvas").width;
+const canvasHeight = window.innerHeight;
+const canvasWidth = window.innerWidth;
 export function getConfig () {
     return {
         type: Phaser.WEBGL,
         canvas: document.getElementById('gameCanvas'),
         scale: {
-            mode: Phaser.Scale.RESIZE,
+            mode: Phaser.Scale.ENVELOP,
             autoCenter: Phaser.Scale.CENTER_BOTH,
             width: canvasWidth,
             height: canvasHeight

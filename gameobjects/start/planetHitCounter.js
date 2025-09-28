@@ -1,3 +1,5 @@
+import {fontSizeS, fontSizeM, fontSizeL} from "../../main.js";
+
 export default class HitCounter {
     /**
      * @param {Phaser.Scene} scene - Die aktuelle Phaser-Szene
@@ -10,11 +12,11 @@ export default class HitCounter {
         this.API_URL = api_url;
 
         // Erstelle das Phaser Text-Objekt
-        this.counterText = scene.add.text(x, y, 'Load...', {
-            fontSize: '32px',
+        this.counterText = scene.add.text(x+fontSizeS, y+fontSizeS, 'Load...', {
+            fontSize: `${fontSizeM}px`,
             fill: '#ffffff',
             fontFamily: 'PokemonG3'
-        });
+        }).setDepth(6);
 
         // Starte die Zählerlogik sofort, wenn die Klasse instanziiert wird
         this.getCount();
