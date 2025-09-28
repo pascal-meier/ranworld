@@ -1,21 +1,24 @@
-//braucht scene + sting text
-// gibt textbox in der szene aus
+import {gH, gW} from "../../main.js";
 
-export function textbox(scene, text) {
+export default class TextboxHandler{
+    constructor(scene, text){
+        this.scene = scene;
+        this.text = text;
+    }
 
+    preload(){
+        console.log("--- Loading textbox:", this.scene.scene.key);
+    }
 
-    const boxWidth = scene.game.canvas.width/2;
-    const boxHeight = scene.game.canvas.height/2;
-    const tsize = Math.round(scene.game.canvas.width / 10);
+    create(){
+           this.box = this.scene.add.text(gW/2, gH/2, this.text, {
+                fontFamily: 'PokemonG1',
+                fontSize: '24px',
+                color: '#ffffff',
+                padding: { x: 10, y: 10 },
+                align: 'center',
+                wordWrap: { width: gW - 40 }
+            }).setOrigin(0.5, 0.5);
 
-    const style = {
-                    //backgroundColor: "rgba(3,19,72,0.34)",
-                    font: `${tsize}px PokemonG3`,
-                    fill: "#ffffff",
-                    wordWrap: { width: boxWidth*1.8, useAdvancedWrap: true },
-                    align: "center",
-                    padding: { x: 10, y: 10 },
-
-    };
-    scene.add.text(boxWidth, boxHeight, text, style).setOrigin(0.5);
+    }
 }

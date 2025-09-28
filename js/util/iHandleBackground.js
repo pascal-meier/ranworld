@@ -16,5 +16,6 @@ export default class BackgroundHandler{
         const bgImage = this.scene.add.image(gW/2, gH/1.5, 'bg-img');
         bgImage.displayWidth = gW;
         bgImage.displayHeight = gH/2;
+        bgImage.setDepth(0);
     }
 }
