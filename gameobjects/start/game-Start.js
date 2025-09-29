@@ -2,6 +2,7 @@ import {gW,gH, qS, fontSizeS, fontSizeM, fontSizeL} from "../../main.js";
 import HitCounter from "./planetHitCounter.js";
 import {rngPoint} from "../../js/rng/randomPoint.js";
 import {drawGPTButton} from "../template/GPT-Button.js";
+import PrefabButton from "../template/prefab-button.js";
 const COUNTER_API_URL = "https://r44pno55t2.execute-api.eu-central-1.amazonaws.com/api/counter";
 
 export default class gameStart {
@@ -80,7 +81,8 @@ export default class gameStart {
         this.updateSpeed(logo);
 
         // Start-Button
-        //drawGPTButton(this.scene).setPosition(0,gH*0.4);
+        drawGPTButton(this.scene).setPosition(0,gH*0.4);
+
     }
     updateSpeed(logo){
         let speed = (logo.body.velocity.x/10)+(logo.body.velocity.y/10);

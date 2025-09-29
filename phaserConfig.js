@@ -11,7 +11,7 @@ export function getConfig () {
         type: Phaser.WEBGL,
         canvas: document.getElementById('gameCanvas'),
         scale: {
-            mode: Phaser.Scale.ENVELOP,
+            mode: Phaser.Scale.FIT,
             autoCenter: Phaser.Scale.CENTER_BOTH,
             width: canvasWidth,
             height: canvasHeight
