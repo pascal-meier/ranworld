@@ -7,11 +7,14 @@ export class Menu extends Phaser.Scene
 
     preload ()
     {
-
+        console.error('preload menu');
     }
 
     create ()
     {
-
+        //Games
+        //Settings
+        //leaderboards
+        //
     }
 }
