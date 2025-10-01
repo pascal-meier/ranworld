@@ -14,7 +14,8 @@ export class MainMenuScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Hintergrund
-        this.add.image(width/2, height/2, "base-bg");
+        const baseBG = this.add.image(width/2, height/2, "base-bg");
+        baseBG.displayWidth=innerWidth;
 
         this.add.text(width / 2, 100, "RanWorld", {
             fontSize: "48px",
