@@ -1,3 +1,5 @@
+import {Button} from "../../../common/ui/Button.js";
+
 export class RanChessGameScene extends Phaser.Scene {
     constructor() {
         super("RanChessGameScene");
@@ -11,8 +13,8 @@ export class RanChessGameScene extends Phaser.Scene {
             color: "#ffffff",
         }).setOrigin(0.5);
 
-        // Beispiel: zurück ins Menü
-        this.input.keyboard.once("keydown-ESC", () => {
+        // Backbutton
+        const backButton = new Button (this, width / 4, height*0.1, "Back", () => {
             this.scene.start("MainMenuScene");
         });
     }
