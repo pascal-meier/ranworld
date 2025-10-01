@@ -2,13 +2,13 @@ const config = {
     type: Phaser.WEBGL,
     canvas: document.getElementById("gameCanvas"),
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: innerWidth,
-        height: innerHeight,
+        width: 320,
+        height: 640,
     },
     pixelArt: true,
-    scene: [], // Szenen werden später in main.js gesetzt
+    scene: [], // Szenen werden in main.js gesetzt
     physics: {
         default: "arcade",
         arcade: {
