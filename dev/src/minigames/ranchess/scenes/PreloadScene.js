@@ -4,8 +4,9 @@ export class RanChessPreloadScene extends Phaser.Scene {
     }
 
     preload() {
-        // Hier die Assets laden
-
+        this.load.image("board", "/public/assets/ranchess/board.png");
+        this.load.image("bFigure", "/public/assets/ranchess/figures_black.png");
+        this.load.image("wFigure", "/public/assets/ranchess/figures_white.png");
     }
 
     create() {
