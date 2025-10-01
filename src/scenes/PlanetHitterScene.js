@@ -10,8 +10,8 @@ export class PlanetHitterScene extends Phaser.Scene {
 
     preload() {
         // Lade hier alle Assets, die du für dein Intro brauchst, z. B. Planeten, Animationen, Musik
-        this.load.image("planet", "assets/logo/100.png");
-        this.load.image("particle", "assets/logo/particle_planet.png");
+        this.load.image("planet", "public/assets/logo/100.png");
+        this.load.image("particle", "public/assets/logo/particle_planet.png");
         //this.load.audio("intro-music", "assets/common/intro-music.mp3");
     }
 

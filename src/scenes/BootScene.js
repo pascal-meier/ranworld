@@ -6,7 +6,7 @@ export class BootScene extends Phaser.Scene {
     preload() {
         // Hier könntest du Dinge laden, die IMMER gebraucht werden
         // (z. B. Logos, Fonts, UI-Assets)
-        this.load.image("base-bg", "assets/backgrounds/Start.png");
+        this.load.image("base-bg", "public/assets/backgrounds/Start.png");
     }
 
     create() {
