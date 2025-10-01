@@ -10,8 +10,7 @@ export class BootScene extends Phaser.Scene {
     }
 
     create() {
-        // Ladebildschirm oder direkter Sprung
-        // → zuerst Intro (PlanetHitter)
+        // Resize-Handler definieren
         this.scene.start("PlanetHitterScene");
     }
 }

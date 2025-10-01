@@ -16,6 +16,7 @@ export class PlanetHitterScene extends Phaser.Scene {
     }
 
     create() {
+        this.scale.refresh();
         const { width, height } = this.scale;
 
         // Hintergrund
