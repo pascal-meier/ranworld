@@ -4,7 +4,6 @@ export class RanChessBootScene extends Phaser.Scene {
     }
 
     preload() {
-        // falls du gemeinsame Assets brauchst
     }
 
     create() {
