@@ -19,7 +19,8 @@ export class PlanetHitterScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Hintergrund
-        this.add.image(width/2, height/2, "base-bg");
+        const baseBG = this.add.image(width/2, height/2, "base-bg");
+        baseBG.displayWidth=innerWidth;
 
         // z. B. ein Planet in der Mitte zeigen
         //Partikel
@@ -88,7 +89,7 @@ export class PlanetHitterScene extends Phaser.Scene {
         }).setDepth(6);
 
         // 🔹 PlanetHits-Anzeige Wert
-        this.hitsText = this.add.text(gW*0.1, gH*0.1 + fontSizeS, "0", {
+        this.hitsText = this.add.text(gW*0.1, gH*0.1 + fontSizeS, "load...", {
             fontSize: `${fontSizeM}px`,
             fill: '#ffffff',
             fontFamily: 'PokemonG3'
@@ -102,11 +103,10 @@ export class PlanetHitterScene extends Phaser.Scene {
             console.log("🌐 WS Nachricht:", msg);
 
             // Wenn der Server die aktuelle Anzahl schickt
-            if (msg.action === "getPcount" || msg.action === "incPcount") {
-                if (msg.hits !== undefined) {
-                    this.hitsText.setText(String(msg.hits));
+                if (msg.count !== undefined) {
+                    this.hitsText.setText(String(msg.count));
                 }
-            }
+
         });
 
 
