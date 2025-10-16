@@ -1,6 +1,6 @@
 import {Button} from "../common/ui/Button.js";
 import {rngPoint} from "../common/utils/RNGpoint.js";
-import {qS, gH, gW, fontSizeS, fontSizeM} from "../config/constants.js";
+import {qS, gH, gW, fontSizeXS, fontSizeS, fontSizeM} from "../config/constants.js";
 import WebSocketClient from "../common/systems/WebSocketClient.js";
 
 export class PlanetHitterScene extends Phaser.Scene {
@@ -16,6 +16,7 @@ export class PlanetHitterScene extends Phaser.Scene {
     }
 
     create() {
+        this.scale.refresh();
         const { width, height } = this.scale;
 
         // Hintergrund
@@ -58,9 +59,9 @@ export class PlanetHitterScene extends Phaser.Scene {
 
         // Speed-Anzeige
         this.add.text(gW*0.9, gH*0.1, "Speed:", {
-            fontSize: `${fontSizeS}px`,
+            fontSize: `${fontSizeXS}px`,
             fill: '#ffffff',
-            fontFamily: 'PokemonG3'
+            fontFamily: 'PokemonG1'
         }).setDepth(6).setOrigin(1,0);
 
         this.speedText = this.add.text(gW*0.9, gH*0.1+fontSizeS, "", {
@@ -77,15 +78,15 @@ export class PlanetHitterScene extends Phaser.Scene {
         // });
 
         // Button zur nächsten szene
-        //new Button(this, width / 2, height - 100, "Zum Menü", () => {
-        //    this.scene.start("MainMenuScene");
-        //});
+        new Button(this, width / 2, height - 100, "Zum Menü", () => {
+            this.scene.start("MainMenuScene");
+        });
 
         // 🔹 PlanetHits-Anzeige Label
-        this.add.text(gW*0.1, gH*0.1, "PlanetHits:", {
-            fontSize: `${fontSizeS}px`,
+        this.add.text(gW*0.1, gH*0.1, "Hits:", {
+            fontSize: `${fontSizeXS}px`,
             fill: '#ffffff',
-            fontFamily: 'PokemonG3'
+            fontFamily: 'PokemonG1'
         }).setDepth(6);
 
         // 🔹 PlanetHits-Anzeige Wert

@@ -14,7 +14,8 @@ export class MainMenuScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Hintergrund
-        this.add.image(width/2, height/2, "base-bg");
+        const baseBG = this.add.image(width/2, height/2, "base-bg");
+        baseBG.displayWidth=innerWidth;
 
         this.add.text(width / 2, 100, "RanWorld", {
             fontSize: "48px",
@@ -23,16 +24,20 @@ export class MainMenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Buttons
-        new Button(this, width / 2, 200, "RanByrinth", () => {
-            this.scene.start("RanByrinthBootScene");
-        });
+        // new Button(this, width / 2, 200, "RanByrinth", () => {
+        //     this.scene.start("RanByrinthBootScene");
+        // });
+        //
+        // new Button(this, width / 2, 300, "RanChess", () => {
+        //     this.scene.start("RanChessBootScene");
+        // });
+        //
+        // new Button(this, width / 2, 400, "RanCards", () => {
+        //     this.scene.start("RanCardsBootScene");
+        // });
 
-        new Button(this, width / 2, 300, "RanChess", () => {
-            this.scene.start("RanChessBootScene");
-        });
-
-        new Button(this, width / 2, 400, "RanCards", () => {
-            this.scene.start("RanCardsBootScene");
+        new Button(this, width / 2, 500, "RythmDrum", () => {
+            this.scene.start("RythmDrumBootScene");
         });
     }
 
