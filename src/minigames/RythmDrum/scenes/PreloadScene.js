@@ -17,8 +17,11 @@ export class RythmDrumPreloadScene extends Phaser.Scene {
         this.load.image("d8", "public/assets/rythmdrums/tonguedrum_08.png");
 
         for (let i = 1; i <= 8; i++) {
-            this.load.audio(`sound${i}`, `public/assets/rythmdrums/sounds/${i}.wav`);
+            this.load.audio(`${i}`, `public/assets/rythmdrums/sounds/${i}.wav`);
         }
+
+        this.load.audio("fail", `public/assets/rythmdrums/sounds/fail.wav`);
+        this.load.audio("success", `public/assets/rythmdrums/sounds/success.wav`);
     }
 
     create() {
