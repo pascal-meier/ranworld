@@ -8,6 +8,7 @@ import { MainMenuScene } from "./scenes/MainMenuScene.js";
 import RanByrinth from "./minigames/ranbyrinth/index.js";
 import RanChess from "./minigames/ranchess/index.js";
 import RanCards from "./minigames/rancards/index.js";
+import RythmDrums from "./minigames/RythmDrum/index.js";
 
 config.scene = [
         BootScene,
@@ -15,7 +16,8 @@ config.scene = [
         MainMenuScene,
     ...RanByrinth,
     ...RanChess,
-    ...RanCards
+    ...RanCards,
+    ...RythmDrums
     ];
 
 new Phaser.Game(config);
