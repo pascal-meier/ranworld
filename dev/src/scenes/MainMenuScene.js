@@ -24,17 +24,17 @@ export class MainMenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Buttons
-        new Button(this, width / 2, 200, "RanByrinth", () => {
-            this.scene.start("RanByrinthBootScene");
-        });
-
-        new Button(this, width / 2, 300, "RanChess", () => {
-            this.scene.start("RanChessBootScene");
-        });
-
-        new Button(this, width / 2, 400, "RanCards", () => {
-            this.scene.start("RanCardsBootScene");
-        });
+        // new Button(this, width / 2, 200, "RanByrinth", () => {
+        //     this.scene.start("RanByrinthBootScene");
+        // });
+        //
+        // new Button(this, width / 2, 300, "RanChess", () => {
+        //     this.scene.start("RanChessBootScene");
+        // });
+        //
+        // new Button(this, width / 2, 400, "RanCards", () => {
+        //     this.scene.start("RanCardsBootScene");
+        // });
 
         new Button(this, width / 2, 500, "RythmDrum", () => {
             this.scene.start("RythmDrumBootScene");

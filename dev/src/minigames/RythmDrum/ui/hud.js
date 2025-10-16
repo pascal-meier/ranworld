@@ -41,7 +41,7 @@ export default class HUD {
 
         // Buttons: Start & Back
         // Positioning: Start unter der Drum (y = 0.8) so that it doesn't overlap drum
-        this.startButton = new Button(scene, width / 2, height * 0.8, "▶ Start", () => {});
+        this.startButton = new Button(scene, width * 0.8, height * 0.15, "▶ Start", () => {});
         this.backButton = new Button(scene, width * 0.12, height * 0.08, "← Zurück", () => {});
 
         // Make sure buttons are in our HUD container so they're above drum
