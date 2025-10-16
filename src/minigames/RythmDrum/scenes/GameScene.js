@@ -96,7 +96,7 @@ export class RythmDrumGameScene extends Phaser.Scene {
             const sequence = [1, 7, 5, 7, 6, 7, 1, 6, 5];
 
             // Optional: feste Verzögerung statt "wait for complete"
-            // const delay = 500;
+            const delay = 500;
 
             let index = 0;
 
@@ -120,16 +120,9 @@ export class RythmDrumGameScene extends Phaser.Scene {
 
                 index++;
 
-                // Warte bis Sound fertig ist, dann räume auf und spiele nächsten
-                melody.once("complete", () => {
-                    melody.destroy();
-                    // kurze Frame-Delay optional, ansonsten direkt playNext()
-                    // scene.time.delayedCall(100, playNext, [], scene);
-                    playNext();
-                });
 
                 // Wenn du stattdessen eine feste Pause willst (unabhängig von Soundlänge):
-                // scene.time.delayedCall(delay, playNext, [], scene);
+                scene.time.delayedCall(delay, playNext, [], scene);
             };
 
             // Starte Kette
