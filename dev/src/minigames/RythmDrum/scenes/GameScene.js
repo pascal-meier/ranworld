@@ -15,7 +15,7 @@ export class RythmDrumGameScene extends Phaser.Scene {
         this.hud = new HUD(this);
 
         // Game state
-        this.melody = [1, 7, 5, 7, 6, 7, 1, 6, 5];
+        this.melody = [1, 7, 5];
         this.playerInput = [];
         this.successList = [];
         this.score = 0;
@@ -75,6 +75,7 @@ export class RythmDrumGameScene extends Phaser.Scene {
                 this.tongueDrum.winFlash();
                 this.score++;
                 this.hud.setScore(this.score);
+                this.changeMelody();
             }
         };
 
@@ -105,5 +106,8 @@ export class RythmDrumGameScene extends Phaser.Scene {
             this.time.delayedCall(500, playNext, [], this);
         };
         playNext();
+    }
+    changeMelody(){
+        this.melody.push(Math.floor(Math.random() * 8) + 1);
     }
 }

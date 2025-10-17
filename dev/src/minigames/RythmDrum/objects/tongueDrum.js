@@ -38,7 +38,7 @@ export default class TongueDrum extends Phaser.GameObjects.Image {
         // Kurzes visuelles Feedback beim Antippen (z. B. Segment zeigen)
         this.setTint(0xffcc00);
         this.setTexture(`d${segment}`);
-        this.scene.time.delayedCall(200, () => {
+        this.scene.time.delayedCall(300, () => {
             this.clearTint();
             this.setTexture("drum");
         });
@@ -50,8 +50,6 @@ export default class TongueDrum extends Phaser.GameObjects.Image {
             targets: this,
             tint: 0xff3333,
             duration: 250,
-            yoyo: true,
-            repeat: 1
         });
     }
 
