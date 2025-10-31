@@ -32,9 +32,9 @@ export class MainMenuScene extends Phaser.Scene {
         //     this.scene.start("RanChessBootScene");
         // });
         //
-        // new Button(this, width / 2, 400, "RanCards", () => {
-        //     this.scene.start("RanCardsBootScene");
-        // });
+        new Button(this, width / 2, 400, "LootyBox", () => {
+            this.scene.start("LootyBoxBootScene");
+        });
 
         new Button(this, width / 2, 500, "RythmDrum", () => {
             this.scene.start("RythmDrumBootScene");
