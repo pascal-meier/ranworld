@@ -1,9 +1,10 @@
-import { RanCardsBootScene } from "./scenes/BootScene.js";
-import { RanCardsPreloadScene } from "./scenes/PreloadScene.js";
-import { RanCardsGameScene } from "./scenes/GameScene.js";
+import { LootyBoxBootScene } from "./scenes/BootScene.js";
+import { LootyBoxPreloadScene } from "./scenes/PreloadScene.js";
+import { LootyBoxGameScene } from "./scenes/GameScene.js";
 
 export default [
-    RanCardsBootScene,
-    RanCardsPreloadScene,
-    RanCardsGameScene
+    LootyBoxBootScene,
+    LootyBoxPreloadScene,
+    LootyBoxGameScene
+    
 ];
