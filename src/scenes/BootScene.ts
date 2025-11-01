@@ -1,27 +1,32 @@
-export class BootScene extends Phaser.Scene {
+// src/scenes/BootScene.ts
+import { BaseScene } from "./BaseScene.js";
+
+export class BootScene extends BaseScene {
   constructor() {
-    super({ key: "BootScene" });
+    super("BootScene");
   }
 
   preload(): void {
-    // 🖼️ Logos, Fonts, UI-Assets laden
     this.load.image("base-bg", "public/assets/backgrounds/Start.png");
   }
 
   create(): void {
-    // 🔁 Optional: Resize-Handler (vorbereitet, falls du RESIZE-Mode nutzt)
-    this.scale.on("resize", this.onResize, this);
+    super.create(); // wichtig, um Resize-Listener einzurichten
 
-    // 🚀 Starte nächste Szene
+    const bg = this.add.image(0, 0, "base-bg").setOrigin(0).setName("base-bg");
+
+    // Direkt danach schon mal das Layout aktualisieren
+    this.onResize(this.scale.gameSize);
+
     this.scene.start("PlanetHitterScene");
   }
 
-  /**
-   * Wird aufgerufen, wenn sich die Fenstergröße ändert (bei RESIZE-Mode)
-   */
-  private onResize(gameSize: Phaser.Structs.Size): void {
+  protected onResize(gameSize: Phaser.Structs.Size): void {
     const { width, height } = gameSize;
-    console.log(`New size: ${width}x${height}`);
-    // Optional: Position oder UI anpassen
+
+    const bg = this.children.getByName("base-bg") as Phaser.GameObjects.Image;
+    if (bg) {
+      bg.setDisplaySize(width, height);
+    }
   }
 }

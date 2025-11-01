@@ -9,6 +9,7 @@ import { MainMenuScene } from "./scenes/MainMenuScene.js";
 // Minigames (Arrays mit Scenes)
 import LootyBox from "./minigames/LootyBox/index.js";
 import RythmDrums from "./minigames/RythmDrum/index.js";
+import RiggedRace from "./minigames/RiggedRace/index.js";
 
 // ✅ Alle Szenen zusammenfassen
 const scenes = [
@@ -17,6 +18,7 @@ const scenes = [
   MainMenuScene,
   ...LootyBox,
   ...RythmDrums,
+  ...RiggedRace,
 ];
 
 // ✅ Phaser starten

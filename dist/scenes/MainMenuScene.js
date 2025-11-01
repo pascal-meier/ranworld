@@ -1,6 +1,7 @@
-export class MainMenuScene extends Phaser.Scene {
+import { BaseScene } from "./BaseScene.js";
+export class MainMenuScene extends BaseScene {
     constructor() {
-        super({ key: "MainMenuScene" });
+        super("MainMenuScene");
     }
     preload() {
         // Beispiel: UI-Grafiken laden (wenn du sie hast)
@@ -29,6 +30,10 @@ export class MainMenuScene extends Phaser.Scene {
         startY += spacing;
         this.createMenuButton(width / 2, startY, "RythmDrum", () => {
             this.scene.start("RythmDrumBootScene");
+        });
+        startY += spacing;
+        this.createMenuButton(width / 2, startY, "RiggedRace", () => {
+            this.scene.start("RiggedRaceBootScene");
         });
     }
     /**

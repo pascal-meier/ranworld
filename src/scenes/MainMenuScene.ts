@@ -1,8 +1,9 @@
 import { Button } from "../common/ui/Button";
+import { BaseScene } from "./BaseScene.js";
 
-export class MainMenuScene extends Phaser.Scene {
+export class MainMenuScene extends BaseScene {
   constructor() {
-    super({ key: "MainMenuScene" });
+    super("MainMenuScene");
   }
 
   preload(): void {
@@ -39,6 +40,12 @@ export class MainMenuScene extends Phaser.Scene {
 
     this.createMenuButton(width / 2, startY, "RythmDrum", () => {
       this.scene.start("RythmDrumBootScene");
+    });
+
+    startY += spacing;
+
+    this.createMenuButton(width / 2, startY, "RiggedRace", () => {
+      this.scene.start("RiggedRaceBootScene");
     });
   }
 
