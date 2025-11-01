@@ -1,13 +1,13 @@
-export class RanCardsBootScene extends Phaser.Scene {
+export class LootyBoxBootScene extends Phaser.Scene {
     constructor() {
-        super("RanCardsBootScene");
+        super("LootyBoxBootScene");
     }
 
     preload() {
-        // falls du gemeinsame Assets brauchst
+        
     }
 
     create() {
-        this.scene.start("RanCardsPreloadScene");
+        this.scene.start("LootyBoxPreloadScene");
     }
 }
