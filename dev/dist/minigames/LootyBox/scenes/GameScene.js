@@ -9,8 +9,10 @@ export class LootyBoxGameScene extends Phaser.Scene {
         const { width, height } = this.scale;
         const centerX = width / 2;
         const centerY = height / 2;
-        // Hintergrund
-        this.add.image(centerX, centerY, "base-bg").setDepth(-1);
+        // 🖼️ Hintergrundbild
+        const baseBG = this.add.image(width / 2, height / 2, "base-bg");
+        baseBG.setDisplaySize(width, height); // skaliert sauber statt innerWidth
+        baseBG.setOrigin(0.5);
         // Titel
         this.add.text(centerX, height * 0.3, "REACH 100", {
             fontSize: "32px",
