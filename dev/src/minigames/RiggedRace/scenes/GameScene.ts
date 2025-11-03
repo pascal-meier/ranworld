@@ -1,5 +1,6 @@
 import { Button } from "../../../common/ui/Button.js";
 import { Track } from "../objects/track.js";
+import { Fox } from "../objects/fox.js"
 
 export class RiggedRaceGameScene extends Phaser.Scene {
   private scoreValue!: Phaser.GameObjects.Text;
@@ -24,19 +25,28 @@ export class RiggedRaceGameScene extends Phaser.Scene {
     });
 
     // Titel
-    this.add.text(centerX, height * 0.1, "CHOOSE RACER", {
+    this.add.text(centerX, height * 0.2, "CHOOSE RACER", {
       fontSize: "32px",
       color: "#ffffff",
     }).setOrigin(0.5);
 
     // Rennstrecken
     const spacing = 100;
-    let startY = height * 0.1;
+    let startY = 50;
 
-    new Track(this).setPosition(0, startY - 2*spacing);
-    new Track(this).setPosition(0, startY- spacing);
-    new Track(this).setPosition(0, startY);
+    let track01 = new Track(this).setPosition(0, startY - 2*spacing);
+    let track02 = new Track(this).setPosition(0, startY- spacing);
+    let track03 = new Track(this).setPosition(0, startY);
+
+    //Foxes
+    const fox1 = new Fox(this, "Speedy", "fox01")
+      .setPosition(75, innerHeight*0.5-2*spacing);
     
+    const fox2 = new Fox(this, "Turbo", "fox02")
+    .setPosition(75, innerHeight*0.5-spacing);
+
+    const fox3 = new Fox(this, "Lightning", "fox03")
+    .setPosition(75, innerHeight*0.5);
         
   }
 }
