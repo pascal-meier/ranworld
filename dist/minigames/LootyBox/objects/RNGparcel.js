@@ -1,3 +1,4 @@
+let value = 0;
 export function generateLoot(scene, boxNr, x, y) {
     // 🔸 Loot-Chancen pro Box
     const lootTables = {
@@ -5,21 +6,43 @@ export function generateLoot(scene, boxNr, x, y) {
         2: { common: 20, rare: 50, epic: 25, legendary: 5 },
         3: { common: 0, rare: 35, epic: 55, legendary: 10 },
     };
+    if (boxNr < 2) {
+        boxNr = 1;
+    }
+    else if (boxNr < 4) {
+        boxNr = 2;
+    }
+    else {
+        boxNr = 3;
+    }
     const table = lootTables[boxNr];
     if (!table) {
         console.warn("⚠️ Ungültige Boxnummer:", boxNr);
-        return "common";
+        return ["common", 1];
     }
     // 🔹 Zufallswurf
     const roll = Math.random() * 100;
     let cumulative = 0;
     let result = "common";
+    let value = 0;
     for (const [rarity, chance] of Object.entries(table)) {
         cumulative += chance;
         if (roll < cumulative) {
             result = rarity;
             break;
         }
+    }
+    if (result == "common") {
+        value = 5;
+    }
+    else if (result == "rare") {
+        value = 10;
+    }
+    else if (result == "epic") {
+        value = 20;
+    }
+    else {
+        value = 50;
     }
     // 🎨 Farbtabelle für Anzeige
     const colors = {
@@ -56,5 +79,5 @@ export function generateLoot(scene, boxNr, x, y) {
             });
         },
     });
-    return result;
+    return [result, value];
 }

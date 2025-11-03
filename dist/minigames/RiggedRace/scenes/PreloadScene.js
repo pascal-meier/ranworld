@@ -5,6 +5,9 @@ export class RiggedRacePreloadScene extends Phaser.Scene {
     preload() {
         // Lade alle benötigten Assets für das Minispiel
         this.load.image("base-bg", "public/assets/common/backgrounds/base-bg.png");
+        this.load.image("fox01", "public/assets/riggedrace/fox01.png");
+        this.load.image("fox02", "public/assets/riggedrace/fox02.png");
+        this.load.image("fox03", "public/assets/riggedrace/fox03.png");
         // Fortschrittsanzeige (optional)
         const { width, height } = this.scale;
         const loadingText = this.add
