@@ -10,9 +10,8 @@ export class Track extends Phaser.GameObjects.Graphics {
 
         // Beispielhafte Punkte für eine kurvige Strecke
         this.pathPoints = [
-            new Phaser.Math.Vector2(100, 500),
-            new Phaser.Math.Vector2(300, 400),
-            
+            new Phaser.Math.Vector2(innerWidth*0.1, innerHeight*0.5),
+            new Phaser.Math.Vector2(innerWidth*0.9, innerHeight*0.5),
         ];
 
         this.drawTrack();
