@@ -18,11 +18,15 @@ export class RiggedRaceGameScene extends Phaser.Scene {
             this.scene.start("MainMenuScene");
         });
         // Titel
-        this.add.text(centerX, height * 0.3, "CHOOSE RACER", {
+        this.add.text(centerX, height * 0.1, "CHOOSE RACER", {
             fontSize: "32px",
             color: "#ffffff",
         }).setOrigin(0.5);
-        // Rennstrecke
-        new Track(this);
+        // Rennstrecken
+        const spacing = 100;
+        let startY = height * 0.1;
+        new Track(this).setPosition(0, startY - 2 * spacing);
+        new Track(this).setPosition(0, startY - spacing);
+        new Track(this).setPosition(0, startY);
     }
 }
