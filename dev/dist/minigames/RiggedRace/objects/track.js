@@ -6,7 +6,7 @@ export class Track extends Phaser.GameObjects.Graphics {
     constructor(scene) {
         super(scene);
         scene.add.existing(this);
-        // Beispielhafte Punkte für eine kurvige Strecke
+        // Strecke
         this.pathPoints = [
             new Phaser.Math.Vector2(innerWidth * 0.1, innerHeight * 0.5),
             new Phaser.Math.Vector2(innerWidth * 0.9, innerHeight * 0.5),
