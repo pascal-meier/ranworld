@@ -15,7 +15,7 @@ export class Race {
      * Starte das Rennen
      */
     start() {
-        if (this.isRunning)
+        if (this.isRunning || !this.scene.scene.isActive())
             return;
         this.isRunning = true;
         this.winner = null;
@@ -31,15 +31,13 @@ export class Race {
      * Rennlogik in jedem Schritt
      */
     updateRace() {
-        if (!this.isRunning)
+        // Sicherheit: Scene oder Timer zerstört?
+        if (!this.isRunning || !this.scene.scene.isActive())
             return;
         for (const fox of this.foxes) {
-            // Zufällige Variation + Glücksfaktor
             const randomBoost = Phaser.Math.Between(0, fox.getLuck());
             const step = (fox.getSpeed() / 50) + randomBoost * 0.2;
-            // 🦊 Bewegung nach rechts
             fox.x += step;
-            // Prüfen, ob dieser Fuchs die Ziellinie erreicht hat
             if (fox.x >= this.finishLineX) {
                 this.finish(fox);
                 break;
@@ -50,21 +48,23 @@ export class Race {
      * Rennen beenden
      */
     finish(winner) {
+        if (!this.scene.scene.isActive())
+            return;
         this.isRunning = false;
         this.winner = winner;
         console.log(`🏆 Gewinner: ${winner.getName()}`);
         // ⏹️ Timer stoppen
         this.raceTimer?.remove();
-        this.foxes.forEach((f) => {
-            //f.stopRunAnimation();
-            f.disableInteractive();
-        });
-        // Optional: Alle Füchse stoppen
-        this.foxes.forEach(f => {
-            f.disableInteractive();
-        });
+        this.raceTimer = undefined;
+        // Füchse deaktivieren
+        this.foxes.forEach((f) => f.disableInteractive());
         // 🎉 Event an Szene senden (GameScene kann darauf reagieren)
-        this.scene.events.emit("raceFinished", winner);
+        try {
+            this.scene.events.emit("raceFinished", winner);
+        }
+        catch (e) {
+            console.warn("⚠️ Event konnte nicht gesendet werden (Scene evtl. zerstört)", e);
+        }
     }
     /**
      * Zugriff auf den Gewinner
@@ -81,9 +81,12 @@ export class Race {
         // ⏹️ Timer wirklich beenden
         this.raceTimer?.remove();
         this.raceTimer = undefined;
+        // Sicherstellen, dass Scene aktiv ist
+        if (!this.scene.scene.isActive())
+            return;
         // Füchse zurücksetzen
-        this.foxes.forEach((fox, i) => {
-            fox.setX(75); // Startposition links
+        this.foxes.forEach((fox) => {
+            fox.setX(75);
             fox.setSelected(false);
             fox.setInteractive();
             fox.resetStats();
