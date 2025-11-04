@@ -107,7 +107,8 @@ export class PlanetHitterScene extends Phaser.Scene {
             return;
         }
         const velocity = body.velocity;
-        const speed = Math.abs(velocity.x / 10 + velocity.y / 10);
+        const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2) / 10;
+        console.log(velocity, speed);
         this.speedText.setText(speed.toFixed(0));
     }
 }
