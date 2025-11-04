@@ -58,8 +58,12 @@ export class RiggedRaceGameScene extends Phaser.Scene {
         // 🎉 Gewinner-Event
         this.events.on("raceFinished", (winner) => {
             console.log("🎉 Der Gewinner ist:", winner.getName());
-            titeltext.text = winner.getName() + "wins!";
+            titeltext.text = winner.getName() + " wins!";
             // z. B. Text einblenden oder Belohnung anzeigen
+            this.time.delayedCall(3000, () => {
+                this.race.reset();
+                this.selectedFox = null;
+            });
         });
     }
     handleFoxSelection(clickedFox) {

@@ -10,8 +10,8 @@ export class Fox extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, name: string, textureKey: string) {
     super(scene);
 
-    this.speed = Phaser.Math.Between(60, 120);
-    this.luck = Phaser.Math.Between(1, 10);
+    this.speed = Phaser.Math.Between(60, 80);
+    this.luck = Phaser.Math.Between(5, 10);
 
     // 🦊 Sprite hinzufügen
     this.sprite = scene.add.sprite(0, 0, textureKey).setOrigin(0.5);
@@ -66,5 +66,11 @@ export class Fox extends Phaser.GameObjects.Container {
     this.isSelected = value;
     this.sprite.setTint(value ? 0xffcc00 : 0xffffff);
   }
+
+  public resetStats(): void {
+  this.speed = Phaser.Math.Between(60, 80);
+  this.luck = Phaser.Math.Between(5, 10);
+  console.log(this.nameText.text + " " + this.speed + " " + this.luck);
+}
 
 }

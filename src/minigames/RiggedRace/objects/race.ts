@@ -8,6 +8,7 @@ export class Race {
   private isRunning: boolean = false;
   private finishLineX: number;
   private winner: Fox | null = null;
+  private raceTimer?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene, foxes: Fox[], finishLineX: number) {
     this.scene = scene;
@@ -26,14 +27,15 @@ export class Race {
 
     console.log("🏁 Rennen gestartet!");
 
-    // Füchse bewegen sich mit ihrer individuellen Geschwindigkeit + Zufallskomponente
-    this.scene.time.addEvent({
+    // ⏱️ Timer speichern
+    this.raceTimer = this.scene.time.addEvent({
       delay: 100,
       loop: true,
       callback: () => this.updateRace(),
     });
   }
 
+  
   /**
    * Rennlogik in jedem Schritt
    */
@@ -65,6 +67,14 @@ export class Race {
 
     console.log(`🏆 Gewinner: ${winner.getName()}`);
 
+     // ⏹️ Timer stoppen
+    this.raceTimer?.remove();
+
+    this.foxes.forEach((f) => {
+      //f.stopRunAnimation();
+      f.disableInteractive();
+    });
+
     // Optional: Alle Füchse stoppen
     this.foxes.forEach(f => {
       f.disableInteractive();
@@ -72,6 +82,7 @@ export class Race {
 
     // 🎉 Event an Szene senden (GameScene kann darauf reagieren)
     this.scene.events.emit("raceFinished", winner);
+    
   }
 
   /**
@@ -88,11 +99,16 @@ export class Race {
     this.isRunning = false;
     this.winner = null;
 
+    // ⏹️ Timer wirklich beenden
+    this.raceTimer?.remove();
+    this.raceTimer = undefined;
+
     // Füchse zurücksetzen
     this.foxes.forEach((fox, i) => {
       fox.setX(75); // Startposition links
       fox.setSelected(false);
       fox.setInteractive();
+      fox.resetStats();
     });
   }
 }

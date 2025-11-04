@@ -5,6 +5,7 @@ export class Race {
     isRunning = false;
     finishLineX;
     winner = null;
+    raceTimer;
     constructor(scene, foxes, finishLineX) {
         this.scene = scene;
         this.foxes = foxes;
@@ -19,8 +20,8 @@ export class Race {
         this.isRunning = true;
         this.winner = null;
         console.log("🏁 Rennen gestartet!");
-        // Füchse bewegen sich mit ihrer individuellen Geschwindigkeit + Zufallskomponente
-        this.scene.time.addEvent({
+        // ⏱️ Timer speichern
+        this.raceTimer = this.scene.time.addEvent({
             delay: 100,
             loop: true,
             callback: () => this.updateRace(),
@@ -52,6 +53,12 @@ export class Race {
         this.isRunning = false;
         this.winner = winner;
         console.log(`🏆 Gewinner: ${winner.getName()}`);
+        // ⏹️ Timer stoppen
+        this.raceTimer?.remove();
+        this.foxes.forEach((f) => {
+            //f.stopRunAnimation();
+            f.disableInteractive();
+        });
         // Optional: Alle Füchse stoppen
         this.foxes.forEach(f => {
             f.disableInteractive();
@@ -71,11 +78,15 @@ export class Race {
     reset() {
         this.isRunning = false;
         this.winner = null;
+        // ⏹️ Timer wirklich beenden
+        this.raceTimer?.remove();
+        this.raceTimer = undefined;
         // Füchse zurücksetzen
         this.foxes.forEach((fox, i) => {
             fox.setX(75); // Startposition links
             fox.setSelected(false);
             fox.setInteractive();
+            fox.resetStats();
         });
     }
 }
