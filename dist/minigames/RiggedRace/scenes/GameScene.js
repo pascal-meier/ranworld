@@ -69,6 +69,21 @@ export class RiggedRaceGameScene extends Phaser.Scene {
                 titeltext.text = "CHOOSE RACER";
             });
         });
+        // 🧹 Scene-Cleanup hinzufügen (GANZ UNTEN in create)
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            console.log("🧹 GameScene wird beendet — cleanup läuft");
+            // Rennen beenden/resetten
+            this.race?.reset();
+            this.race = null;
+            // Alle Timer entfernen
+            this.time.removeAllEvents();
+            // Eventlistener abmelden
+            this.events.off("foxSelected", this.handleFoxSelection, this);
+            this.events.off("raceFinished");
+            // Optional: Textobjekte zerstören
+            const titeltext = this.children.getByName("titeltext");
+            titeltext?.destroy();
+        });
     }
     /**
      * Auswahl eines Fuchses behandeln
