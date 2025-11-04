@@ -7,7 +7,7 @@ export class Fox extends Phaser.GameObjects.Container {
     isSelected = false;
     constructor(scene, name, textureKey) {
         super(scene);
-        this.speed = Phaser.Math.Between(60, 80);
+        this.speed = Phaser.Math.Between(90, 120);
         this.luck = Phaser.Math.Between(5, 10);
         // 🦊 Sprite hinzufügen
         this.sprite = scene.add.sprite(0, 0, textureKey).setOrigin(0.5);
