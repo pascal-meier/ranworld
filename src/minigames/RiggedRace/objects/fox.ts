@@ -61,4 +61,10 @@ export class Fox extends Phaser.GameObjects.Container {
   public getName(): string {
     return this.nameText.text;
   }
+
+  public setSelected(value: boolean): void {
+    this.isSelected = value;
+    this.sprite.setTint(value ? 0xffcc00 : 0xffffff);
+  }
+
 }

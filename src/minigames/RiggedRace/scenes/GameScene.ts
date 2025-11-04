@@ -1,9 +1,13 @@
 import { Button } from "../../../common/ui/Button.js";
 import { Track } from "../objects/track.js";
-import { Fox } from "../objects/fox.js"
+import { Fox } from "../objects/fox.js";
+import { Race } from "../objects/race.js";
 
 export class RiggedRaceGameScene extends Phaser.Scene {
   private scoreValue!: Phaser.GameObjects.Text;
+  private foxes: Fox[] = [];
+  private selectedFox: Fox | null = null;
+  private race!: Race;
 
   constructor() {
     super("RiggedRaceGameScene");
@@ -16,37 +20,81 @@ export class RiggedRaceGameScene extends Phaser.Scene {
 
     // 🖼️ Hintergrundbild
     const baseBG = this.add.image(width / 2, height / 2, "base-bg");
-    baseBG.setDisplaySize(width, height); // skaliert sauber statt innerWidth
+    baseBG.setDisplaySize(width, height);
     baseBG.setOrigin(0.5);
 
-    // Zurück-Button
+    // 🔙 Zurück-Button
     new Button(this, width / 4, height * 0.1, "Back", () => {
       this.scene.start("MainMenuScene");
     });
 
-    // Titel
-    this.add.text(centerX, height * 0.2, "CHOOSE RACER", {
+    // 🏁 Titel
+    let titeltext = this.add.text(centerX, height * 0.2, "CHOOSE RACER", {
       fontSize: "32px",
       color: "#ffffff",
     }).setOrigin(0.5);
 
-    // Rennstrecken
+    // 🛤️ Rennstrecken
     const spacing = 100;
-    let startY = 50;
+    const startY = 50;
 
-    let track01 = new Track(this).setPosition(0, startY - 2*spacing);
-    let track02 = new Track(this).setPosition(0, startY- spacing);
-    let track03 = new Track(this).setPosition(0, startY);
+    new Track(this).setPosition(0, startY - 2 * spacing);
+    new Track(this).setPosition(0, startY - spacing);
+    new Track(this).setPosition(0, startY);
 
-    //Foxes
-    const fox1 = new Fox(this, "Speedy", "fox01")
-      .setPosition(75, innerHeight*0.5-2*spacing);
+    // 🦊 Füchse erzeugen
+    const fox1 = new Fox(this, "Miyo", "fox01")
+      .setPosition(75, innerHeight * 0.5 - 2 * spacing);
+    const fox2 = new Fox(this, "Anber", "fox02")
+      .setPosition(75, innerHeight * 0.5 - spacing);
+    const fox3 = new Fox(this, "Ret", "fox03")
+      .setPosition(75, innerHeight * 0.5);
+
+    this.foxes = [fox1, fox2, fox3];
+
+    // 🎧 Reagiere auf Klicks eines Fuchses
+    this.events.on("foxSelected", (clickedFox: Fox) => {
+      this.handleFoxSelection(clickedFox);
+    });
+
+    // 🏁 Rennen erstellen (z. B. mit Ziellinie rechts vom Bildschirm)
+    this.race = new Race(this, this.foxes, this.scale.width - 100);
+
+    // ▶️ Start-Button
+    new Button(this, this.scale.width * 0.75, this.scale.height * 0.1, "Start Race", () => {
+      if (!this.selectedFox) {
+        console.log("⚠️ Bitte zuerst einen Fuchs auswählen!");
+        return;
+      }
+      this.race.start();
+    });
+
+    // 🎉 Gewinner-Event
+    this.events.on("raceFinished", (winner: Fox) => {
+      console.log("🎉 Der Gewinner ist:", winner.getName());
+      titeltext.text = winner.getName() + "wins!";
+      // z. B. Text einblenden oder Belohnung anzeigen
+    });
     
-    const fox2 = new Fox(this, "Turbo", "fox02")
-    .setPosition(75, innerHeight*0.5-spacing);
+  }
 
-    const fox3 = new Fox(this, "Lightning", "fox03")
-    .setPosition(75, innerHeight*0.5);
-        
+  private handleFoxSelection(clickedFox: Fox): void {
+    // Wenn derselbe Fuchs erneut geklickt wurde → abwählen
+    if (this.selectedFox === clickedFox) {
+      clickedFox.setSelected(false);
+      this.selectedFox = null;
+      return;
+    }
+
+    // Anderen abwählen
+    if (this.selectedFox) {
+      this.selectedFox.setSelected(false);
+    }
+
+    // Neuen aktivieren
+    clickedFox.setSelected(true);
+    this.selectedFox = clickedFox;
+
+    console.log("Aktuell gewählter Fuchs:", this.selectedFox.getName());
   }
 }
