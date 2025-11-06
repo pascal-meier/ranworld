@@ -8,6 +8,7 @@ import { MainMenuScene } from "./scenes/MainMenuScene.js";
 import LootyBox from "./minigames/LootyBox/index.js";
 import RythmDrums from "./minigames/RythmDrum/index.js";
 import RiggedRace from "./minigames/RiggedRace/index.js";
+import CantropyDraw from "./minigames/CantropyDraw/index.js";
 // ✅ Alle Szenen zusammenfassen
 const scenes = [
     BootScene,
@@ -16,6 +17,7 @@ const scenes = [
     ...LootyBox,
     ...RythmDrums,
     ...RiggedRace,
+    ...CantropyDraw
 ];
 // ✅ Phaser starten
 new Phaser.Game({

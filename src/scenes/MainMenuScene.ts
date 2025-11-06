@@ -47,6 +47,12 @@ export class MainMenuScene extends BaseScene {
     this.createMenuButton(width / 2, startY, "RiggedRace", () => {
       this.scene.start("RiggedRaceBootScene");
     });
+
+    startY += spacing;
+    
+    this.createMenuButton(width / 2, startY, "CantropyDraw", () => {
+      this.scene.start("CantropyDrawBootScene");
+    });
   }
 
   /**
