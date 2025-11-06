@@ -1,6 +1,7 @@
 export type Rarity = "common" | "rare" | "epic" | "legendary";
+let value = 0;
 
-export function generateLoot(scene: Phaser.Scene, boxNr: number, x: number, y: number): Rarity {
+export function generateLoot(scene: Phaser.Scene, boxNr: number, x: number, y: number): [Rarity, number] {
   // 🔸 Loot-Chancen pro Box
   const lootTables: Record<number, Record<Rarity, number>> = {
     1: { common: 50, rare: 35, epic: 14, legendary: 1 },
@@ -8,16 +9,25 @@ export function generateLoot(scene: Phaser.Scene, boxNr: number, x: number, y: n
     3: { common: 0,  rare: 35, epic: 55, legendary: 10 },
   };
 
+  if (boxNr<2){
+    boxNr=1;
+  }else if (boxNr<4){
+    boxNr=2;
+  }else{
+    boxNr=3;
+  }
+
   const table = lootTables[boxNr];
   if (!table) {
     console.warn("⚠️ Ungültige Boxnummer:", boxNr);
-    return "common";
+    return ["common", 1];
   }
 
   // 🔹 Zufallswurf
   const roll = Math.random() * 100;
   let cumulative = 0;
   let result: Rarity = "common";
+  let value = 0;
 
   for (const [rarity, chance] of Object.entries(table) as [Rarity, number][]) {
     cumulative += chance;
@@ -25,6 +35,19 @@ export function generateLoot(scene: Phaser.Scene, boxNr: number, x: number, y: n
       result = rarity;
       break;
     }
+  }
+
+  if (result=="common"){
+    value = 5;
+  }
+  else if(result=="rare"){
+    value = 10;
+  }
+  else if(result=="epic"){
+    value = 20;
+  }
+  else{
+    value = 50;
   }
 
   // 🎨 Farbtabelle für Anzeige
@@ -65,5 +88,5 @@ export function generateLoot(scene: Phaser.Scene, boxNr: number, x: number, y: n
     },
   });
 
-  return result;
+  return [result, value];
 }
