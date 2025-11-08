@@ -1,4 +1,4 @@
-import { Button } from "../../../common/ui/Button.js";
+import { Button } from "../../../core/ui/Button.js";
 import { generateLoot } from "../objects/RNGparcel.js";
 
 export class LootyBoxGameScene extends Phaser.Scene {
@@ -20,21 +20,30 @@ export class LootyBoxGameScene extends Phaser.Scene {
     baseBG.setOrigin(0.5);
 
     // Titel
-    this.titelText = this.add.text(centerX, height * 0.3, "REACH 100", {
-      fontSize: "32px",
-      color: "#ffffff",
-    }).setOrigin(0.5);
+    this.titelText = this.add
+      .text(centerX, height * 0.3, "REACH 100", {
+        fontSize: "32px",
+        color: "#ffffff",
+        fontFamily: "Ranworldfont01",
+      })
+      .setOrigin(0.5);
 
     // Score
-    this.add.text(width * 0.75, height * 0.1, "Score:", {
-      fontSize: "32px",
-      color: "#ffffff",
-    }).setOrigin(0.5);
+    this.add
+      .text(width * 0.75, height * 0.1, "Score:", {
+        fontSize: "32px",
+        color: "#ffffff",
+        fontFamily: "Ranworldfont01",
+      })
+      .setOrigin(0.5);
 
-    this.scoreValue = this.add.text(width * 0.85, height * 0.1, "0", {
-      fontSize: "32px",
-      color: "#ffffff",
-    }).setOrigin(0.5);
+    this.scoreValue = this.add
+      .text(width * 0.85, height * 0.1, "0", {
+        fontSize: "32px",
+        color: "#ffffff",
+        fontFamily: "Ranworldfont01",
+      })
+      .setOrigin(0.5);
 
     // Zurück-Button
     new Button(this, width / 4, height * 0.1, "Back", () => {
@@ -185,13 +194,17 @@ export class LootyBoxGameScene extends Phaser.Scene {
   const { width, height } = this.scale;
 
   // 🎉 Win-Text in der Mitte
-  const winText = this.add.text(width / 2, height / 2, "YOU WIN!", {
-    fontSize: "72px",
-    color: "#FFD700",
-    fontStyle: "bold",
-    stroke: "#000",
-    strokeThickness: 8,
-  }).setOrigin(0.5).setScale(0);
+  const winText = this.add
+    .text(width / 2, height / 2, "YOU WIN!", {
+      fontSize: "72px",
+      color: "#FFD700",
+      fontStyle: "bold",
+      stroke: "#000",
+      strokeThickness: 8,
+      fontFamily: "Ranworldfont01",
+    })
+    .setOrigin(0.5)
+    .setScale(0);
 
   // 🟩 Animation (reinzoomen)
   this.tweens.add({

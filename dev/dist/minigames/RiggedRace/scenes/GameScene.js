@@ -1,4 +1,4 @@
-import { Button } from "../../../common/ui/Button.js";
+import { Button } from "../../../core/ui/Button.js";
 import { Track } from "../objects/track.js";
 import { Fox } from "../objects/fox.js";
 import { Race } from "../objects/race.js";

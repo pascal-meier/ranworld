@@ -1,5 +1,5 @@
-import { Button } from "../common/ui/Button";
-import { BaseScene } from "./BaseScene.js";
+import { Button } from "../core/ui/Button.js";
+import { BaseScene } from "../core/scenes/BaseScene.js";
 
 export class MainMenuScene extends BaseScene {
   constructor() {
@@ -24,7 +24,7 @@ export class MainMenuScene extends BaseScene {
       .text(width / 2, height * 0.15, "RanWorld", {
         fontSize: "48px",
         color: "#ffffff",
-        fontFamily: "Arial",
+        fontFamily: "Ranworldfont01",
       })
       .setOrigin(0.5);
 
@@ -73,7 +73,7 @@ export class MainMenuScene extends BaseScene {
       .text(x, y, text, {
         fontSize: "24px",
         color: "#ffffff",
-        fontFamily: "Arial",
+        fontFamily: "Ranworldfont01",
       })
       .setOrigin(0.5);
 
