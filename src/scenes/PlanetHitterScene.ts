@@ -1,5 +1,5 @@
-import { Button } from "../common/ui/Button.js";
-import { rngPoint } from "../common/utils/RNGpoint.js";
+import { Button } from "../core/ui/Button.js";
+import { rngPoint } from "../core/utils/RNGpoint.js";
 import {
   qS,
   gH,
@@ -7,13 +7,16 @@ import {
   fontSizeXS,
   fontSizeS,
   fontSizeM,
-} from "../config/constants.js";
-import WebSocketClient from "../common/systems/WebSocketClient.js";
+} from "../core/config/constants.js";
+import WebSocketClient from "../core/systems/WebSocketClient.js";
 
 export class PlanetHitterScene extends Phaser.Scene {
   private speedText!: Phaser.GameObjects.Text;
   private hitsText!: Phaser.GameObjects.Text;
   private wsClient!: WebSocketClient;
+  private loadingOverlay!: Phaser.GameObjects.Container;
+  private loadingHidden = false;
+  private loadingText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: "PlanetHitterScene" });
@@ -69,7 +72,7 @@ export class PlanetHitterScene extends Phaser.Scene {
       .text(gW * 0.9, gH * 0.1, "Speed:", {
         fontSize: `${fontSizeXS}px`,
         color: "#ffffff",
-        fontFamily: "PokemonG1",
+        fontFamily: "Ranworldfont01",
       })
       .setOrigin(1, 0)
       .setDepth(6);
@@ -78,7 +81,7 @@ export class PlanetHitterScene extends Phaser.Scene {
       .text(gW * 0.9, gH * 0.1 + fontSizeS, "", {
         fontSize: `${fontSizeM}px`,
         color: "#ffffff",
-        fontFamily: "PokemonG3",
+        fontFamily: "Ranworldfont01",
       })
       .setOrigin(1, 0)
       .setDepth(6);
@@ -100,7 +103,7 @@ export class PlanetHitterScene extends Phaser.Scene {
       .text(gW * 0.1, gH * 0.1, "Hits:", {
         fontSize: `${fontSizeXS}px`,
         color: "#ffffff",
-        fontFamily: "PokemonG1",
+        fontFamily: "Ranworldfont01",
       })
       .setDepth(6);
 
@@ -108,22 +111,29 @@ export class PlanetHitterScene extends Phaser.Scene {
       .text(gW * 0.1, gH * 0.1 + fontSizeS, "load...", {
         fontSize: `${fontSizeM}px`,
         color: "#ffffff",
-        fontFamily: "PokemonG3",
+        fontFamily: "Ranworldfont01",
       })
       .setDepth(6);
 
+    // ⏳ Ladeoverlay bis WebSocket bereit ist
+    this.showLoadingOverlay();
+
     // 🌐 WebSocket
     this.wsClient = new WebSocketClient();
-    this.wsClient.connect((msg: any) => {
-      console.log("🌐 WS Nachricht:", msg);
-      if (msg.count !== undefined) {
-        this.hitsText.setText(String(msg.count));
-      }
-    });
-
-    // Initiale Abfrage nach kurzer Verzögerung
-    this.time.delayedCall(100, () => {
-      this.wsClient.send("getPcount");
+    this.wsClient.connect({
+      onOpen: () => {
+        if (this.loadingText && this.loadingText.active) {
+          this.loadingText.setText("Success - loaded Score...");
+        }
+        this.wsClient.send("getPcount");
+      },
+      onMessage: (msg: any) => {
+        console.log("🌐 WS Nachricht:", msg);
+        if (msg.count !== undefined) {
+          this.hitsText.setText(String(msg.count));
+          this.hideLoadingOverlay();
+        }
+      },
     });
   }
 
@@ -136,7 +146,52 @@ export class PlanetHitterScene extends Phaser.Scene {
     }
     const velocity = body.velocity;
     const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2) / 10;
-    console.log(velocity, speed);
     this.speedText.setText(speed.toFixed(0));
   }
+
+  private showLoadingOverlay(): void {
+    const { width, height } = this.scale;
+
+    const overlayBg = this.add.rectangle(
+      width / 2,
+      height / 2,
+      width,
+      height,
+      0x000000,
+      0.6
+    );
+    overlayBg.setInteractive();
+
+    this.loadingText = this.add
+      .text(width / 2, height / 2, "Connect...", {
+        fontSize: `${fontSizeM}px`,
+        color: "#ffffff",
+        fontFamily: "Ranworldfont01",
+      })
+      .setOrigin(0.5);
+
+    this.loadingOverlay = this.add.container(0, 0, [overlayBg, this.loadingText]);
+    this.loadingOverlay.setDepth(1000);
+
+    // Fallback: nach 8s Hinweis anzeigen, falls noch nichts kam
+    this.time.delayedCall(8000, () => {
+      if (!this.loadingHidden && this.loadingOverlay && this.loadingOverlay.active) {
+        this.loadingText.setText("Connect... (slow)");
+      }
+    });
+  }
+
+  private hideLoadingOverlay(): void {
+    if (this.loadingHidden || !this.loadingOverlay) return;
+    this.loadingHidden = true;
+    this.tweens.add({
+      targets: this.loadingOverlay,
+      alpha: 0,
+      duration: 250,
+      onComplete: () => {
+        this.loadingOverlay.destroy();
+      },
+    });
+  }
 }
+

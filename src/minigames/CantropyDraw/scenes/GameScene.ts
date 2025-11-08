@@ -1,5 +1,5 @@
 // src/minigames/CantropyDraw/scenes/GameScene.ts
-import { Button } from "../../../common/ui/Button.js";
+import { Button } from "../../../core/ui/Button.js";
 
 export class CantropyDrawGameScene extends Phaser.Scene {
   private shapes!: Phaser.GameObjects.Group;

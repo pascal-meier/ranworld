@@ -1,5 +1,5 @@
 // src/scenes/BootScene.ts
-import { BaseScene } from "./BaseScene.js";
+import { BaseScene } from "../core/scenes/BaseScene.js";
 
 export class BootScene extends BaseScene {
   constructor() {

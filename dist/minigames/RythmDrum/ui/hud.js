@@ -1,4 +1,4 @@
-import { Button } from "../../../common/ui/Button.js"; // Pfad prüfen: ui -> common/ui
+import { Button } from "../../../core/ui/Button.js"; // Pfad prüfen: ui -> common/ui
 export default class HUD {
     scene;
     container;
