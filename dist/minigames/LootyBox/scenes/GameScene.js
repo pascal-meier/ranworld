@@ -1,218 +1,150 @@
-import { Button } from "../../../core/ui/Button.js";
-import { generateLoot, RARITY_COLORS, } from "../objects/RNGparcel.js";
-export class LootyBoxGameScene extends Phaser.Scene {
-    scoreText;
-    titleText;
+import { BaseScene } from "../../../core/scenes/BaseScene.js";
+import { Box } from "../objects/Box.js";
+import { LootyBoxUi } from "../objects/UI.js";
+import { LootyBoxController } from "../systems/Controller.js";
+import { PhaseManager, } from "../systems/PhaseManager.js";
+import { LootEffect } from "../objects/LootEffect.js";
+import { generateLoot, RARITY_COLORS, getOddsForTier, } from "../systems/RNGparcel.js";
+export class LootyBoxGameScene extends BaseScene {
+    hud;
+    controller;
     boxes = [];
-    score = 0;
-    hasWon = false;
-    resetTimer;
-    boxScale = 3;
-    goalScore = 100;
+    background;
+    phases;
     constructor() {
         super("LootyBoxGameScene");
     }
     create() {
         this.createBackground();
-        this.createUi();
+        this.hud = new LootyBoxUi(this, 100, () => this.phases?.cycleTransparencyPhase());
+        this.controller = new LootyBoxController(this);
         this.spawnBoxes();
+        this.phases = new PhaseManager(this, {
+            onFlowStateChange: (state) => this.handleFlowStateChanged(state),
+            onTransparencyChange: (phase) => this.handleTransparencyChanged(phase),
+        });
+        this.phases.enterReady();
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phases.destroy());
+        this.refreshPhaseDetail();
+        super.create();
     }
     createBackground() {
-        const { width, height } = this.scale;
-        this.add.image(width / 2, height / 2, "base-bg").setDisplaySize(width, height).setOrigin(0.5);
-    }
-    createUi() {
-        const { width, height } = this.scale;
-        this.titleText = this.add
-            .text(width / 2, height * 0.3, `Reach ${this.goalScore}`, {
-            fontSize: "32px",
-            color: "#ffffff",
-            fontFamily: "Ranworldfont01",
-        })
-            .setOrigin(0.5);
-        this.add
-            .text(width * 0.75, height * 0.1, "Score:", {
-            fontSize: "32px",
-            color: "#ffffff",
-            fontFamily: "Ranworldfont01",
-        })
-            .setOrigin(0.5);
-        this.scoreText = this.add
-            .text(width * 0.85, height * 0.1, this.score.toString(), {
-            fontSize: "32px",
-            color: "#ffffff",
-            fontFamily: "Ranworldfont01",
-        })
-            .setOrigin(0.5);
-        new Button(this, width / 4, height * 0.1, "Back", () => {
-            this.scene.start("MainMenuScene");
-        });
+        this.background = this.add.image(0, 0, "base-bg").setOrigin(0.5);
     }
     spawnBoxes() {
-        const { width, height } = this.scale;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const spacing = 50 * this.boxScale;
         const frames = [0, 2, 4];
-        this.boxes = frames.map((frame, index) => {
-            const sprite = this.add
-                .sprite(centerX + (index - 1) * spacing, centerY, "box", frame)
-                .setOrigin(0.5)
-                .setScale(this.boxScale)
-                .setDataEnabled();
-            sprite.setData("tier", (index + 1));
-            sprite.setData("closedFrame", frame);
-            sprite.setData("openFrame", frame + 1);
-            this.registerBoxInteractions(sprite);
-            return sprite;
-        });
-    }
-    registerBoxInteractions(box) {
-        box.setInteractive({ useHandCursor: true });
-        box.on("pointerover", () => {
-            this.tweens.add({
-                targets: box,
-                scale: this.boxScale * 1.2,
-                duration: 150,
-                ease: "Power1",
-            });
-        });
-        box.on("pointerout", () => {
-            this.tweens.add({
-                targets: box,
-                scale: this.boxScale,
-                duration: 150,
-                ease: "Power1",
-            });
-        });
-        box.on("pointerdown", () => this.handleBoxClick(box));
-    }
-    handleBoxClick(box) {
-        if (this.hasWon)
-            return;
-        this.resetTimer?.remove();
-        this.disableBoxInteractions();
-        this.moveNonSelectedBoxes(box);
         const { width, height } = this.scale;
-        this.tweens.add({
-            targets: box,
-            x: width / 2,
-            y: height / 2,
-            scale: this.boxScale * 1.2,
-            duration: 800,
-            ease: "Back.Out",
-            onComplete: () => this.openBox(box),
-        });
+        this.boxes = frames.map((f, i) => new Box(this, width / 2, height / 2, f, i + 1, (b) => this.onBoxClicked(b)));
+        this.layoutBoxes(this.scale.gameSize.width, this.scale.gameSize.height);
+        this.syncBoxInteractivity();
     }
-    moveNonSelectedBoxes(selected) {
-        const { width } = this.scale;
-        this.boxes.forEach((box) => {
-            if (box === selected)
-                return;
-            const isLeft = box.x < selected.x;
-            this.tweens.add({
-                targets: box,
-                x: isLeft ? -200 : width + 200,
-                alpha: 0,
-                duration: 800,
-                ease: "Power2",
-            });
-        });
-    }
-    openBox(box) {
-        const openFrame = Number(box.getData("openFrame"));
-        this.time.delayedCall(300, () => {
-            if (!Number.isNaN(openFrame)) {
-                box.setFrame(openFrame);
-            }
-            this.tweens.add({
-                targets: box,
-                scale: this.boxScale * 1.4,
-                yoyo: true,
-                duration: 200,
-                ease: "Back.Out",
-            });
-            this.resolveLoot(box);
-        });
-    }
-    resolveLoot(box) {
-        const { width, height } = this.scale;
-        const tier = Number(box.getData("tier")) || 1;
-        const loot = generateLoot(this, tier, width / 2, height / 2 + box.displayHeight);
-        this.spawnParticles(box, loot.rarity);
-        this.handleLootResult(loot);
-    }
-    spawnParticles(box, rarity) {
-        if (!this.textures.exists("open-particles"))
+    onBoxClicked(box) {
+        if (!this.phases.canInteract())
             return;
-        const tint = Phaser.Display.Color.HexStringToColor(RARITY_COLORS[rarity]).color;
-        const particles = this.add.particles(0, 0, "open-particles", {
-            x: box.x,
-            y: box.y,
-            speed: { min: -200, max: 800 },
-            lifespan: 1800,
-            scale: { start: 0.08, end: 0, random: true },
-            quantity: 5,
-            tint,
-            blendMode: "ADD",
-        });
-        this.time.delayedCall(800, () => particles.destroy());
-    }
-    handleLootResult(loot) {
-        this.score += loot.value;
-        this.scoreText.setText(this.score.toString());
-        this.updateTitle(`${loot.rarity.toUpperCase()} +${loot.value}`);
-        if (this.score >= this.goalScore) {
+        this.phases.enterReveal();
+        const loot = generateLoot(this, box.getTier(), box.x, box.y + 100);
+        this.presentTransparencyFeedback(loot);
+        LootEffect.spawn(this, box, RARITY_COLORS[loot.rarity]);
+        const won = this.controller.addLoot(loot.value);
+        this.hud.updateScore(this.controller.getScore());
+        this.hud.updateTitle(`${loot.rarity.toUpperCase()} +${loot.value}`);
+        if (won)
             this.winGame();
-            return;
-        }
-        this.scheduleReset();
-    }
-    scheduleReset() {
-        this.resetTimer?.remove();
-        this.resetTimer = this.time.delayedCall(2000, () => {
-            this.resetBoxes();
-            this.updateTitle(`Just ${this.goalScore - this.score} more to go`);
-        });
+        else
+            this.phases.startCooldown(() => this.resetBoxes());
     }
     resetBoxes() {
-        this.boxes.forEach((box) => box.destroy());
-        this.boxes = [];
+        this.boxes.forEach(b => b.destroy());
         this.spawnBoxes();
     }
-    disableBoxInteractions() {
-        this.boxes.forEach((box) => box.disableInteractive());
-    }
-    updateTitle(text) {
-        this.titleText.setText(text);
-    }
     winGame() {
-        if (this.hasWon)
+        this.phases.enterWin();
+        this.controller.clear();
+        this.hud.updateTitle("YOU WIN!");
+        this.time.delayedCall(3000, () => this.scene.start("MainMenuScene"));
+    }
+    onResize(gameSize) {
+        const { width, height } = gameSize;
+        this.background?.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+        this.layoutBoxes(width, height);
+    }
+    layoutBoxes(width, height) {
+        if (!this.boxes.length)
             return;
-        this.hasWon = true;
-        this.resetTimer?.remove();
-        this.resetTimer = undefined;
-        this.disableBoxInteractions();
-        const { width, height } = this.scale;
-        const winText = this.add
-            .text(width / 2, height / 2, "YOU WIN!", {
-            fontSize: "72px",
-            color: "#FFD700",
-            fontStyle: "bold",
-            stroke: "#000",
-            strokeThickness: 8,
-            fontFamily: "Ranworldfont01",
-        })
-            .setOrigin(0.5)
-            .setScale(0);
-        this.tweens.add({
-            targets: winText,
-            scale: 1,
-            duration: 500,
-            ease: "Back.Out",
+        const spacing = Math.min(width * 0.25, 250);
+        const centerY = height * 0.55;
+        const baseScale = Phaser.Math.Clamp(Math.min(width, height) / 260, 1.4, 3.2);
+        const middleIndex = (this.boxes.length - 1) / 2;
+        this.boxes.forEach((box, index) => {
+            const offset = (index - middleIndex) * spacing;
+            box.setPosition(width / 2 + offset, centerY);
+            box.setBaseScale(baseScale);
         });
-        this.time.delayedCall(3000, () => {
-            this.scene.start("MainMenuScene");
+    }
+    handleFlowStateChanged(_state) {
+        this.syncBoxInteractivity();
+    }
+    handleTransparencyChanged(phase) {
+        this.hud.setPhaseInfo(phase);
+        this.refreshPhaseDetail();
+    }
+    syncBoxInteractivity() {
+        if (!this.boxes.length || !this.phases)
+            return;
+        const interactable = this.phases.canInteract();
+        this.boxes.forEach(box => {
+            if (interactable)
+                box.setInteractive({ useHandCursor: true });
+            else
+                box.disableInteractive();
         });
+    }
+    refreshPhaseDetail() {
+        if (!this.phases)
+            return;
+        const active = this.phases.getTransparencyPhase();
+        if (active.key === "blind") {
+            this.hud.setPhaseDetail("Phase 1 versteckt alle Chancen. Nur das Ergebnis zaehlt.");
+        }
+        else if (active.key === "odds") {
+            this.hud.setPhaseDetail(this.formatOddsOverview());
+        }
+        else {
+            this.hud.setPhaseDetail("Phase 3 zeigt dir den exakten Zufallswert nach dem Klick.");
+        }
+    }
+    presentTransparencyFeedback(result) {
+        const phase = this.phases.getTransparencyPhase();
+        if (phase.key === "blind") {
+            this.hud.setPhaseDetail("Ergebnis verborgen - wechsle die Phase fuer mehr Infos.");
+            return;
+        }
+        if (phase.key === "odds") {
+            this.hud.setPhaseDetail(this.formatOddsForTier(result.tier));
+            return;
+        }
+        const range = result.ranges.find(r => r.rarity === result.rarity);
+        if (!range) {
+            this.hud.setPhaseDetail("Roll ermittelt - keine Detaildaten verfuegbar.");
+            return;
+        }
+        const rollValue = result.roll.toFixed(2);
+        const min = range.min.toFixed(1);
+        const max = range.max.toFixed(1);
+        const rarityLabel = result.rarity.toUpperCase();
+        this.hud.setPhaseDetail(`Roll ${rollValue} lag im Fenster [${min}, ${max}) -> ${rarityLabel}`);
+    }
+    formatOddsOverview() {
+        const tiers = [1, 2, 3];
+        return tiers
+            .map(tier => this.formatOddsForTier(tier))
+            .join("\n");
+    }
+    formatOddsForTier(tier) {
+        const ranges = getOddsForTier(tier);
+        const oddsText = ranges
+            .map(range => `${range.rarity}: ${range.chance}%`)
+            .join(" | ");
+        return `Tier ${tier}: ${oddsText}`;
     }
 }
