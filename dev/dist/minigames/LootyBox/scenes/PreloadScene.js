@@ -1,17 +1,23 @@
 import { BaseScene } from "../../../core/scenes/BaseScene.js";
 export class LootyBoxPreloadScene extends BaseScene {
+    /**
+     * ℹ️ Initializes the preload scene with its key. ℹ️
+     */
     constructor() {
         super("LootyBoxPreloadScene");
     }
+    /**
+     * ℹ️ Loads every asset required for the LootyBox minigame and provides progress feedback. ℹ️
+     */
     preload() {
-        // Lade alle benötigten Assets für das Minispiel
+        // Load every asset the minigame needs.
         this.load.image("base-bg", "public/assets/common/space_bg.png");
         this.load.spritesheet("box", "public/assets/lootybox/boxes.png", {
             frameWidth: 40,
             frameHeight: 32,
         });
         this.load.image("open-particles", "public/assets/lootybox/spark.png");
-        // Fortschrittsanzeige (optional)
+        // Optional loading progress indicator.
         const { width, height } = this.scale;
         const loadingText = this.add
             .text(width / 2, height / 2, "Loading...", {
@@ -26,6 +32,9 @@ export class LootyBoxPreloadScene extends BaseScene {
             loadingText.destroy();
         });
     }
+    /**
+     * ℹ️ Starts the game scene after loading completes. ℹ️
+     */
     create() {
         super.create();
         this.scene.start("LootyBoxGameScene");

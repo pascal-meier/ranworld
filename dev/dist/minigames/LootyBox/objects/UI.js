@@ -11,6 +11,9 @@ export class LootyBoxUi {
     phaseDescription;
     phaseDetail;
     transparencyButton;
+    /**
+     * ℹ️ Creates the LootyBox HUD including title, score, and transparency controls. ℹ️
+     */
     constructor(scene, goalScore, onTransparencyToggle = () => { }) {
         this.scene = scene;
         this.goalScore = goalScore;
@@ -45,7 +48,7 @@ export class LootyBoxUi {
         })
             .setOrigin(0.5);
         this.phaseDescription = scene.add
-            .text(width / 2, height * 0.38, "Nur das Ergebnis ist sichtbar.", {
+            .text(width / 2, height * 0.38, "Only the outcome is visible.", {
             fontSize: "18px",
             color: "#ffffff",
             fontFamily: "Ranworldfont01",
@@ -70,19 +73,34 @@ export class LootyBoxUi {
         });
         this.handleResize(scene.scale.gameSize);
     }
+    /**
+     * ℹ️ Updates the numeric score display. ℹ️
+     */
     updateScore(score) {
         this.scoreText.setText(score.toString());
     }
+    /**
+     * ℹ️ Changes the main HUD title text. ℹ️
+     */
     updateTitle(text) {
         this.titleText.setText(text);
     }
+    /**
+     * ℹ️ Shows the current transparency phase name and description. ℹ️
+     */
     setPhaseInfo(definition) {
         this.phaseTitle.setText(definition.title);
         this.phaseDescription.setText(definition.description);
     }
+    /**
+     * ℹ️ Writes the phase-specific detail text below the description. ℹ️
+     */
     setPhaseDetail(detail) {
         this.phaseDetail.setText(detail);
     }
+    /**
+     * ℹ️ Reflows and rescales all HUD elements for responsive layouts. ℹ️
+     */
     handleResize(gameSize) {
         const { width, height } = gameSize;
         const shortestSide = Math.min(width, height);
