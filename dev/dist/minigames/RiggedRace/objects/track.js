@@ -9,6 +9,10 @@ export class Track extends Phaser.GameObjects.Graphics {
         this.length = length ?? scene.scale.width * 0.8;
         this.drawTrack();
     }
+    resize(length) {
+        this.length = length;
+        this.drawTrack();
+    }
     drawTrack() {
         const startX = 0;
         const endX = this.length;

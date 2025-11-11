@@ -91,4 +91,7 @@ export class Race {
             fox.resetStats();
         });
     }
+    setFinishLine(x) {
+        this.finishLineX = x;
+    }
 }

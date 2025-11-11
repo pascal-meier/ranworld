@@ -1,9 +1,19 @@
 export type Rarity = "common" | "rare" | "epic" | "legendary";
 export type BoxTier = 1 | 2 | 3;
 
+export interface LootRange {
+  rarity: Rarity;
+  chance: number;
+  min: number;
+  max: number;
+}
+
 export interface LootResult {
   rarity: Rarity;
   value: number;
+  tier: BoxTier;
+  roll: number;
+  ranges: LootRange[];
 }
 
 const LOOT_TABLES: Record<BoxTier, Record<Rarity, number>> = {
@@ -34,12 +44,23 @@ export function generateLoot(
 ): LootResult {
   const tier = normalizeTier(boxNr);
   const table = LOOT_TABLES[tier];
-  const rarity = rollRarity(table);
+  const { rarity, roll, ranges } = rollRarity(table);
   const value = RARITY_VALUES[rarity];
 
   showLootText(scene, rarity, x, y);
 
-  return { rarity, value };
+  return { rarity, value, tier, roll, ranges };
+}
+
+export function getOddsForTier(tier: BoxTier): LootRange[] {
+  const table = LOOT_TABLES[tier];
+  let cumulative = 0;
+  return (Object.entries(table) as [Rarity, number][]).map(([rarity, chance]) => {
+    const min = cumulative;
+    cumulative += chance;
+    const max = cumulative;
+    return { rarity, chance, min, max };
+  });
 }
 
 function normalizeTier(boxNr: number): BoxTier {
@@ -48,18 +69,24 @@ function normalizeTier(boxNr: number): BoxTier {
   return 3;
 }
 
-function rollRarity(table: Record<Rarity, number>): Rarity {
+function rollRarity(table: Record<Rarity, number>): { rarity: Rarity; roll: number; ranges: LootRange[] } {
   const roll = Math.random() * 100;
   let cumulative = 0;
+  let chosen: Rarity | null = null;
+  const ranges: LootRange[] = [];
 
   for (const [rarity, chance] of Object.entries(table) as [Rarity, number][]) {
+    const min = cumulative;
     cumulative += chance;
-    if (roll < cumulative) {
-      return rarity;
+    const max = cumulative;
+    ranges.push({ rarity, chance, min, max });
+
+    if (roll >= min && roll < max && chosen === null) {
+      chosen = rarity;
     }
   }
 
-  return "common";
+  return { rarity: chosen ?? "common", roll, ranges };
 }
 
 function showLootText(scene: Phaser.Scene, rarity: Rarity, x: number, y: number): void {

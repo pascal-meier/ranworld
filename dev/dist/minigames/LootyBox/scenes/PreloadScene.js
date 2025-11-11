@@ -1,4 +1,5 @@
-export class LootyBoxPreloadScene extends Phaser.Scene {
+import { BaseScene } from "../../../core/scenes/BaseScene.js";
+export class LootyBoxPreloadScene extends BaseScene {
     constructor() {
         super("LootyBoxPreloadScene");
     }
@@ -26,6 +27,7 @@ export class LootyBoxPreloadScene extends Phaser.Scene {
         });
     }
     create() {
+        super.create();
         this.scene.start("LootyBoxGameScene");
     }
 }
