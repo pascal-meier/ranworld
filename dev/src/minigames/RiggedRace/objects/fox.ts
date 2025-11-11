@@ -6,6 +6,8 @@ export class Fox extends Phaser.GameObjects.Container {
   private speed: number;
   private luck: number;
   private isSelected: boolean = false;
+  private spawnX = 0;
+  private spawnY = 0;
 
   constructor(scene: Phaser.Scene, name: string, textureKey: string) {
     super(scene);
@@ -47,7 +49,13 @@ export class Fox extends Phaser.GameObjects.Container {
 
   public setPosition(x: number, y: number): this {
     super.setPosition(x, y);
+    this.spawnX = x;
+    this.spawnY = y;
     return this;
+  }
+
+  public resetToSpawn(): void {
+    super.setPosition(this.spawnX, this.spawnY);
   }
 
   public getSpeed(): number {
@@ -68,9 +76,8 @@ export class Fox extends Phaser.GameObjects.Container {
   }
 
   public resetStats(): void {
-  this.speed = Phaser.Math.Between(60, 80);
-  this.luck = Phaser.Math.Between(5, 10);
-  console.log(this.nameText.text + " " + this.speed + " " + this.luck);
-}
-
+    this.speed = Phaser.Math.Between(60, 80);
+    this.luck = Phaser.Math.Between(5, 10);
+    console.log(`${this.nameText.text} ${this.speed} ${this.luck}`);
+  }
 }

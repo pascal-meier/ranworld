@@ -6,107 +6,100 @@ export class RiggedRaceGameScene extends Phaser.Scene {
     foxes = [];
     selectedFox = null;
     race;
+    titleText;
+    raceFinishedListener = (winner) => this.handleRaceFinished(winner);
     constructor() {
         super("RiggedRaceGameScene");
     }
     create() {
+        this.createBackground();
+        this.createTitle();
+        const laneStartY = this.scale.height * 0.4;
+        const laneSpacing = 110;
+        this.createTracks(laneStartY, laneSpacing);
+        this.createFoxes(laneStartY, laneSpacing);
+        this.events.on("foxSelected", this.handleFoxSelection, this);
+        this.events.on("raceFinished", this.raceFinishedListener);
+        this.registerShutdownHook();
+        this.race = new Race(this, this.foxes, this.scale.width - 100);
+        this.createButtons();
+    }
+    createBackground() {
         const { width, height } = this.scale;
-        const centerX = width / 2;
-        // 🖼️ Hintergrundbild
-        const baseBG = this.add.image(width / 2, height / 2, "base-bg");
-        baseBG.setDisplaySize(width, height);
-        baseBG.setOrigin(0.5);
-        // 🏁 Titel
-        const titeltext = this.add.text(centerX, height * 0.2, "CHOOSE RACER", {
+        this.add.image(width / 2, height / 2, "base-bg").setDisplaySize(width, height).setOrigin(0.5);
+    }
+    createTitle() {
+        const { width, height } = this.scale;
+        this.titleText = this.add
+            .text(width / 2, height * 0.2, "CHOOSE RACER", {
             fontSize: "32px",
             color: "#ffffff",
-        }).setOrigin(0.5).setName("titeltext");
-        // 🛤️ Rennstrecken
-        const spacing = 100;
-        const startY = 50;
-        new Track(this).setPosition(0, startY - 2 * spacing);
-        new Track(this).setPosition(0, startY - spacing);
-        new Track(this).setPosition(0, startY);
-        // 🦊 Füchse erzeugen
-        const fox1 = new Fox(this, "Miyo", "fox01").setPosition(75, innerHeight * 0.5 - 2 * spacing);
-        const fox2 = new Fox(this, "Anber", "fox02").setPosition(75, innerHeight * 0.5 - spacing);
-        const fox3 = new Fox(this, "Ret", "fox03").setPosition(75, innerHeight * 0.5);
-        this.foxes = [fox1, fox2, fox3];
-        // 🎧 Reagiere auf Klicks eines Fuchses (korrekt registriert!)
-        this.events.on("foxSelected", this.handleFoxSelection, this);
-        // 🏁 Rennen erstellen (Ziellinie rechts vom Bildschirm)
-        this.race = new Race(this, this.foxes, this.scale.width - 100);
-        // ▶️ Start-Button
-        new Button(this, this.scale.width * 0.75, this.scale.height * 0.1, "Start Race", () => {
-            if (!this.selectedFox) {
-                titeltext.text = "⚠️ Bitte zuerst einen Fuchs auswählen!";
-                return;
-            }
-            titeltext.text = "🏁 Running...";
-            this.race.start();
-        });
-        // 🔙 Zurück-Button
+        })
+            .setOrigin(0.5)
+            .setName("titleText");
+    }
+    createTracks(startY, spacing) {
+        const trackStartX = this.scale.width * 0.05;
+        const trackLength = this.scale.width - trackStartX * 2;
+        for (let i = 0; i < 3; i++) {
+            new Track(this, trackLength).setPosition(trackStartX, startY + i * spacing);
+        }
+    }
+    createFoxes(startY, spacing) {
+        const foxConfigs = [
+            { name: "Miyo", texture: "fox01" },
+            { name: "Anber", texture: "fox02" },
+            { name: "Ret", texture: "fox03" },
+        ];
+        const startX = this.scale.width * 0.15;
+        this.foxes = foxConfigs.map((config, index) => new Fox(this, config.name, config.texture).setPosition(startX, startY + index * spacing));
+    }
+    createButtons() {
+        const { width, height } = this.scale;
+        new Button(this, width * 0.75, height * 0.1, "Start Race", () => this.startRace());
         new Button(this, width / 4, height * 0.1, "Back", () => {
-            // Auswahl zurücksetzen
-            if (this.selectedFox) {
-                this.selectedFox.setSelected(false);
-                this.selectedFox = null;
-            }
-            // Rennen resetten
-            this.race?.reset();
-            // Event sauber abmelden
-            this.events.off("foxSelected", this.handleFoxSelection, this);
-            // Szene wechseln
+            this.resetRaceState();
             this.scene.start("MainMenuScene");
         });
-        // 🎉 Gewinner-Event
-        this.events.on("raceFinished", (winner) => {
-            console.log("🎉 Der Gewinner ist:", winner.getName());
-            titeltext.text = `${winner.getName()} wins!`;
-            this.time.delayedCall(3000, () => {
-                this.race.reset();
-                this.selectedFox = null;
-                titeltext.text = "CHOOSE RACER";
-            });
-        });
-        // 🧹 Scene-Cleanup hinzufügen (GANZ UNTEN in create)
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            console.log("🧹 GameScene wird beendet — cleanup läuft");
-            // Rennen beenden/resetten
-            this.race?.reset();
-            this.race = null;
-            // Alle Timer entfernen
-            this.time.removeAllEvents();
-            // Eventlistener abmelden
-            this.events.off("foxSelected", this.handleFoxSelection, this);
-            this.events.off("raceFinished");
-            // Optional: Textobjekte zerstören
-            const titeltext = this.children.getByName("titeltext");
-            titeltext?.destroy();
-        });
     }
-    /**
-     * Auswahl eines Fuchses behandeln
-     */
+    startRace() {
+        if (!this.selectedFox) {
+            this.titleText.setText("⚠️ Select a fox first");
+            return;
+        }
+        this.titleText.setText("🏁 Running...");
+        this.race?.start();
+    }
     handleFoxSelection(clickedFox) {
-        const titeltext = this.children.getByName("titeltext");
-        // Wenn derselbe Fuchs erneut geklickt wurde → abwählen
         if (this.selectedFox === clickedFox) {
             clickedFox.setSelected(false);
             this.selectedFox = null;
-            if (titeltext)
-                titeltext.text = "CHOOSE RACER";
+            this.titleText.setText("CHOOSE RACER");
             return;
         }
-        // Alten abwählen
-        if (this.selectedFox) {
-            this.selectedFox.setSelected(false);
-        }
-        // Neuen aktivieren
+        this.selectedFox?.setSelected(false);
         clickedFox.setSelected(true);
         this.selectedFox = clickedFox;
-        if (titeltext)
-            titeltext.text = "Press Start";
-        console.log("Aktuell gewählter Fuchs:", this.selectedFox.getName());
+        this.titleText.setText("Press Start");
+    }
+    handleRaceFinished(winner) {
+        this.titleText.setText(`${winner.getName()} wins!`);
+        this.time.delayedCall(3000, () => {
+            this.resetRaceState();
+            this.titleText.setText("CHOOSE RACER");
+        });
+    }
+    resetRaceState() {
+        this.selectedFox?.setSelected(false);
+        this.selectedFox = null;
+        this.race?.reset();
+    }
+    registerShutdownHook() {
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.resetRaceState();
+            this.time.removeAllEvents();
+            this.events.off("foxSelected", this.handleFoxSelection, this);
+            this.events.off("raceFinished", this.raceFinishedListener);
+        });
     }
 }

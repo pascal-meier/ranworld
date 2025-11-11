@@ -3,6 +3,9 @@ import { Button } from "../../../core/ui/Button.js";
 export class CantropyDrawGameScene extends Phaser.Scene {
     shapes;
     seed;
+    flowKey;
+    soundCache = {};
+    soundKeys = ["ping", "tone"];
     constructor() {
         super('CantropyDrawGameScene');
     }
@@ -14,9 +17,9 @@ export class CantropyDrawGameScene extends Phaser.Scene {
             fontSize: '14px',
             color: '#888'
         }).setScrollFactor(0);
+        this.flowKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.F);
         this.input.on('pointerdown', (pointer) => {
             this.spawnRandomShape(pointer.x, pointer.y);
-            this.playRandomSound();
         });
         // Zurück-Button
         new Button(this, width / 4, height * 0.1, "Back", () => {
@@ -27,7 +30,7 @@ export class CantropyDrawGameScene extends Phaser.Scene {
             delay: 500,
             loop: true,
             callback: () => {
-                if (this.input.keyboard?.checkDown(this.input.keyboard.addKey('F'))) {
+                if (this.flowKey?.isDown) {
                     this.spawnRandomShape(Phaser.Math.Between(0, this.scale.width), Phaser.Math.Between(0, this.scale.height));
                 }
             },
@@ -61,9 +64,9 @@ export class CantropyDrawGameScene extends Phaser.Scene {
         });
     }
     playRandomSound() {
-        const soundKey = Phaser.Math.RND.pick(['ping', 'tone']);
-        const sound = this.sound.add(soundKey);
-        sound.setRate(Phaser.Math.FloatBetween(0.7, 1.5));
-        sound.play({ volume: 0.2 });
+        const soundKey = Phaser.Math.RND.pick(this.soundKeys);
+        const sound = this.soundCache[soundKey] ?? (this.soundCache[soundKey] = this.sound.add(soundKey));
+        const rate = Phaser.Math.FloatBetween(0.7, 1.5);
+        sound.play({ volume: 0.2, rate });
     }
 }

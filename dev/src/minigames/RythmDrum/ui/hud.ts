@@ -134,8 +134,8 @@ export default class HUD {
 
     // Enable or disable HUD interactions
     setInteractive(enabled: boolean): void {
-        this.startButton.setInteractive(enabled);
-        this.backButton.setInteractive(enabled);
+        this.startButton.setInteractionEnabled(enabled);
+        this.backButton.setInteractionEnabled(enabled);
     }
 }
 

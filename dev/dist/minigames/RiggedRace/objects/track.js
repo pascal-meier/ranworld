@@ -1,35 +1,27 @@
 /**
- * Eine einfache Rennstrecke, die als GameObject gezeichnet wird.
+ * Zeichnet eine einfache horizontale Rennstrecke, die über Position verschoben werden kann.
  */
 export class Track extends Phaser.GameObjects.Graphics {
-    pathPoints;
-    constructor(scene) {
+    length;
+    constructor(scene, length) {
         super(scene);
         scene.add.existing(this);
-        // Strecke
-        this.pathPoints = [
-            new Phaser.Math.Vector2(innerWidth * 0.1, innerHeight * 0.5),
-            new Phaser.Math.Vector2(innerWidth * 0.9, innerHeight * 0.5),
-        ];
+        this.length = length ?? scene.scale.width * 0.8;
         this.drawTrack();
     }
     drawTrack() {
+        const startX = 0;
+        const endX = this.length;
         this.clear();
-        // Straße zeichnen
-        this.lineStyle(20, 0x222222, 1); // Straße (dunkelgrau)
+        this.lineStyle(20, 0x222222, 1);
         this.beginPath();
-        this.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
-        for (let i = 1; i < this.pathPoints.length; i++) {
-            this.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
-        }
+        this.moveTo(startX, 0);
+        this.lineTo(endX, 0);
         this.strokePath();
-        // Mittellinie
         this.lineStyle(2, 0xffff00, 1);
         this.beginPath();
-        this.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
-        for (let i = 1; i < this.pathPoints.length; i++) {
-            this.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
-        }
+        this.moveTo(startX, 0);
+        this.lineTo(endX, 0);
         this.strokePath();
     }
 }
