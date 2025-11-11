@@ -36,6 +36,9 @@ export const RARITY_COLORS: Record<Rarity, string> = {
   legendary: "#FFD700",
 };
 
+/**
+ * ℹ️ Produces a loot result for a clicked box and renders the rarity text. ℹ️
+ */
 export function generateLoot(
   scene: Phaser.Scene,
   boxNr: number,
@@ -52,6 +55,9 @@ export function generateLoot(
   return { rarity, value, tier, roll, ranges };
 }
 
+/**
+ * ℹ️ Returns the cumulative odds table for the given tier. ℹ️
+ */
 export function getOddsForTier(tier: BoxTier): LootRange[] {
   const table = LOOT_TABLES[tier];
   let cumulative = 0;
@@ -63,12 +69,18 @@ export function getOddsForTier(tier: BoxTier): LootRange[] {
   });
 }
 
+/**
+ * ℹ️ Converts a box index into the discrete loot tier. ℹ️
+ */
 function normalizeTier(boxNr: number): BoxTier {
-  if (boxNr < 2) return 1;
-  if (boxNr < 4) return 2;
+  if (boxNr <= 1) return 1;
+  if (boxNr <= 2) return 2;
   return 3;
 }
 
+/**
+ * ℹ️ Rolls a rarity based on the provided table and records its ranges. ℹ️
+ */
 function rollRarity(table: Record<Rarity, number>): { rarity: Rarity; roll: number; ranges: LootRange[] } {
   const roll = Math.random() * 100;
   let cumulative = 0;
@@ -89,6 +101,9 @@ function rollRarity(table: Record<Rarity, number>): { rarity: Rarity; roll: numb
   return { rarity: chosen ?? "common", roll, ranges };
 }
 
+/**
+ * ℹ️ Displays an animated text label representing the awarded rarity. ℹ️
+ */
 function showLootText(scene: Phaser.Scene, rarity: Rarity, x: number, y: number): void {
   const lootText = scene.add
     .text(x, y, rarity.toUpperCase(), {

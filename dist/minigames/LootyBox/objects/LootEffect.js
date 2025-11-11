@@ -1,4 +1,7 @@
 export class LootEffect {
+    /**
+     * ℹ️ Spawns a short-lived particle burst at the given box position. ℹ️
+     */
     static spawn(scene, box, color) {
         if (!scene.textures.exists("open-particles"))
             return;

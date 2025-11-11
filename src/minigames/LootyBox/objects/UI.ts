@@ -11,6 +11,9 @@ export class LootyBoxUi {
   private phaseDetail: Phaser.GameObjects.Text;
   private transparencyButton: Button;
 
+  /**
+   * ℹ️ Creates the LootyBox HUD including title, score, and transparency controls. ℹ️
+   */
   constructor(
     private scene: Phaser.Scene,
     private goalScore: number,
@@ -50,7 +53,7 @@ export class LootyBoxUi {
       .setOrigin(0.5);
 
     this.phaseDescription = scene.add
-      .text(width / 2, height * 0.38, "Nur das Ergebnis ist sichtbar.", {
+      .text(width / 2, height * 0.38, "Only the outcome is visible.", {
         fontSize: "18px",
         color: "#ffffff",
         fontFamily: "Ranworldfont01",
@@ -88,23 +91,38 @@ export class LootyBoxUi {
     this.handleResize(scene.scale.gameSize);
   }
 
+  /**
+   * ℹ️ Updates the numeric score display. ℹ️
+   */
   updateScore(score: number): void {
     this.scoreText.setText(score.toString());
   }
 
+  /**
+   * ℹ️ Changes the main HUD title text. ℹ️
+   */
   updateTitle(text: string): void {
     this.titleText.setText(text);
   }
 
+  /**
+   * ℹ️ Shows the current transparency phase name and description. ℹ️
+   */
   setPhaseInfo(definition: TransparencyPhaseDefinition): void {
     this.phaseTitle.setText(definition.title);
     this.phaseDescription.setText(definition.description);
   }
 
+  /**
+   * ℹ️ Writes the phase-specific detail text below the description. ℹ️
+   */
   setPhaseDetail(detail: string): void {
     this.phaseDetail.setText(detail);
   }
 
+  /**
+   * ℹ️ Reflows and rescales all HUD elements for responsive layouts. ℹ️
+   */
   private handleResize(gameSize: Phaser.Structs.Size): void {
     const { width, height } = gameSize;
     const shortestSide = Math.min(width, height);

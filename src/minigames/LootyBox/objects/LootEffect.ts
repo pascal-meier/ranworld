@@ -1,4 +1,7 @@
 export class LootEffect {
+  /**
+   * ℹ️ Spawns a short-lived particle burst at the given box position. ℹ️
+   */
   static spawn(scene: Phaser.Scene, box: Phaser.GameObjects.Sprite, color: string) {
     if (!scene.textures.exists("open-particles")) return;
     const tint = Phaser.Display.Color.HexStringToColor(color).color;
