@@ -1,43 +1,38 @@
 /**
- * Eine einfache Rennstrecke, die als GameObject gezeichnet wird.
+ * Zeichnet eine einfache horizontale Rennstrecke, die über Position verschoben werden kann.
  */
 export class Track extends Phaser.GameObjects.Graphics {
-    private pathPoints: Phaser.Math.Vector2[];
+  private length: number;
 
-    constructor(scene: Phaser.Scene) {
-        super(scene);
-        scene.add.existing(this);
+  constructor(scene: Phaser.Scene, length?: number) {
+    super(scene);
+    scene.add.existing(this);
 
-        // Strecke
-        this.pathPoints = [
-            new Phaser.Math.Vector2(innerWidth*0.1, innerHeight*0.5),
-            new Phaser.Math.Vector2(innerWidth*0.9, innerHeight*0.5),
-        ];
+    this.length = length ?? scene.scale.width * 0.8;
+    this.drawTrack();
+  }
 
-        this.drawTrack();
-    }
+  public resize(length: number): void {
+    this.length = length;
+    this.drawTrack();
+  }
 
-    private drawTrack(): void {
-        this.clear();
+  private drawTrack(): void {
+    const startX = 0;
+    const endX = this.length;
 
-        // Straße zeichnen
-        this.lineStyle(20, 0x222222, 1); // Straße (dunkelgrau)
-        this.beginPath();
+    this.clear();
 
-        this.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
-        for (let i = 1; i < this.pathPoints.length; i++) {
-            this.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
-        }
+    this.lineStyle(20, 0x222222, 1);
+    this.beginPath();
+    this.moveTo(startX, 0);
+    this.lineTo(endX, 0);
+    this.strokePath();
 
-        this.strokePath();
-
-        // Mittellinie
-        this.lineStyle(2, 0xffff00, 1);
-        this.beginPath();
-        this.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
-        for (let i = 1; i < this.pathPoints.length; i++) {
-            this.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
-        }
-        this.strokePath();
-    }
+    this.lineStyle(2, 0xffff00, 1);
+    this.beginPath();
+    this.moveTo(startX, 0);
+    this.lineTo(endX, 0);
+    this.strokePath();
+  }
 }

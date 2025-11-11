@@ -1,68 +1,58 @@
-let value = 0;
+const LOOT_TABLES = {
+    1: { common: 50, rare: 35, epic: 14, legendary: 1 },
+    2: { common: 20, rare: 50, epic: 25, legendary: 5 },
+    3: { common: 0, rare: 35, epic: 55, legendary: 10 },
+};
+const RARITY_VALUES = {
+    common: 5,
+    rare: 10,
+    epic: 20,
+    legendary: 50,
+};
+export const RARITY_COLORS = {
+    common: "#CCCCCC",
+    rare: "#3399FF",
+    epic: "#AA33FF",
+    legendary: "#FFD700",
+};
 export function generateLoot(scene, boxNr, x, y) {
-    // 🔸 Loot-Chancen pro Box
-    const lootTables = {
-        1: { common: 50, rare: 35, epic: 14, legendary: 1 },
-        2: { common: 20, rare: 50, epic: 25, legendary: 5 },
-        3: { common: 0, rare: 35, epic: 55, legendary: 10 },
-    };
-    if (boxNr < 2) {
-        boxNr = 1;
-    }
-    else if (boxNr < 4) {
-        boxNr = 2;
-    }
-    else {
-        boxNr = 3;
-    }
-    const table = lootTables[boxNr];
-    if (!table) {
-        console.warn("⚠️ Ungültige Boxnummer:", boxNr);
-        return ["common", 1];
-    }
-    // 🔹 Zufallswurf
+    const tier = normalizeTier(boxNr);
+    const table = LOOT_TABLES[tier];
+    const rarity = rollRarity(table);
+    const value = RARITY_VALUES[rarity];
+    showLootText(scene, rarity, x, y);
+    return { rarity, value };
+}
+function normalizeTier(boxNr) {
+    if (boxNr < 2)
+        return 1;
+    if (boxNr < 4)
+        return 2;
+    return 3;
+}
+function rollRarity(table) {
     const roll = Math.random() * 100;
     let cumulative = 0;
-    let result = "common";
-    let value = 0;
     for (const [rarity, chance] of Object.entries(table)) {
         cumulative += chance;
         if (roll < cumulative) {
-            result = rarity;
-            break;
+            return rarity;
         }
     }
-    if (result == "common") {
-        value = 5;
-    }
-    else if (result == "rare") {
-        value = 10;
-    }
-    else if (result == "epic") {
-        value = 20;
-    }
-    else {
-        value = 50;
-    }
-    // 🎨 Farbtabelle für Anzeige
-    const colors = {
-        common: "#CCCCCC",
-        rare: "#3399FF",
-        epic: "#AA33FF",
-        legendary: "#FFD700",
-    };
-    // ✨ Text anzeigen
-    const lootText = scene.add.text(x, y, result.toUpperCase(), {
+    return "common";
+}
+function showLootText(scene, rarity, x, y) {
+    const lootText = scene.add
+        .text(x, y, rarity.toUpperCase(), {
         fontSize: "48px",
         fontStyle: "bold",
-        color: colors[result],
+        color: RARITY_COLORS[rarity],
         stroke: "#000000",
         strokeThickness: 6,
     })
         .setOrigin(0.5)
         .setAlpha(0)
         .setScale(0);
-    // Tween-Animation (auftauchen → ausblenden)
     scene.tweens.add({
         targets: lootText,
         alpha: 1,
@@ -79,5 +69,4 @@ export function generateLoot(scene, boxNr, x, y) {
             });
         },
     });
-    return [result, value];
 }

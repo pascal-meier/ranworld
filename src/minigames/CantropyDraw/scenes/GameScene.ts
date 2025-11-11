@@ -1,40 +1,47 @@
 // src/minigames/CantropyDraw/scenes/GameScene.ts
 import { Button } from "../../../core/ui/Button.js";
+import { BaseScene } from "../../../core/scenes/BaseScene.js";
 
-export class CantropyDrawGameScene extends Phaser.Scene {
+export class CantropyDrawGameScene extends BaseScene {
   private shapes!: Phaser.GameObjects.Group;
   private seed!: number;
+  private flowKey?: Phaser.Input.Keyboard.Key;
+  private soundCache: Record<string, Phaser.Sound.BaseSound> = {};
+  private readonly soundKeys = ["ping", "tone"];
+  private seedLabel!: Phaser.GameObjects.Text;
+  private backButton!: Button;
 
   constructor() {
-    super('CantropyDrawGameScene');
+    super("CantropyDrawGameScene");
   }
 
-  create() {
+  create(): void {
     const { width, height } = this.scale;
     this.shapes = this.add.group();
     this.seed = Phaser.Math.Between(0, 99999);
 
-    this.add.text(10, 10, `Seed: ${this.seed}`, {
-      fontSize: '14px',
-      color: '#888'
-    }).setScrollFactor(0);
+    this.seedLabel = this.add
+      .text(10, 10, `Seed: ${this.seed}`, {
+        fontSize: "14px",
+        color: "#888",
+      })
+      .setScrollFactor(0);
 
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    this.flowKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.spawnRandomShape(pointer.x, pointer.y);
-      this.playRandomSound();
     });
 
-    // Zurück-Button
-        new Button(this, width / 4, height * 0.1, "Back", () => {
-          this.scene.start("MainMenuScene");
-        });
+    this.backButton = new Button(this, width / 4, height * 0.1, "Back", () => {
+      this.scene.start("MainMenuScene");
+    });
 
-    // Optional Flow Mode
     this.time.addEvent({
       delay: 500,
       loop: true,
       callback: () => {
-        if (this.input.keyboard?.checkDown(this.input.keyboard.addKey('F'))) {
+        if (this.flowKey?.isDown) {
           this.spawnRandomShape(
             Phaser.Math.Between(0, this.scale.width),
             Phaser.Math.Between(0, this.scale.height)
@@ -42,10 +49,12 @@ export class CantropyDrawGameScene extends Phaser.Scene {
         }
       },
     });
+
+    super.create();
   }
 
-  private spawnRandomShape(x: number, y: number) {
-    const shapeType = Phaser.Math.RND.pick(['circle', 'rect', 'triangle']);
+  private spawnRandomShape(x: number, y: number): void {
+    const shapeType = Phaser.Math.RND.pick(["circle", "rect", "triangle"]);
     const color = Phaser.Display.Color.RandomRGB(100, 255).color;
     const size = Phaser.Math.Between(20, 120);
     const alpha = Phaser.Math.FloatBetween(0.4, 1);
@@ -53,10 +62,10 @@ export class CantropyDrawGameScene extends Phaser.Scene {
     let shape: Phaser.GameObjects.Shape;
 
     switch (shapeType) {
-      case 'circle':
+      case "circle":
         shape = this.add.circle(x, y, size / 2, color, alpha);
         break;
-      case 'rect':
+      case "rect":
         shape = this.add.rectangle(x, y, size, size, color, alpha);
         break;
       default:
@@ -71,15 +80,24 @@ export class CantropyDrawGameScene extends Phaser.Scene {
       scale: { from: 0.5, to: 2.2 },
       alpha: { from: 0, to: alpha },
       yoyo: true,
-      ease: 'Sine.easeInOut',
+      ease: "Sine.easeInOut",
       duration: Phaser.Math.Between(1800, 2500),
     });
   }
 
-  private playRandomSound() {
-    const soundKey = Phaser.Math.RND.pick(['ping', 'tone']);
-    const sound = this.sound.add(soundKey);
-    sound.setRate(Phaser.Math.FloatBetween(0.7, 1.5));
-    sound.play({ volume: 0.2 });
+  private playRandomSound(): void {
+    const soundKey = Phaser.Math.RND.pick(this.soundKeys);
+    const sound =
+      this.soundCache[soundKey] ?? (this.soundCache[soundKey] = this.sound.add(soundKey));
+
+    const rate = Phaser.Math.FloatBetween(0.7, 1.5);
+    sound.play({ volume: 0.2, rate });
+  }
+
+  protected onResize(gameSize: Phaser.Structs.Size): void {
+    const { width, height } = gameSize;
+
+    this.seedLabel?.setPosition(width * 0.05, height * 0.05);
+    this.backButton?.setPosition(width / 4, height * 0.1);
   }
 }

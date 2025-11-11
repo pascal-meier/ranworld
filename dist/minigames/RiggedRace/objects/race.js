@@ -84,11 +84,10 @@ export class Race {
         // Sicherstellen, dass Scene aktiv ist
         if (!this.scene.scene.isActive())
             return;
-        // Füchse zurücksetzen
         this.foxes.forEach((fox) => {
-            fox.setX(75);
+            fox.resetToSpawn();
             fox.setSelected(false);
-            fox.setInteractive();
+            fox.setInteractive({ useHandCursor: true });
             fox.resetStats();
         });
     }

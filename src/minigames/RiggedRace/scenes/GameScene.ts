@@ -1,12 +1,24 @@
 import { Button } from "../../../core/ui/Button.js";
+import { BaseScene } from "../../../core/scenes/BaseScene.js";
 import { Track } from "../objects/track.js";
 import { Fox } from "../objects/fox.js";
 import { Race } from "../objects/race.js";
 
-export class RiggedRaceGameScene extends Phaser.Scene {
+export class RiggedRaceGameScene extends BaseScene {
   private foxes: Fox[] = [];
   private selectedFox: Fox | null = null;
-  private race!: Race;
+  private race?: Race;
+  private titleText!: Phaser.GameObjects.Text;
+  private background!: Phaser.GameObjects.Image;
+  private startButton!: Button;
+  private backButton!: Button;
+  private tracks: Track[] = [];
+  private startLineX = 0;
+  private finishLineX = 0;
+  private readonly trackMarginRatio = 0.05;
+  private readonly laneStartRatio = 0.4;
+  private readonly laneSpacingRatio = 0.12;
+  private readonly raceFinishedListener = (winner: Fox) => this.handleRaceFinished(winner);
 
   constructor() {
     super("RiggedRaceGameScene");
@@ -14,123 +26,157 @@ export class RiggedRaceGameScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
-    const centerX = width / 2;
+    this.startLineX = width * 0.15;
+    this.finishLineX = width - 100;
 
-    // 🖼️ Hintergrundbild
-    const baseBG = this.add.image(width / 2, height / 2, "base-bg");
-    baseBG.setDisplaySize(width, height);
-    baseBG.setOrigin(0.5);
+    this.background = this.add.image(0, 0, "base-bg").setOrigin(0.5);
+    this.background.setPosition(width / 2, height / 2).setDisplaySize(width, height);
 
-    // 🏁 Titel
-    const titeltext = this.add.text(centerX, height * 0.2, "CHOOSE RACER", {
-      fontSize: "32px",
-      color: "#ffffff",
-    }).setOrigin(0.5).setName("titeltext");
+    this.titleText = this.add
+      .text(width / 2, height * 0.2, "CHOOSE RACER", {
+        fontSize: "32px",
+        color: "#ffffff",
+      })
+      .setOrigin(0.5);
 
-    // 🛤️ Rennstrecken
-    const spacing = 100;
-    const startY = 50;
-    new Track(this).setPosition(0, startY - 2 * spacing);
-    new Track(this).setPosition(0, startY - spacing);
-    new Track(this).setPosition(0, startY);
+    const laneStartY = this.getLaneStart(height);
+    const laneSpacing = this.getLaneSpacing(height);
+    this.createTracks(laneStartY, laneSpacing, width);
+    this.createFoxes(laneStartY, laneSpacing);
 
-    // 🦊 Füchse erzeugen
-    const fox1 = new Fox(this, "Miyo", "fox01").setPosition(75, innerHeight * 0.5 - 2 * spacing);
-    const fox2 = new Fox(this, "Anber", "fox02").setPosition(75, innerHeight * 0.5 - spacing);
-    const fox3 = new Fox(this, "Ret", "fox03").setPosition(75, innerHeight * 0.5);
-    this.foxes = [fox1, fox2, fox3];
+    this.startButton = new Button(this, width * 0.75, height * 0.1, "Start Race", () =>
+      this.startRace()
+    );
 
-    // 🎧 Reagiere auf Klicks eines Fuchses (korrekt registriert!)
-    this.events.on("foxSelected", this.handleFoxSelection, this);
-
-    // 🏁 Rennen erstellen (Ziellinie rechts vom Bildschirm)
-    this.race = new Race(this, this.foxes, this.scale.width - 100);
-
-    // ▶️ Start-Button
-    new Button(this, this.scale.width * 0.75, this.scale.height * 0.1, "Start Race", () => {
-      if (!this.selectedFox) {
-        titeltext.text = "⚠️ Bitte zuerst einen Fuchs auswählen!";
-        return;
-      }
-      titeltext.text = "🏁 Running...";
-      this.race.start();
-    });
-
-    // 🔙 Zurück-Button
-    new Button(this, width / 4, height * 0.1, "Back", () => {
-      // Auswahl zurücksetzen
-      if (this.selectedFox) {
-        this.selectedFox.setSelected(false);
-        this.selectedFox = null;
-      }
-
-      // Rennen resetten
-      this.race?.reset();
-
-      // Event sauber abmelden
-      this.events.off("foxSelected", this.handleFoxSelection, this);
-
-      // Szene wechseln
+    this.backButton = new Button(this, width / 4, height * 0.1, "Back", () => {
+      this.resetRaceState();
       this.scene.start("MainMenuScene");
     });
 
-    // 🎉 Gewinner-Event
-    this.events.on("raceFinished", (winner: Fox) => {
-      console.log("🎉 Der Gewinner ist:", winner.getName());
-      titeltext.text = `${winner.getName()} wins!`;
+    this.events.on("foxSelected", this.handleFoxSelection, this);
+    this.events.on("raceFinished", this.raceFinishedListener);
+    this.registerShutdownHook();
 
-      this.time.delayedCall(3000, () => {
-        this.race.reset();
-        this.selectedFox = null;
-        titeltext.text = "CHOOSE RACER";
-      });
-    });
-    
-    // 🧹 Scene-Cleanup hinzufügen (GANZ UNTEN in create)
-this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-  console.log("🧹 GameScene wird beendet — cleanup läuft");
+    this.race = new Race(this, this.foxes, this.finishLineX);
 
-  // Rennen beenden/resetten
-  this.race?.reset();
-  this.race = null!;
-
-  // Alle Timer entfernen
-  this.time.removeAllEvents();
-
-  // Eventlistener abmelden
-  this.events.off("foxSelected", this.handleFoxSelection, this);
-  this.events.off("raceFinished");
-
-  // Optional: Textobjekte zerstören
-  const titeltext = this.children.getByName("titeltext") as Phaser.GameObjects.Text | undefined;
-  titeltext?.destroy();
-});
+    super.create();
   }
 
-  /**
-   * Auswahl eines Fuchses behandeln
-   */
-  private handleFoxSelection(clickedFox: Fox): void {
-    const titeltext = this.children.getByName("titeltext") as Phaser.GameObjects.Text | undefined;
+  private createTracks(startY: number, spacing: number, width: number): void {
+    const startX = width * this.trackMarginRatio;
+    const trackLength = width - startX * 2;
 
-    // Wenn derselbe Fuchs erneut geklickt wurde → abwählen
-    if (this.selectedFox === clickedFox) {
-      clickedFox.setSelected(false);
-      this.selectedFox = null;
-      if (titeltext) titeltext.text = "CHOOSE RACER";
+    this.tracks = Array.from({ length: 3 }, (_, index) =>
+      new Track(this, trackLength).setPosition(startX, startY + index * spacing)
+    );
+  }
+
+  private createFoxes(startY: number, spacing: number): void {
+    const foxConfigs = [
+      { name: "Miyo", texture: "fox01" },
+      { name: "Anber", texture: "fox02" },
+      { name: "Ret", texture: "fox03" },
+    ];
+
+    this.foxes = foxConfigs.map((config, index) =>
+      new Fox(this, config.name, config.texture).setPosition(
+        this.startLineX,
+        startY + index * spacing
+      )
+    );
+  }
+
+  private startRace(): void {
+    if (!this.selectedFox) {
+      this.titleText.setText("⚠️ Select a fox first");
       return;
     }
 
-    // Alten abwählen
-    if (this.selectedFox) {
-      this.selectedFox.setSelected(false);
+    this.titleText.setText("🏁 Running...");
+    this.race?.start();
+  }
+
+  private handleFoxSelection(clickedFox: Fox): void {
+    if (this.selectedFox === clickedFox) {
+      clickedFox.setSelected(false);
+      this.selectedFox = null;
+      this.titleText.setText("CHOOSE RACER");
+      return;
     }
 
-    // Neuen aktivieren
+    this.selectedFox?.setSelected(false);
     clickedFox.setSelected(true);
     this.selectedFox = clickedFox;
+    this.titleText.setText("Press Start");
+  }
 
-    if (titeltext) titeltext.text = "Press Start";
-    console.log("Aktuell gewählter Fuchs:", this.selectedFox.getName());
+  private handleRaceFinished(winner: Fox): void {
+    this.titleText.setText(`${winner.getName()} wins!`);
+
+    this.time.delayedCall(3000, () => {
+      this.resetRaceState();
+      this.titleText.setText("CHOOSE RACER");
+    });
+  }
+
+  private resetRaceState(): void {
+    this.selectedFox?.setSelected(false);
+    this.selectedFox = null;
+    this.race?.reset();
+  }
+
+  private registerShutdownHook(): void {
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.resetRaceState();
+      this.time.removeAllEvents();
+      this.events.off("foxSelected", this.handleFoxSelection, this);
+      this.events.off("raceFinished", this.raceFinishedListener);
+    });
+  }
+
+  protected onResize(gameSize: Phaser.Structs.Size): void {
+    const prevStart = this.startLineX;
+    const prevFinish = this.finishLineX;
+
+    const { width, height } = gameSize;
+
+    this.startLineX = width * 0.15;
+    this.finishLineX = width - 100;
+
+    const laneStartY = this.getLaneStart(height);
+    const laneSpacing = this.getLaneSpacing(height);
+
+    this.background?.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+    this.titleText?.setPosition(width / 2, height * 0.2);
+    this.startButton?.setPosition(width * 0.75, height * 0.1);
+    this.backButton?.setPosition(width / 4, height * 0.1);
+
+    const trackStartX = width * this.trackMarginRatio;
+    const trackLength = width - trackStartX * 2;
+
+    this.tracks.forEach((track, index) => {
+      track.setPosition(trackStartX, laneStartY + index * laneSpacing);
+      track.resize(trackLength);
+    });
+
+    const oldRange = Math.max(prevFinish - prevStart, 1);
+    const newRange = Math.max(this.finishLineX - this.startLineX, 1);
+
+    this.foxes.forEach((fox, index) => {
+      const progress = Phaser.Math.Clamp((fox.x - prevStart) / oldRange, 0, 1);
+      const newX = this.startLineX + progress * newRange;
+      const newY = laneStartY + index * laneSpacing;
+      fox.setPosition(newX, newY);
+    });
+
+    this.race?.setFinishLine(this.finishLineX);
+  }
+
+  private getLaneStart(height: number): number {
+    return height * this.laneStartRatio;
+  }
+
+  private getLaneSpacing(height: number): number {
+    return Math.max(80, height * this.laneSpacingRatio);
   }
 }
