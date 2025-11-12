@@ -1,81 +1,137 @@
-// src/minigames/CantropyDraw/scenes/GameScene.ts
-import { Button } from "../../../core/ui/Button.js";
 import { BaseScene } from "../../../core/scenes/BaseScene.js";
+import { RandomSeed } from "../systems/RandomSeed.js";
+import { CompositionEngine } from "../systems/CompositionEngine.js";
+import { LightStroke } from "../objects/LightStroke.js";
+import { SoundPalette } from "../systems/SoundPalette.js";
+import { ComposerHUD } from "../ui/ComposerHUD.js";
 export class CantropyDrawGameScene extends BaseScene {
-    shapes;
     seed;
+    composer;
+    strokes;
+    audioPalette;
+    hud;
     flowKey;
-    soundCache = {};
-    soundKeys = ["ping", "tone"];
-    seedLabel;
-    backButton;
+    flowTimer;
+    isFlowing = false;
+    lastDragPaint = 0;
+    // ℹ️ Provides Phaser with the scene key so it can be registered and referenced ℹ️
     constructor() {
         super("CantropyDrawGameScene");
     }
+    // ℹ️ Wires up randomness, audio, visuals, HUD and input for both desktop and mobile interactions ℹ️
     create() {
-        const { width, height } = this.scale;
-        this.shapes = this.add.group();
-        this.seed = Phaser.Math.Between(0, 99999);
-        this.seedLabel = this.add
-            .text(10, 10, `Seed: ${this.seed}`, {
-            fontSize: "14px",
-            color: "#888",
-        })
-            .setScrollFactor(0);
-        this.flowKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+        super.create();
+        this.input.addPointer(2);
+        this.seed = new RandomSeed();
+        this.composer = new CompositionEngine(this.seed);
+        this.strokes = new LightStroke(this);
+        this.audioPalette = new SoundPalette(this);
+        this.hud = new ComposerHUD(this, {
+            onReplay: () => this.replayComposition(),
+            onNewSeed: () => this.newSeed(),
+            onNewComposition: () => this.newComposition(),
+            onFlowToggle: () => this.toggleFlow(),
+            onBack: () => this.scene.start("MainMenuScene"),
+        });
+        this.hud.setSeed(this.seed.getSeed());
+        this.hud.setMessage("Touch gently to paint with chance.");
+        this.hud.setFlowActive(this.isFlowing);
         this.input.on("pointerdown", (pointer) => {
-            this.spawnRandomShape(pointer.x, pointer.y);
+            this.paintEvent(pointer.x, pointer.y);
         });
-        this.backButton = new Button(this, width / 4, height * 0.1, "Back", () => {
-            this.scene.start("MainMenuScene");
+        this.input.on("pointermove", (pointer) => {
+            if (pointer.isDown) {
+                this.paintEvent(pointer.x, pointer.y, true);
+            }
         });
-        this.time.addEvent({
-            delay: 500,
+        this.flowKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+        this.flowTimer = this.time.addEvent({
+            delay: 420,
             loop: true,
             callback: () => {
-                if (this.flowKey?.isDown) {
-                    this.spawnRandomShape(Phaser.Math.Between(0, this.scale.width), Phaser.Math.Between(0, this.scale.height));
+                if (this.flowKey?.isDown || this.isFlowing) {
+                    this.paintEvent(this.seed.between(0, this.scale.width), this.seed.between(0, this.scale.height));
                 }
             },
         });
-        super.create();
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
     }
-    spawnRandomShape(x, y) {
-        const shapeType = Phaser.Math.RND.pick(["circle", "rect", "triangle"]);
-        const color = Phaser.Display.Color.RandomRGB(100, 255).color;
-        const size = Phaser.Math.Between(20, 120);
-        const alpha = Phaser.Math.FloatBetween(0.4, 1);
-        let shape;
-        switch (shapeType) {
-            case "circle":
-                shape = this.add.circle(x, y, size / 2, color, alpha);
-                break;
-            case "rect":
-                shape = this.add.rectangle(x, y, size, size, color, alpha);
-                break;
-            default:
-                shape = this.add.triangle(x, y, 0, size, size / 2, 0, size, size, color, alpha);
-        }
-        this.shapes.add(shape);
-        this.playRandomSound();
-        this.tweens.add({
-            targets: shape,
-            scale: { from: 0.5, to: 2.2 },
-            alpha: { from: 0, to: alpha },
-            yoyo: true,
-            ease: "Sine.easeInOut",
-            duration: Phaser.Math.Between(1800, 2500),
-        });
-    }
-    playRandomSound() {
-        const soundKey = Phaser.Math.RND.pick(this.soundKeys);
-        const sound = this.soundCache[soundKey] ?? (this.soundCache[soundKey] = this.sound.add(soundKey));
-        const rate = Phaser.Math.FloatBetween(0.7, 1.5);
-        sound.play({ volume: 0.2, rate });
-    }
+    // ℹ️ Relayouts the HUD when the viewport changes to keep controls reachable ℹ️
     onResize(gameSize) {
-        const { width, height } = gameSize;
-        this.seedLabel?.setPosition(width * 0.05, height * 0.05);
-        this.backButton?.setPosition(width / 4, height * 0.1);
+        super.onResize(gameSize);
+        this.hud?.layout(gameSize.width, gameSize.height);
+    }
+    // ℹ️ Generates a single audiovisual event, throttling drag interactions when needed ℹ️
+    paintEvent(x, y, isDrag = false) {
+        if (isDrag) {
+            const now = this.time.now;
+            if (now - this.lastDragPaint < 60) {
+                return;
+            }
+            this.lastDragPaint = now;
+        }
+        const artEvent = this.composer.craftEvent(x, y);
+        this.strokes.emit(artEvent);
+        this.audioPalette.play(artEvent.toneKey, artEvent.toneRate, artEvent.brightness, artEvent.chord);
+        const descriptor = this.describeEmotion(artEvent.emotion, artEvent.brightness);
+        this.hud.setMessage(`${descriptor} · Seed ${this.seed.getSeed()}`);
+    }
+    // ℹ️ Replays the last generated seed sequence to recreate the same audiovisual composition ℹ️
+    replayComposition() {
+        this.strokes.clear();
+        this.hud.setMessage("Let us listen to recorded echoes...");
+        this.scheduleGuidedPulses();
+    }
+    // ℹ️ Generates an entirely new seed so future strokes form a different composition ℹ️
+    newSeed() {
+        this.seed.reseed();
+        this.composer = new CompositionEngine(this.seed);
+        this.strokes.clear();
+        this.hud.setSeed(this.seed.getSeed());
+        this.hud.setMessage("Fresh seed, fresh emotions.");
+    }
+    // ℹ️ Creates a new seed and immediately showcases it with a guided pulse sequence ℹ️
+    newComposition() {
+        this.seed.reseed();
+        this.composer = new CompositionEngine(this.seed);
+        this.strokes.clear();
+        this.hud.setSeed(this.seed.getSeed());
+        this.hud.setMessage("New composition blooming...");
+        this.scheduleGuidedPulses();
+    }
+    // ℹ️ Toggles autonomous flow mode so the experience can run hands-free ℹ️
+    toggleFlow() {
+        this.isFlowing = !this.isFlowing;
+        this.hud.setFlowActive(this.isFlowing);
+        this.hud.setMessage(this.isFlowing ? "Chance paints while you observe." : "Guide the resonance with your touch.");
+    }
+    // ℹ️ Queues up a series of timed strokes to demonstrate the active composition ℹ️
+    scheduleGuidedPulses() {
+        this.seed.replay();
+        const pulses = 12;
+        let delay = 0;
+        for (let i = 0; i < pulses; i++) {
+            delay += 220;
+            this.time.delayedCall(delay, () => {
+                this.paintEvent(this.seed.between(this.scale.width * 0.2, this.scale.width * 0.8), this.seed.between(this.scale.height * 0.2, this.scale.height * 0.85));
+            });
+        }
+    }
+    // ℹ️ Stops timers and clears lingering strokes when the scene shuts down ℹ️
+    cleanup() {
+        this.flowTimer?.destroy();
+        this.flowTimer = undefined;
+        this.strokes.clear();
+    }
+    describeEmotion(emotion, brightness) {
+        const intensity = brightness > 0.75 ? "bright" : brightness > 0.5 ? "glowing" : "soft";
+        switch (emotion.label) {
+            case "warm":
+                return `Warm ${intensity} glow`;
+            case "radiant":
+                return `Radiant ${intensity} flare`;
+            default:
+                return `Calm ${intensity} breath`;
+        }
     }
 }

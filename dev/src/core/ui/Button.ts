@@ -1,7 +1,16 @@
+﻿const DEFAULT_WIDTH = 200;
+const DEFAULT_HEIGHT = 60;
+const NORMAL_FILL = 0x1e1e1e;
+const NORMAL_ALPHA = 0.8;
+const HOVER_FILL = 0x444444;
+const HOVER_ALPHA = 1;
+const STROKE_COLOR = 0xffffff;
+const DEFAULT_FONT_SIZE = 24;
+
 export class Button extends Phaser.GameObjects.Container {
-  private bg: Phaser.GameObjects.Rectangle;
+  private background: Phaser.GameObjects.Rectangle;
   private label: Phaser.GameObjects.Text;
-  private _callback?: () => void;
+  private clickCallback?: () => void;
 
   constructor(
     scene: Phaser.Scene,
@@ -11,37 +20,32 @@ export class Button extends Phaser.GameObjects.Container {
     callback?: () => void
   ) {
     super(scene, x, y);
-    this._callback = callback;
+    this.clickCallback = callback;
 
-    // 🎨 Hintergrund
-    this.bg = scene.add
-      .rectangle(0, 0, 200, 60, 0x1e1e1e, 0.8)
-      .setStrokeStyle(2, 0xffffff)
+    this.background = scene.add
+      .rectangle(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT, NORMAL_FILL, NORMAL_ALPHA)
+      .setStrokeStyle(2, STROKE_COLOR)
       .setOrigin(0.5);
 
-    // 🏷️ Label
     this.label = scene.add
       .text(0, 0, text, {
-        fontSize: "24px",
+        fontSize: `${DEFAULT_FONT_SIZE}px`,
         fontFamily: "Ranworldfont01",
         color: "#ffffff",
       })
       .setOrigin(0.5);
 
-    // Komponenten hinzufügen
-    this.add([this.bg, this.label]);
+    this.add([this.background, this.label]);
     scene.add.existing(this);
-    this.setSize(200, 60);
+    this.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
-    // 🖱️ Interaktivität
-    this.bg
+    this.background
       .setInteractive({ useHandCursor: true })
-      .on("pointerover", () => this.bg.setFillStyle(0x444444, 1))
-      .on("pointerout", () => this.bg.setFillStyle(0x1e1e1e, 0.8))
+      .on("pointerover", () => this.setHoverState())
+      .on("pointerout", () => this.setNormalState())
       .on("pointerdown", () => this.handleClick());
   }
 
-  /** Führt den Klick-Callback mit kleiner Animation aus */
   private handleClick(): void {
     this.scene.tweens.add({
       targets: this,
@@ -50,22 +54,33 @@ export class Button extends Phaser.GameObjects.Container {
       ease: "Quad.easeOut",
     });
 
-    this._callback?.();
+    this.clickCallback?.();
   }
 
-  /** Ändert die Klickfunktion nachträglich */
-  public setCallback(cb: () => void): void {
-    this._callback = cb;
+  private setHoverState(): void {
+    this.background.setFillStyle(HOVER_FILL, HOVER_ALPHA);
   }
 
-  /** Aktiviert oder deaktiviert den Button */
+  private setNormalState(): void {
+    this.background.setFillStyle(NORMAL_FILL, NORMAL_ALPHA);
+  }
+
+  public setCallback(callback: () => void): void {
+    this.clickCallback = callback;
+  }
+
+  public setLabel(text: string): void {
+    this.label.setText(text);
+  }
+
   public setInteractionEnabled(enabled: boolean): void {
     if (enabled) {
-      this.bg.setInteractive({ useHandCursor: true });
+      this.background.setInteractive({ useHandCursor: true });
       this.alpha = 1;
-    } else {
-      this.bg.disableInteractive();
-      this.alpha = 0.5;
+      return;
     }
+
+    this.background.disableInteractive();
+    this.alpha = 0.5;
   }
 }

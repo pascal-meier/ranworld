@@ -1,108 +1,119 @@
-const WS_URL = "wss://2mb2glerma.execute-api.eu-central-1.amazonaws.com/production";
+﻿const DEFAULT_WS_URL = "wss://2mb2glerma.execute-api.eu-central-1.amazonaws.com/production";
+const RECONNECT_DELAY_MS = 30_000;
 
-// 💬 Definiere, welche Nachrichten vom Server kommen können
 export interface ServerMessage {
   count?: number;
   message?: string;
-  [key: string]: any; // fallback für unerwartete Felder
+  [key: string]: any;
 }
 
-// 📤 und was du senden darfst
 export interface ClientMessage {
   action: string;
   [key: string]: any;
 }
 
-type ConnectOptions =
-  | {
-      onOpen?: () => void;
-      onMessage?: (msg: ServerMessage) => void;
-      onClose?: () => void;
-      onError?: (error: Event) => void;
-    }
-  | ((msg: ServerMessage) => void);
+type SocketFactory = (url: string) => WebSocket;
+
+type ConnectOptionsObject = {
+  onOpen?: () => void;
+  onMessage?: (msg: ServerMessage) => void;
+  onClose?: () => void;
+  onError?: (error: Event) => void;
+};
+
+type ConnectOptions = ConnectOptionsObject | ((msg: ServerMessage) => void);
 
 export default class WebSocketClient {
-  private url: string;
+  private readonly url: string;
+  private readonly createSocket: SocketFactory;
+  private readonly reconnectDelayMs: number;
   private ws: WebSocket | null = null;
   private isConnected = false;
   private reconnectTimeout: number | null = null;
 
-  constructor(url: string = WS_URL) {
+  constructor(
+    url: string = DEFAULT_WS_URL,
+    socketFactory: SocketFactory = (target) => new WebSocket(target),
+    reconnectDelayMs: number = RECONNECT_DELAY_MS
+  ) {
     this.url = url;
+    this.createSocket = socketFactory;
+    this.reconnectDelayMs = reconnectDelayMs;
   }
 
-  /**
-   * Verbindet sich mit dem WebSocket-Server
-   * @param options Entweder Callback für Nachrichten oder Options-Objekt
-   */
   connect(options?: ConnectOptions): void {
-    const opts =
-      typeof options === "function" ? { onMessage: options } : options || {};
-
-    this.ws = new WebSocket(this.url);
+    const normalizedOptions = this.normalizeOptions(options);
+    this.ws = this.createSocket(this.url);
 
     this.ws.onopen = () => {
-      console.log("✅ Verbunden mit WebSocket");
+      console.log("[WebSocket] Connected");
       this.isConnected = true;
-      opts.onOpen?.();
+      normalizedOptions.onOpen?.();
     };
 
     this.ws.onmessage = (event: MessageEvent<string>) => {
-      console.log("📩 Nachricht vom Server:", event.data);
       try {
         const data: ServerMessage = JSON.parse(event.data);
-        opts.onMessage?.(data);
-      } catch (err) {
-        console.warn("⚠️ Konnte Nachricht nicht parsen:", event.data);
+        normalizedOptions.onMessage?.(data);
+      } catch {
+        console.warn("[WebSocket] Failed to parse message:", event.data);
       }
     };
 
     this.ws.onclose = () => {
-      console.log("❌ Verbindung geschlossen – versuche Reconnect in 30s");
+      console.log("[WebSocket] Disconnected, scheduling reconnect");
       this.isConnected = false;
-      opts.onClose?.();
-
-      // Reconnect nur, wenn nicht schon geplant
-      if (!this.reconnectTimeout) {
-        this.reconnectTimeout = window.setTimeout(() => {
-          this.reconnectTimeout = null;
-          this.connect(opts);
-        }, 30000);
-      }
+      normalizedOptions.onClose?.();
+      this.scheduleReconnect(normalizedOptions);
     };
 
     this.ws.onerror = (error) => {
-      console.error("⚠️ WebSocket-Fehler:", error);
-      opts.onError?.(error as unknown as Event);
+      console.error("[WebSocket] Error", error);
+      normalizedOptions.onError?.(error as unknown as Event);
     };
   }
 
-  /**
-   * Sendet eine Nachricht an den Server
-   */
   send(action: string, payload: Record<string, any> = {}): void {
-    if (this.isConnected && this.ws) {
-      const message: ClientMessage = { action, ...payload };
-      console.log("📤 Sende Nachricht:", message);
-      this.ws.send(JSON.stringify(message));
-    } else {
-      console.warn("⚠️ Noch nicht verbunden");
+    if (!this.isConnected || !this.ws) {
+      console.warn("[WebSocket] Attempted to send before connecting");
+      return;
     }
+
+    const message: ClientMessage = { action, ...payload };
+    this.ws.send(JSON.stringify(message));
   }
 
-  /**
-   * Trennt die Verbindung sauber
-   */
   disconnect(): void {
     if (this.ws) {
-      console.log("🔌 Verbindung manuell getrennt");
       this.ws.close();
-      this.isConnected = false;
+      this.ws = null;
     }
+    this.isConnected = false;
+    this.clearReconnectTimer();
+  }
+
+  private normalizeOptions(options?: ConnectOptions): ConnectOptionsObject {
+    if (typeof options === "function") {
+      return { onMessage: options };
+    }
+    return options ?? {};
+  }
+
+  private scheduleReconnect(options: ConnectOptionsObject): void {
     if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
+      return;
     }
+    this.reconnectTimeout = window.setTimeout(() => {
+      this.reconnectTimeout = null;
+      this.connect(options);
+    }, this.reconnectDelayMs);
+  }
+
+  private clearReconnectTimer(): void {
+    if (!this.reconnectTimeout) {
+      return;
+    }
+    clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = null;
   }
 }

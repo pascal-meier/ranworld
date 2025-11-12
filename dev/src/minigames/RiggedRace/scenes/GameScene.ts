@@ -1,182 +1,223 @@
-import { Button } from "../../../core/ui/Button.js";
-import { BaseScene } from "../../../core/scenes/BaseScene.js";
+﻿import { BaseScene } from "../../../core/scenes/BaseScene.js";
 import { Track } from "../objects/track.js";
-import { Fox } from "../objects/fox.js";
-import { Race } from "../objects/race.js";
+import { Runner } from "../objects/Runner.js";
+import { RaceHUD } from "../ui/RaceHUD.js";
+import { RaceController } from "../systems/RaceController.js";
+import { BoostManager } from "../systems/BoostManager.js";
+import type { RunnerConfig, RaceDimensions } from "../systems/types.js";
 
 export class RiggedRaceGameScene extends BaseScene {
-  private foxes: Fox[] = [];
-  private selectedFox: Fox | null = null;
-  private race?: Race;
-  private titleText!: Phaser.GameObjects.Text;
   private background!: Phaser.GameObjects.Image;
-  private startButton!: Button;
-  private backButton!: Button;
   private tracks: Track[] = [];
-  private startLineX = 0;
-  private finishLineX = 0;
-  private readonly trackMarginRatio = 0.05;
-  private readonly laneStartRatio = 0.4;
-  private readonly laneSpacingRatio = 0.12;
-  private readonly raceFinishedListener = (winner: Fox) => this.handleRaceFinished(winner);
+  private runners: Runner[] = [];
+  private hud!: RaceHUD;
+  private raceController!: RaceController;
+  private boostManager!: BoostManager;
+  private selectedRunner?: Runner;
+  private dimensions: RaceDimensions = { startX: 0, finishX: 0 };
+  private readonly boostUses = 2;
+  private static readonly MIN_LANE_SPACING = 120;
+  private readonly runnerConfigs: RunnerConfig[] = [
+    { id: "ember", name: "Ember", texture: "fox01", color: 0xffb347, baseSpeed: 125, variance: 18 },
+    { id: "sol", name: "Sol", texture: "fox02", color: 0x4dd1ff, baseSpeed: 118, variance: 20 },
+    { id: "ash", name: "Ash", texture: "fox03", color: 0xb88bff, baseSpeed: 132, variance: 16 },
+  ];
 
+  // ℹ️ Registers the scene key with Phaser ℹ️
   constructor() {
     super("RiggedRaceGameScene");
   }
 
+  // ℹ️ Sets up background, tracks, runners, HUD, and race systems ℹ️
   create(): void {
-    const { width, height } = this.scale;
-    this.startLineX = width * 0.15;
-    this.finishLineX = width - 100;
-
-    this.background = this.add.image(0, 0, "base-bg").setOrigin(0.5);
-    this.background.setPosition(width / 2, height / 2).setDisplaySize(width, height);
-
-    this.titleText = this.add
-      .text(width / 2, height * 0.2, "CHOOSE RACER", {
-        fontSize: "32px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
-
-    const laneStartY = this.getLaneStart(height);
-    const laneSpacing = this.getLaneSpacing(height);
-    this.createTracks(laneStartY, laneSpacing, width);
-    this.createFoxes(laneStartY, laneSpacing);
-
-    this.startButton = new Button(this, width * 0.75, height * 0.1, "Start Race", () =>
-      this.startRace()
-    );
-
-    this.backButton = new Button(this, width / 4, height * 0.1, "Back", () => {
-      this.resetRaceState();
-      this.scene.start("MainMenuScene");
-    });
-
-    this.events.on("foxSelected", this.handleFoxSelection, this);
-    this.events.on("raceFinished", this.raceFinishedListener);
+    this.configureDimensions();
+    this.createBackground();
+    this.createTracks();
+    this.createRunners();
+    this.setupHud();
+    this.setupRaceSystems();
     this.registerShutdownHook();
-
-    this.race = new Race(this, this.foxes, this.finishLineX);
-
     super.create();
   }
 
-  private createTracks(startY: number, spacing: number, width: number): void {
-    const startX = width * this.trackMarginRatio;
-    const trackLength = width - startX * 2;
-
-    this.tracks = Array.from({ length: 3 }, (_, index) =>
-      new Track(this, trackLength).setPosition(startX, startY + index * spacing)
-    );
+  // ℹ️ Initializes start/finish coordinates based on current viewport ℹ️
+  private configureDimensions(): void {
+    const { width } = this.scale;
+    this.dimensions = {
+      startX: width * 0.18,
+      finishX: width * 0.9,
+    };
   }
 
-  private createFoxes(startY: number, spacing: number): void {
-    const foxConfigs = [
-      { name: "Miyo", texture: "fox01" },
-      { name: "Anber", texture: "fox02" },
-      { name: "Ret", texture: "fox03" },
-    ];
-
-    this.foxes = foxConfigs.map((config, index) =>
-      new Fox(this, config.name, config.texture).setPosition(
-        this.startLineX,
-        startY + index * spacing
-      )
-    );
+  // ℹ️ Draws the parallax background covering the full viewport ℹ️
+  private createBackground(): void {
+    const { width, height } = this.scale;
+    this.background = this.add.image(width / 2, height / 2, "base-bg");
+    this.background.setDisplaySize(width, height);
   }
 
-  private startRace(): void {
-    if (!this.selectedFox) {
-      this.titleText.setText("⚠️ Select a fox first");
-      return;
+  // ℹ️ Creates lane graphics spaced evenly across the playfield ℹ️
+  private createTracks(): void {
+    this.tracks.forEach((track) => track.destroy());
+    this.tracks = [];
+    const { width, height } = this.scale;
+    const laneSpacing = this.getLaneSpacing(height);
+    const startY = height * 0.35;
+    const trackLength = this.dimensions.finishX - this.dimensions.startX + 40;
+
+    for (let i = 0; i < this.runnerConfigs.length; i++) {
+      const track = new Track(this, trackLength);
+      track.setPosition(this.dimensions.startX - 20, startY + i * laneSpacing);
+      this.tracks.push(track);
     }
-
-    this.titleText.setText("🏁 Running...");
-    this.race?.start();
   }
 
-  private handleFoxSelection(clickedFox: Fox): void {
-    if (this.selectedFox === clickedFox) {
-      clickedFox.setSelected(false);
-      this.selectedFox = null;
-      this.titleText.setText("CHOOSE RACER");
-      return;
-    }
+  // ℹ️ Instantiates runners according to configuration and positions them on lanes ℹ️
+  private createRunners(): void {
+    this.runners.forEach((runner) => runner.destroy());
+    this.runners = [];
+    const { height } = this.scale;
+    const laneSpacing = this.getLaneSpacing(height);
+    const startY = height * 0.35;
 
-    this.selectedFox?.setSelected(false);
-    clickedFox.setSelected(true);
-    this.selectedFox = clickedFox;
-    this.titleText.setText("Press Start");
-  }
-
-  private handleRaceFinished(winner: Fox): void {
-    this.titleText.setText(`${winner.getName()} wins!`);
-
-    this.time.delayedCall(3000, () => {
-      this.resetRaceState();
-      this.titleText.setText("CHOOSE RACER");
+    this.runners = this.runnerConfigs.map((config, index) => {
+      const runner = new Runner(this, config);
+      runner.placeAt(this.dimensions.startX, startY + index * laneSpacing);
+      runner.setSelectCallback((selected) => this.handleRunnerSelection(selected));
+      return runner;
     });
   }
 
-  private resetRaceState(): void {
-    this.selectedFox?.setSelected(false);
-    this.selectedFox = null;
-    this.race?.reset();
+  // ℹ️ Builds the HUD and wires button callbacks ℹ️
+  private setupHud(): void {
+    this.hud = new RaceHUD(this, {
+      onStart: () => this.handleStartRequested(),
+      onBoost: () => this.handleBoostRequested(),
+      onBack: () => this.handleBackRequested(),
+    });
+    this.hud.setBoostState(this.boostUses, false);
   }
 
+  // ℹ️ Configures the race controller and boost manager ℹ️
+  private setupRaceSystems(): void {
+    this.boostManager = new BoostManager(this, this.boostUses, 1600);
+    this.raceController = new RaceController(this, this.runners, this.dimensions, {
+      tickMs: 110,
+      fairnessLabelCallback: (text) => this.hud.setFairnessLabel(text),
+    });
+    this.raceController.setBoostManager(this.boostManager);
+  }
+
+  // ℹ️ Handles selection toggles when a runner is tapped ℹ️
+  private handleRunnerSelection(runner: Runner): void {
+    if (this.selectedRunner === runner) {
+      runner.setSelected(false);
+      this.selectedRunner = undefined;
+      this.hud.setSelectionSummary();
+      this.hud.setTitle("Tap a runner to inspect");
+      this.hud.setBoostState(this.boostManager.getRemainingUses(), false);
+      return;
+    }
+
+    this.selectedRunner?.setSelected(false);
+    runner.setSelected(true);
+    this.selectedRunner = runner;
+    const profile = runner.getProfile();
+    this.hud.setSelectionSummary(profile.name, profile.baseSpeed, profile.variance);
+    this.hud.setTitle("Press start when ready");
+    this.hud.setBoostState(this.boostManager.getRemainingUses(), this.boostManager.getRemainingUses() > 0);
+  }
+
+  // ℹ️ Starts the race if a runner is selected and no race is active ℹ️
+  private handleStartRequested(): void {
+    if (!this.selectedRunner) {
+      this.hud.setTitle("Select a runner first");
+      return;
+    }
+
+    this.hud.setTitle("Controlled uncertainty in motion");
+    this.raceController.start((winner) => this.handleRaceFinished(winner));
+  }
+
+  // ℹ️ Attempts to trigger a manual boost for the selected runner ℹ️
+  private handleBoostRequested(): void {
+    if (!this.selectedRunner) {
+      this.hud.setTitle("Select a runner before boosting");
+      return;
+    }
+
+    if (!this.boostManager.triggerBoost(this.selectedRunner.getProfile().id)) {
+      this.hud.setTitle("No boosts left");
+      return;
+    }
+
+    const remaining = this.boostManager.getRemainingUses();
+    this.hud.setBoostState(remaining, remaining > 0);
+    this.hud.setTitle("Boost engaged for a moment");
+  }
+
+  // ℹ️ Returns to the main menu after stopping ongoing race logic ℹ️
+  private handleBackRequested(): void {
+    this.resetState();
+    this.scene.start("MainMenuScene");
+  }
+
+  // ℹ️ Updates the HUD and resets state once a winner is declared ℹ️
+  private handleRaceFinished(winner: Runner): void {
+    this.hud.setTitle(`${winner.getProfile().name} crosses first!`);
+    this.time.delayedCall(3000, () => this.resetState());
+  }
+
+  // ℹ️ Resets runners, selections, boosts, and HUD text ℹ️
+  private resetState(): void {
+    this.resetCoreRaceState();
+    this.refreshHudAfterReset();
+  }
+
+  // ℹ️ Responds to viewport changes by repositioning elements ℹ️
+  protected onResize(gameSize: Phaser.Structs.Size): void {
+    super.onResize(gameSize);
+    this.configureDimensions();
+    this.background?.setPosition(gameSize.width / 2, gameSize.height / 2).setDisplaySize(gameSize.width, gameSize.height);
+    this.createTracks();
+    const laneSpacing = this.getLaneSpacing(gameSize.height);
+    const startY = gameSize.height * 0.35;
+    this.runners.forEach((runner, index) => {
+      const progress = Phaser.Math.Clamp(
+        (runner.x - this.dimensions.startX) / (this.dimensions.finishX - this.dimensions.startX),
+        0,
+        1
+      );
+      const newX = this.dimensions.startX + progress * (this.dimensions.finishX - this.dimensions.startX);
+      runner.reposition(newX, startY + index * laneSpacing);
+    });
+    this.raceController.setDimensions(this.dimensions);
+    this.hud.layout(gameSize.width, gameSize.height);
+  }
+
+  // ℹ️ Calculates vertical spacing between lanes, ensuring a reasonable minimum ℹ️
+  private getLaneSpacing(height: number): number {
+    return Math.max(RiggedRaceGameScene.MIN_LANE_SPACING, height * 0.18);
+  }
+
+  // ℹ️ Stops timers and boosts when the scene shuts down ℹ️
   private registerShutdownHook(): void {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.resetRaceState();
-      this.time.removeAllEvents();
-      this.events.off("foxSelected", this.handleFoxSelection, this);
-      this.events.off("raceFinished", this.raceFinishedListener);
+      this.resetCoreRaceState();
     });
   }
 
-  protected onResize(gameSize: Phaser.Structs.Size): void {
-    const prevStart = this.startLineX;
-    const prevFinish = this.finishLineX;
-
-    const { width, height } = gameSize;
-
-    this.startLineX = width * 0.15;
-    this.finishLineX = width - 100;
-
-    const laneStartY = this.getLaneStart(height);
-    const laneSpacing = this.getLaneSpacing(height);
-
-    this.background?.setPosition(width / 2, height / 2).setDisplaySize(width, height);
-    this.titleText?.setPosition(width / 2, height * 0.2);
-    this.startButton?.setPosition(width * 0.75, height * 0.1);
-    this.backButton?.setPosition(width / 4, height * 0.1);
-
-    const trackStartX = width * this.trackMarginRatio;
-    const trackLength = width - trackStartX * 2;
-
-    this.tracks.forEach((track, index) => {
-      track.setPosition(trackStartX, laneStartY + index * laneSpacing);
-      track.resize(trackLength);
-    });
-
-    const oldRange = Math.max(prevFinish - prevStart, 1);
-    const newRange = Math.max(this.finishLineX - this.startLineX, 1);
-
-    this.foxes.forEach((fox, index) => {
-      const progress = Phaser.Math.Clamp((fox.x - prevStart) / oldRange, 0, 1);
-      const newX = this.startLineX + progress * newRange;
-      const newY = laneStartY + index * laneSpacing;
-      fox.setPosition(newX, newY);
-    });
-
-    this.race?.setFinishLine(this.finishLineX);
+  private resetCoreRaceState(): void {
+    this.raceController.stop();
+    this.boostManager.reset(this.boostUses);
+    this.runners.forEach((runner) => runner.resetToStart());
+    this.selectedRunner?.setSelected(false);
+    this.selectedRunner = undefined;
   }
 
-  private getLaneStart(height: number): number {
-    return height * this.laneStartRatio;
-  }
-
-  private getLaneSpacing(height: number): number {
-    return Math.max(80, height * this.laneSpacingRatio);
+  private refreshHudAfterReset(): void {
+    this.hud.setSelectionSummary();
+    this.hud.setBoostState(this.boostManager.getRemainingUses(), false);
+    this.hud.setTitle("Tap a runner to inspect");
   }
 }
