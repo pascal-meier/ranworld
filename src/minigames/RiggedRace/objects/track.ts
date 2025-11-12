@@ -1,9 +1,7 @@
-/**
- * Zeichnet eine einfache horizontale Rennstrecke, die über Position verschoben werden kann.
- */
-export class Track extends Phaser.GameObjects.Graphics {
+﻿export class Track extends Phaser.GameObjects.Graphics {
   private length: number;
 
+  // ℹ️ Creates the track graphics with an optional initial length ℹ️
   constructor(scene: Phaser.Scene, length?: number) {
     super(scene);
     scene.add.existing(this);
@@ -12,11 +10,13 @@ export class Track extends Phaser.GameObjects.Graphics {
     this.drawTrack();
   }
 
-  public resize(length: number): void {
+  // ℹ️ Redraws the track to match a new desired length ℹ️
+  resize(length: number): void {
     this.length = length;
     this.drawTrack();
   }
 
+  // ℹ️ Renders the asphalt band plus highlighted center line ℹ️
   private drawTrack(): void {
     const startX = 0;
     const endX = this.length;

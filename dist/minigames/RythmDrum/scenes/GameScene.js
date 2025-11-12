@@ -1,97 +1,73 @@
+import { BaseScene } from "../../../core/scenes/BaseScene.js";
 import HUD from "../ui/hud.js";
-import SoundManager from "../audio/soundManager.js";
 import TongueDrum from "../objects/tongueDrum.js";
-export class RythmDrumGameScene extends Phaser.Scene {
-    soundManager;
+import { DrumInput } from "../systems/DrumInput.js";
+import { RhythmPattern } from "../systems/RhythmPattern.js";
+import { PhaseManager } from "../systems/PhaseManager.js";
+import { RoundConductor } from "../systems/RoundConductor.js";
+import SoundController from "../systems/SoundController.js";
+export class RythmDrumGameScene extends BaseScene {
     hud;
-    tongueDrum;
-    melody = [1, 7, 5];
-    playerInput = [];
-    successList = [];
-    score = 0;
-    isPlaying = false;
-    isInputActive = false;
+    drum;
+    soundController;
+    conductor;
+    phases;
+    isRoundLocked = false;
+    hasAnnouncedPhase = false;
+    // ℹ️ Registers the scene key so Phaser can boot this minigame ℹ️
     constructor() {
         super("RythmDrumGameScene");
     }
+    // ℹ️ Boots all systems (sound, HUD, drum, phase logic) and wires player input ℹ️
     create() {
-        const { width, height } = this.scale;
-        // ⚙️ Systems
-        this.soundManager = new SoundManager(this);
+        super.create();
+        this.soundController = new SoundController(this);
         this.hud = new HUD(this);
-        // 🥁 Drum object
-        this.tongueDrum = new TongueDrum(this, width / 2, height / 2, "drum");
-        // 🧭 HUD setup
-        this.hud.setStartCallback(() => {
-            if (!this.isPlaying)
-                this.startMelody();
+        const { width, height } = this.scale;
+        this.drum = new TongueDrum(this, width / 2, height / 2, "drum");
+        const input = new DrumInput(this.drum);
+        const pattern = new RhythmPattern();
+        this.phases = new PhaseManager(pattern, {
+            onPhaseChanged: (phase) => this.handlePhaseChanged(phase),
+            onProgress: (current, total) => this.hud.setPhaseProgress(current, total),
+            onScore: (score) => this.hud.setScore(score),
+            onChance: (label, intensity) => this.hud.setChanceInfo(label, intensity),
         });
-        this.hud.setBackCallback(() => {
-            this.scene.start("MainMenuScene");
+        this.conductor = new RoundConductor(this, this.hud, this.drum, this.soundController, input);
+        this.hud.setStartCallback(() => this.handleStartRequested());
+        this.hud.setBackCallback(() => this.scene.start("MainMenuScene"));
+        this.hud.setChanceInfo("Chance: 0% (pure skill)", 0);
+        this.hud.setStatus("Press Start to hear the groove.");
+        this.hud.setStartEnabled(true);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.conductor.cancel());
+    }
+    // ℹ️ Starts a new round only if no other sequence is currently playing ℹ️
+    handleStartRequested() {
+        if (this.isRoundLocked)
+            return;
+        this.isRoundLocked = true;
+        this.hud.setStartEnabled(false);
+        const plan = this.phases.prepareRound();
+        this.conductor.run(plan, (success) => {
+            this.isRoundLocked = false;
+            this.hud.setStartEnabled(true);
+            if (success) {
+                this.phases.registerSuccess();
+            }
+            else {
+                this.phases.registerFailure();
+            }
         });
-        this.hud.setScore(this.score);
-        this.hud.setStatus("Start?");
-        // 🎹 Input von TongueDrum
-        // TongueDrum ruft scene.onNotePlayed(segment) intern auf
-        this.onNotePlayed = (segment) => {
-            this.soundManager.playNote(segment);
-            this.tongueDrum.flash(segment);
-            this.hud.showCenterNote(segment);
-            // Wenn nicht in Eingabephase → nur frei spielen
-            if (!this.isInputActive)
-                return;
-            const index = this.playerInput.length;
-            const expected = this.melody[index];
-            const correct = expected === segment;
-            this.playerInput.push(segment);
-            this.successList.push(correct);
-            this.hud.showPlayerInput(this.playerInput, this.successList);
-            if (!correct) {
-                // ❌ Falsch: sofort abbrechen
-                this.isInputActive = false;
-                this.isPlaying = false;
-                this.hud.setStatus("❌ Try Again!");
-                this.soundManager.playFail();
-                this.tongueDrum.failFlash();
-                return;
-            }
-            // 🎉 Wenn komplett richtig
-            if (this.playerInput.length === this.melody.length) {
-                this.isInputActive = false;
-                this.isPlaying = false;
-                this.hud.setStatus("🎉 Perfect!");
-                this.soundManager.playSuccess();
-                this.tongueDrum.winFlash();
-                this.score++;
-                this.hud.setScore(this.score);
-                this.changeMelody();
-            }
-        };
     }
-    startMelody() {
-        this.isPlaying = true;
-        this.isInputActive = false;
-        this.playerInput = [];
-        this.successList = [];
-        this.hud.setStatus("Listen...");
-        this.hud.showPlayerInput([], []);
-        let i = 0;
-        const playNext = () => {
-            if (i >= this.melody.length) {
-                this.hud.setStatus("Your Turn!");
-                this.isInputActive = true;
-                return;
-            }
-            const note = this.melody[i];
-            this.soundManager.playNote(note);
-            this.tongueDrum.flash(note);
-            this.hud.showCenterNote(note);
-            i++;
-            this.time.delayedCall(500, playNext, [], this);
-        };
-        playNext();
-    }
-    changeMelody() {
-        this.melody.push(Math.floor(Math.random() * 8) + 1);
+    // ℹ️ Updates the HUD whenever the skill/chance phase changes ℹ️
+    handlePhaseChanged(phase) {
+        this.hud.setPhaseInfo(phase.title, phase.description);
+        if (this.hasAnnouncedPhase) {
+            this.hud.flashPhaseChange(phase.title);
+            this.hud.setStatus(`${phase.title} unlocked! Press Start.`);
+        }
+        else {
+            this.hasAnnouncedPhase = true;
+        }
     }
 }

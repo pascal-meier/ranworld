@@ -1,76 +1,81 @@
-const WS_URL = "wss://2mb2glerma.execute-api.eu-central-1.amazonaws.com/production";
+const DEFAULT_WS_URL = "wss://2mb2glerma.execute-api.eu-central-1.amazonaws.com/production";
+const RECONNECT_DELAY_MS = 30_000;
 export default class WebSocketClient {
     url;
+    createSocket;
+    reconnectDelayMs;
     ws = null;
     isConnected = false;
     reconnectTimeout = null;
-    constructor(url = WS_URL) {
+    constructor(url = DEFAULT_WS_URL, socketFactory = (target) => new WebSocket(target), reconnectDelayMs = RECONNECT_DELAY_MS) {
         this.url = url;
+        this.createSocket = socketFactory;
+        this.reconnectDelayMs = reconnectDelayMs;
     }
-    /**
-     * Verbindet sich mit dem WebSocket-Server
-     * @param options Entweder Callback für Nachrichten oder Options-Objekt
-     */
     connect(options) {
-        const opts = typeof options === "function" ? { onMessage: options } : options || {};
-        this.ws = new WebSocket(this.url);
+        const normalizedOptions = this.normalizeOptions(options);
+        this.ws = this.createSocket(this.url);
         this.ws.onopen = () => {
-            console.log("✅ Verbunden mit WebSocket");
+            console.log("[WebSocket] Connected");
             this.isConnected = true;
-            opts.onOpen?.();
+            normalizedOptions.onOpen?.();
         };
         this.ws.onmessage = (event) => {
-            console.log("📩 Nachricht vom Server:", event.data);
             try {
                 const data = JSON.parse(event.data);
-                opts.onMessage?.(data);
+                normalizedOptions.onMessage?.(data);
             }
-            catch (err) {
-                console.warn("⚠️ Konnte Nachricht nicht parsen:", event.data);
+            catch {
+                console.warn("[WebSocket] Failed to parse message:", event.data);
             }
         };
         this.ws.onclose = () => {
-            console.log("❌ Verbindung geschlossen – versuche Reconnect in 30s");
+            console.log("[WebSocket] Disconnected, scheduling reconnect");
             this.isConnected = false;
-            opts.onClose?.();
-            // Reconnect nur, wenn nicht schon geplant
-            if (!this.reconnectTimeout) {
-                this.reconnectTimeout = window.setTimeout(() => {
-                    this.reconnectTimeout = null;
-                    this.connect(opts);
-                }, 30000);
-            }
+            normalizedOptions.onClose?.();
+            this.scheduleReconnect(normalizedOptions);
         };
         this.ws.onerror = (error) => {
-            console.error("⚠️ WebSocket-Fehler:", error);
-            opts.onError?.(error);
+            console.error("[WebSocket] Error", error);
+            normalizedOptions.onError?.(error);
         };
     }
-    /**
-     * Sendet eine Nachricht an den Server
-     */
     send(action, payload = {}) {
-        if (this.isConnected && this.ws) {
-            const message = { action, ...payload };
-            console.log("📤 Sende Nachricht:", message);
-            this.ws.send(JSON.stringify(message));
+        if (!this.isConnected || !this.ws) {
+            console.warn("[WebSocket] Attempted to send before connecting");
+            return;
         }
-        else {
-            console.warn("⚠️ Noch nicht verbunden");
-        }
+        const message = { action, ...payload };
+        this.ws.send(JSON.stringify(message));
     }
-    /**
-     * Trennt die Verbindung sauber
-     */
     disconnect() {
         if (this.ws) {
-            console.log("🔌 Verbindung manuell getrennt");
             this.ws.close();
-            this.isConnected = false;
+            this.ws = null;
         }
+        this.isConnected = false;
+        this.clearReconnectTimer();
+    }
+    normalizeOptions(options) {
+        if (typeof options === "function") {
+            return { onMessage: options };
+        }
+        return options ?? {};
+    }
+    scheduleReconnect(options) {
         if (this.reconnectTimeout) {
-            clearTimeout(this.reconnectTimeout);
-            this.reconnectTimeout = null;
+            return;
         }
+        this.reconnectTimeout = window.setTimeout(() => {
+            this.reconnectTimeout = null;
+            this.connect(options);
+        }, this.reconnectDelayMs);
+    }
+    clearReconnectTimer() {
+        if (!this.reconnectTimeout) {
+            return;
+        }
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
     }
 }
