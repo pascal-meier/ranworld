@@ -7,19 +7,20 @@ export class RoundConductor {
     isRunning = false;
     completion;
     activeTimers = [];
-    // ℹ️ Subscribes to drum events so HUD, audio, and scoring stay synchronized ℹ️
+    boundHandlers = [];
+    // ?? Subscribes to drum events so HUD, audio, and scoring stay synchronized ??
     constructor(scene, hud, drum, sound, input) {
         this.scene = scene;
         this.hud = hud;
         this.drum = drum;
         this.sound = sound;
         this.input = input;
-        this.input.on("note", (note) => this.handlePlayerNote(note));
-        this.input.on("progress", (payload) => this.hud.showPlayerInput(payload.progress, payload.success));
-        this.input.on("fail", () => this.conclude(false));
-        this.input.on("success", () => this.conclude(true));
+        this.register("note", (note) => this.handlePlayerNote(note));
+        this.register("progress", (payload) => this.hud.showPlayerInput(payload.progress, payload.success));
+        this.register("fail", () => this.conclude(false));
+        this.register("success", () => this.conclude(true));
     }
-    // ℹ️ Plays the reference melody and then hands control to the player ℹ️
+    // ?? Plays the reference melody and then hands control to the player ??
     run(plan, onFinish) {
         if (this.isRunning)
             return;
@@ -32,13 +33,19 @@ export class RoundConductor {
             this.input.startCapture(plan.notes);
         });
     }
-    // ℹ️ Stops any running round, used when the scene shuts down ℹ️
+    // ?? Stops any running round, used when the scene shuts down ??
     cancel() {
         this.input.stopCapture();
         this.clearTimers();
         this.isRunning = false;
     }
-    // ℹ️ Steps through the AI melody, respecting per-note tempo variations ℹ️
+    destroy() {
+        this.cancel();
+        this.boundHandlers.forEach(([event, fn]) => this.input.off(event, fn));
+        this.boundHandlers = [];
+        this.drum.setHitHandler(undefined);
+    }
+    // ?? Steps through the AI melody, respecting per-note tempo variations ??
     playSequence(plan, onComplete) {
         const { notes, variations } = plan;
         let index = 0;
@@ -56,17 +63,17 @@ export class RoundConductor {
         };
         step();
     }
-    // ℹ️ Echoes player taps with audiovisual feedback even outside capture windows ℹ️
+    // ?? Echoes player taps with audiovisual feedback even outside capture windows ??
     handlePlayerNote(note) {
         this.pulseNote(note);
     }
-    // ℹ️ Plays a note, flashes the drum, and shows it on the HUD center display ℹ️
+    // ?? Plays a note, flashes the drum, and shows it on the HUD center display ??
     pulseNote(note, config) {
         this.sound.playNote(note, config);
         this.drum.flash(note);
         this.hud.showCenterNote(note);
     }
-    // ℹ️ Finalizes a round with success/failure cues and invokes the completion handler ℹ️
+    // ?? Finalizes a round with success/failure cues and invokes the completion handler ??
     conclude(success) {
         if (!this.isRunning)
             return;
@@ -85,7 +92,7 @@ export class RoundConductor {
         }
         this.completion?.(success);
     }
-    // ℹ️ Manages delayed callbacks so they can be canceled cleanly if needed ℹ️
+    // ?? Manages delayed callbacks so they can be canceled cleanly if needed ??
     queueTimer(delay, callback) {
         const timer = this.scene.time.delayedCall(delay, () => {
             this.activeTimers = this.activeTimers.filter((t) => t !== timer);
@@ -93,9 +100,13 @@ export class RoundConductor {
         });
         this.activeTimers.push(timer);
     }
-    // ℹ️ Removes any scheduled callbacks when the round is aborted ℹ️
+    // ?? Removes any scheduled callbacks when the round is aborted ??
     clearTimers() {
         this.activeTimers.forEach((timer) => timer.remove(false));
         this.activeTimers = [];
+    }
+    register(event, handler) {
+        this.input.on(event, handler);
+        this.boundHandlers.push([event, handler]);
     }
 }

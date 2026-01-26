@@ -16,6 +16,7 @@ export class RythmDrumGameScene extends BaseScene {
   private phases!: PhaseManager;
   private isRoundLocked = false;
   private hasAnnouncedPhase = false;
+  private viewport = { width: 0, height: 0 };
 
   // ℹ️ Registers the scene key so Phaser can boot this minigame ℹ️
   constructor() {
@@ -26,10 +27,12 @@ export class RythmDrumGameScene extends BaseScene {
   create(): void {
     super.create();
 
+    this.updateViewport(this.scale.gameSize);
+
     this.soundController = new SoundController(this);
     this.hud = new HUD(this);
 
-    const { width, height } = this.scale;
+    const { width, height } = this.scale.gameSize;
     this.drum = new TongueDrum(this, width / 2, height / 2, "drum");
 
     const input = new DrumInput(this.drum);
@@ -47,9 +50,11 @@ export class RythmDrumGameScene extends BaseScene {
     this.hud.setBackCallback(() => this.scene.start("MainMenuScene"));
     this.hud.setChanceInfo("Chance: 0% (pure skill)", 0);
     this.hud.setStatus("Press Start to hear the groove.");
-    this.hud.setStartEnabled(true);
+    this.hud.setStartState("ready");
 
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.conductor.cancel());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
+
+    this.applyResponsiveLayout();
   }
 
   // ℹ️ Starts a new round only if no other sequence is currently playing ℹ️
@@ -57,12 +62,12 @@ export class RythmDrumGameScene extends BaseScene {
     if (this.isRoundLocked) return;
 
     this.isRoundLocked = true;
-    this.hud.setStartEnabled(false);
+    this.hud.setStartState("playing");
 
     const plan = this.phases.prepareRound();
     this.conductor.run(plan, (success) => {
       this.isRoundLocked = false;
-      this.hud.setStartEnabled(true);
+      this.hud.setStartState("ready");
 
       if (success) {
         this.phases.registerSuccess();
@@ -82,5 +87,44 @@ export class RythmDrumGameScene extends BaseScene {
     } else {
       this.hasAnnouncedPhase = true;
     }
+  }
+
+  protected onResize(gameSize: Phaser.Structs.Size): void {
+    this.updateViewport(gameSize);
+    this.applyResponsiveLayout();
+  }
+
+  private updateViewport(gameSize: Phaser.Structs.Size): void {
+    this.viewport.width = gameSize.width;
+    this.viewport.height = gameSize.height;
+  }
+
+  private applyResponsiveLayout(): void {
+    if (!this.hud || !this.drum) {
+      return;
+    }
+
+    const width = this.viewport.width || this.scale.gameSize.width;
+    const height = this.viewport.height || this.scale.gameSize.height;
+    const isPortrait = height >= width;
+
+    const drumDiameter = Math.min(width, height) * (isPortrait ? 0.78 : 0.68);
+    const drumY = isPortrait ? height * 0.58 : height * 0.56;
+
+    this.drum.setDisplaySize(drumDiameter, drumDiameter);
+    this.drum.setPosition(width / 2, drumY);
+
+    this.hud.resize(width, height);
+    this.hud.syncDrumOverlay(this.drum.x, this.drum.y, this.drum.displayWidth);
+  }
+
+  destroy(): void {
+    this.cleanup();
+  }
+
+  private cleanup(): void {
+    this.conductor?.destroy();
+    this.drum?.destroy();
+    this.hud?.destroy();
   }
 }

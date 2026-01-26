@@ -1,17 +1,27 @@
+import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from "./virtualResolution.js";
 const canvas = document.getElementById("gameCanvas");
 const config = {
     type: Phaser.WEBGL,
-    canvas: canvas ?? undefined, // falls das Element noch nicht existiert
-    scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-    },
+    canvas: canvas ?? undefined,
     pixelArt: true,
-    scene: [], // wird später in main.ts gesetzt
+    backgroundColor: "#000",
+    render: {
+        pixelArt: true,
+        antialias: false,
+        roundPixels: true,
+    },
+    scale: {
+        width: VIRTUAL_WIDTH,
+        height: VIRTUAL_HEIGHT,
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        zoom: 1,
+        expandParent: true,
+    },
+    scene: [], // wird spaeter in main.ts gesetzt
     physics: {
         default: "arcade",
         arcade: { debug: false, gravity: { x: 5, y: 10 } },
     },
-    backgroundColor: "#000",
 };
 export default config;

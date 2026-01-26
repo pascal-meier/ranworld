@@ -3,11 +3,19 @@ const ECHO_DELAY_MS = 520;
 const BASE_VOLUME_MIN = 0.12;
 const BASE_VOLUME_MAX = 0.32;
 const DETUNE_RANGE = 120;
+const MIN_PLAY_GAP = 90;
 
 export class SoundPalette {
+  private lastPlay = 0;
   constructor(private scene: Phaser.Scene) {}
 
   play(toneKey: string, rate: number, brightness: number, chord: string[]): void {
+    const now = this.scene.time.now;
+    if (now - this.lastPlay < MIN_PLAY_GAP) {
+      return;
+    }
+    this.lastPlay = now;
+
     const baseVolume = Phaser.Math.Linear(BASE_VOLUME_MIN, BASE_VOLUME_MAX, brightness);
     this.scene.sound.play(toneKey, { volume: baseVolume, rate, detune: brightness * DETUNE_RANGE });
 

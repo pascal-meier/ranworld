@@ -6,6 +6,8 @@ export class BootScene extends BaseScene {
     }
     preload() {
         this.load.image("base-bg", "public/assets/backgrounds/Start.png");
+        this.load.image("ui_button_menu", "public/assets/common/menu_button.png");
+        this.load.image("ui_button_back", "public/assets/common/back_button.png");
     }
     create() {
         super.create(); // wichtig, um Resize-Listener einzurichten

@@ -1,0 +1,5 @@
+export const VIRTUAL_WIDTH = 360;
+export const VIRTUAL_HEIGHT = 720;
+
+export const ASPECT_RATIO = VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
+export const SHORTEST_EDGE = Math.min(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);

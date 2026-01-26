@@ -8,17 +8,17 @@ export class RythmDrumPreloadScene extends Phaser.Scene {
         this.load.image("base-bg", "public/assets/common/space_bg.png");
         this.load.image("drum", "public/assets/rythmdrums/tonguedrum.png");
 
-        // 🔹 Drum-Varianten (1–8)
+        // Drum-Varianten (1–8)
         for (let i = 1; i <= 8; i++) {
             this.load.image(`d${i}`, `public/assets/rythmdrums/tonguedrum_0${i}.png`);
             this.load.audio(`${i}`, `public/assets/rythmdrums/sounds/${i}.wav`);
         }
 
-        // 🔹 Extra-Sounds
+        // Extra-Sounds
         this.load.audio("fail", "public/assets/rythmdrums/sounds/fail.wav");
         this.load.audio("success", "public/assets/rythmdrums/sounds/success.wav");
 
-        // ✅ Optional: Ladebalken oder Fortschrittsanzeige
+        // Ladebalken
         const { width, height } = this.scale;
         const progressText = this.add.text(width / 2, height / 2, "Loading...", {
             fontSize: "20px",

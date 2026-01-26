@@ -1,5 +1,12 @@
-﻿import { Button } from "../../../core/ui/Button.js";
+import type { Button as ButtonType } from "../../../core/ui/Button";
+import { Button as ButtonRuntime } from "../../../core/ui/Button.js";
+import { InputDisplay } from "./InputDisplay.js";
+import { HUDLayout } from "./HUDLayout.js";
+import { clampValue, createText, getChanceColor } from "./hudUtils.js";
 
+// HUD handles all on-screen UI for the rhythm drum minigame.
+// Layout and font sizes are recalculated in `resize` so everything
+// stays readable on different resolutions and orientations.
 export default class HUD {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
@@ -9,175 +16,175 @@ export default class HUD {
   private scoreText: Phaser.GameObjects.Text;
   private phaseProgressText: Phaser.GameObjects.Text;
   private chanceText: Phaser.GameObjects.Text;
-  private inputDisplay: Phaser.GameObjects.Container;
+  private inputDisplay: InputDisplay;
   private centerNotesText: Phaser.GameObjects.Text;
-  private startButton: Button;
-  private backButton: Button;
+  private startButton: ButtonType;
+  private backButton: ButtonType;
+  private layout: HUDLayout;
+  private startState: "ready" | "playing" | "locked" | null = null;
 
-  // ℹ️ Builds the HUD container, text labels, and control buttons ℹ️
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     const { width, height } = scene.scale;
+    this.layout = new HUDLayout();
 
     this.container = scene.add.container(0, 0).setDepth(100);
 
-    this.phaseTitleText = scene.add
-      .text(width / 2, height * 0.05, "Phase", {
-        fontSize: "30px",
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    this.phaseTitleText = createText(scene, width / 2, height * 0.05, "Phase", {
+      fontSize: "30px",
+      color: "#ffffff",
+      fontStyle: "bold",
+    });
     this.container.add(this.phaseTitleText);
 
-    this.phaseDetailText = scene.add
-      .text(width / 2, height * 0.08, "", {
-        fontSize: "18px",
-        color: "#c5c5c5",
-      })
-      .setOrigin(0.5);
+    this.phaseDetailText = createText(scene, width / 2, height * 0.08, "", {
+      fontSize: "18px",
+      color: "#c5c5c5",
+    });
     this.container.add(this.phaseDetailText);
 
-    this.statusText = scene.add
-      .text(width / 2, height * 0.14, "Ready?", {
-        fontSize: "32px",
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    this.statusText = createText(scene, width / 2, height * 0.14, "Ready?", {
+      fontSize: "22px",
+      color: "#ffffff",
+      fontStyle: "bold",
+    });
     this.container.add(this.statusText);
 
-    this.scoreText = scene.add
-      .text(width * 0.85, height * 0.08, "Score: 0", {
-        fontSize: "22px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
+    this.scoreText = createText(scene, width * 0.85, height * 0.08, "Score: 0", {
+      fontSize: "22px",
+      color: "#ffffff",
+    });
     this.container.add(this.scoreText);
 
-    this.phaseProgressText = scene.add
-      .text(width * 0.85, height * 0.12, "Round 0/0", {
-        fontSize: "18px",
-        color: "#c5c5c5",
-      })
-      .setOrigin(0.5);
+    this.phaseProgressText = createText(scene, width * 0.85, height * 0.12, "Round 0/0", {
+      fontSize: "18px",
+      color: "#c5c5c5",
+    });
     this.container.add(this.phaseProgressText);
 
-    this.chanceText = scene.add
-      .text(width * 0.85, height * 0.16, "Chance: 0%", {
-        fontSize: "18px",
-        color: "#6befa8",
-      })
-      .setOrigin(0.5);
+    this.chanceText = createText(scene, width * 0.85, height * 0.16, "Chance: 0%", {
+      fontSize: "18px",
+      color: "#6befa8",
+    });
     this.container.add(this.chanceText);
 
-    this.inputDisplay = scene.add.container(width / 2, height * 0.88);
-    this.container.add(this.inputDisplay);
+    this.inputDisplay = new InputDisplay(scene, width / 2, height * 0.88);
+    this.container.add(this.inputDisplay.getContainer());
 
-    this.centerNotesText = scene.add
-      .text(width / 2, height / 2, "", {
-        fontSize: "48px",
-        color: "#ffffff",
-        align: "center",
-      })
-      .setOrigin(0.5)
-      .setAlpha(0);
+    this.centerNotesText = createText(scene, width / 2, height / 2, "", {
+      fontSize: "48px",
+      color: "#ffffff",
+      align: "center",
+    }).setAlpha(0);
     this.centerNotesText.setDepth(110);
     this.container.add(this.centerNotesText);
 
-    this.startButton = new Button(
-      scene,
-      width * 0.8,
-      height * 0.2,
-      "Start Round",
-      () => {}
-    );
-    this.backButton = new Button(scene, width * 0.12, height * 0.08, "Back", () => {});
+    this.startButton = new ButtonRuntime(scene, width * 0.8, height * 0.2, "Start Round", () => {});
+    this.backButton = new ButtonRuntime(scene, width * 0.12, height * 0.08, "Back", () => {});
 
     this.container.add(this.startButton);
     this.container.add(this.backButton);
+
+    this.resize(width, height);
   }
 
-  // ℹ️ Hooks the provided handler to the start button ℹ️
   setStartCallback(cb: () => void): void {
     this.startButton.setCallback(cb);
   }
 
-  // ℹ️ Hooks the provided handler to the back button ℹ️
   setBackCallback(cb: () => void): void {
     this.backButton.setCallback(cb);
   }
 
-  // ℹ️ Shows or hides the start button depending on game state ℹ️
+  // Recalculate layout and font sizes whenever the game viewport changes.
+  // Uses a dedicated layout helper so HUD stays focused on behavior.
+  resize(width: number, height: number): void {
+    this.layout.apply(
+      {
+        backButton: this.backButton,
+        startButton: this.startButton,
+        phaseTitleText: this.phaseTitleText,
+        phaseDetailText: this.phaseDetailText,
+        statusText: this.statusText,
+        scoreText: this.scoreText,
+        phaseProgressText: this.phaseProgressText,
+        chanceText: this.chanceText,
+        inputDisplay: this.inputDisplay,
+      },
+      width,
+      height,
+    );
+  }
+
   setStartVisible(visible: boolean): void {
     this.startButton.setVisible(visible);
   }
 
-  // ℹ️ Enables or disables the start button to prevent double taps ℹ️
   setStartEnabled(enabled: boolean): void {
     this.startButton.setInteractionEnabled(enabled);
   }
 
-  // ℹ️ Updates the main status banner ℹ️
+  setStartState(state: "ready" | "playing" | "locked"): void {
+    if (state === this.startState) return;
+    this.startState = state;
+
+    if (state === "ready") {
+      this.startButton.setLabel("Start Round");
+      this.startButton.setTintColors(0xffffff, 0xf0f0f0);
+      this.startButton.setLabelColor("#ffffff");
+      this.startButton.setInteractionEnabled(true);
+      return;
+    }
+
+    if (state === "playing") {
+      this.startButton.setLabel("Playing...");
+      this.startButton.setTintColors(0xbebebe, 0xdcdcdc);
+      this.startButton.setLabelColor("#f5f5f5");
+      this.startButton.setInteractionEnabled(false);
+      return;
+    }
+
+    this.startButton.setLabel("Please wait");
+    this.startButton.setTintColors(0x999999, 0xb0b0b0);
+    this.startButton.setLabelColor("#f5f5f5");
+    this.startButton.setInteractionEnabled(false);
+  }
+
   setStatus(text: string): void {
     this.statusText.setText(text);
   }
 
-  // ℹ️ Shows the current phase title and descriptive line ℹ️
   setPhaseInfo(title: string, detail: string = ""): void {
     this.phaseTitleText.setText(title);
     this.phaseDetailText.setText(detail);
   }
 
-  // ℹ️ Refreshes the round progress indicator ℹ️
   setPhaseProgress(current: number, total: number | string): void {
     this.phaseProgressText.setText(`Round ${current}/${total}`);
   }
 
-  // ℹ️ Updates the chance label text and color ℹ️
   setChanceInfo(label: string, intensity: number = 0): void {
     this.chanceText.setText(label);
-    this.chanceText.setColor(this.getChanceColor(intensity));
+    this.chanceText.setColor(getChanceColor(intensity));
   }
 
-  // ℹ️ Displays the player's current score ℹ️
   setScore(n: number): void {
     this.scoreText.setText(`Score: ${n}`);
   }
 
-  // ℹ️ Removes all note indicators from the input display ℹ️
   clearPlayerInput(): void {
-    this.inputDisplay.removeAll(true);
+    this.inputDisplay.clear();
   }
 
-  // ℹ️ Draws each tapped note plus correctness coloring ℹ️
+  // Draw the player's input sequence at the bottom of the screen.
+  // Spacing and font size come from the responsive values computed in layout.
   showPlayerInput(
     playerArray: number[] = [],
-    successArray: (boolean | undefined)[] = []
+    successArray: (boolean | undefined)[] = [],
   ): void {
-    this.inputDisplay.removeAll(true);
-
-    const spacing = 40;
-    let x = -((playerArray.length - 1) * spacing) / 2;
-
-    for (let i = 0; i < playerArray.length; i++) {
-      const note = playerArray[i];
-      const ok = successArray[i];
-      const color = ok === undefined ? "#ffffff" : ok ? "#ffffff" : "#ff5555";
-
-      const t = this.scene.add
-        .text(x, 0, `${note}`, {
-          fontSize: "28px",
-          color,
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5);
-      this.inputDisplay.add(t);
-      x += spacing;
-    }
+    this.inputDisplay.render(playerArray, successArray);
   }
 
-  // ℹ️ Pops the current note in the center of the drum for emphasis ℹ️
   showCenterNote(note?: number): void {
     if (note === undefined || note === null) {
       this.centerNotesText.setAlpha(0);
@@ -206,13 +213,11 @@ export default class HUD {
     });
   }
 
-  // ℹ️ Toggles both HUD buttons' interactivity at once ℹ️
   setInteractive(enabled: boolean): void {
     this.startButton.setInteractionEnabled(enabled);
     this.backButton.setInteractionEnabled(enabled);
   }
 
-  // ℹ️ Animates the phase title to highlight transitions ℹ️
   flashPhaseChange(title: string): void {
     this.phaseTitleText.setText(title);
     this.scene.tweens.add({
@@ -223,14 +228,17 @@ export default class HUD {
     });
   }
 
-  // ℹ️ Converts chance intensity into a readable HUD color ℹ️
-  private getChanceColor(intensity: number): string {
-    if (intensity <= 0.2) {
-      return "#6befa8";
-    }
-    if (intensity <= 0.5) {
-      return "#ffd369";
-    }
-    return "#ff5c8d";
+  // Keep the center note label aligned with the drum overlay and scale
+  // its font relative to the drum diameter so it matches the circle size.
+  syncDrumOverlay(x: number, y: number, diameter: number): void {
+    this.centerNotesText.setPosition(x, y);
+    const overlayFont = clampValue(diameter * 0.14, 12, 32);
+    this.centerNotesText.setStyle({ fontSize: `${overlayFont}px` });
+  }
+
+  destroy(): void {
+    this.scene.tweens.killTweensOf(this.centerNotesText);
+    this.inputDisplay.destroy();
+    this.container.destroy(true);
   }
 }
