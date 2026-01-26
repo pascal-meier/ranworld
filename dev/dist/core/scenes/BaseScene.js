@@ -12,6 +12,13 @@ export class BaseScene extends Phaser.Scene {
         this.scale.on("resize", this.onResize, this);
         // Direkt einmal beim Start ausführen
         this.onResize(this.scale.gameSize);
+        // Beim Szenenende sauber abklemmen, damit keine toten Listener in Folgeszenen feuern
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.scale.off("resize", this.onResize, this);
+        });
+        this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+            this.scale.off("resize", this.onResize, this);
+        });
     }
     /**
      * Wird automatisch bei Fenstergröße-Änderungen aufgerufen.

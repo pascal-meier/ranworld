@@ -1,4 +1,4 @@
-﻿import HUD from "../ui/hud.js";
+import HUD from "../ui/hud.js";
 import TongueDrum from "../objects/tongueDrum.js";
 import SoundController from "./SoundController.js";
 import { DrumInput, type DrumProgressPayload } from "./DrumInput.js";
@@ -10,8 +10,9 @@ export class RoundConductor {
   private isRunning = false;
   private completion?: RoundResultHandler;
   private activeTimers: Phaser.Time.TimerEvent[] = [];
+  private boundHandlers: Array<[string, (...args: any[]) => void]> = [];
 
-  // ℹ️ Subscribes to drum events so HUD, audio, and scoring stay synchronized ℹ️
+  // ?? Subscribes to drum events so HUD, audio, and scoring stay synchronized ??
   constructor(
     private scene: Phaser.Scene,
     private hud: HUD,
@@ -19,15 +20,15 @@ export class RoundConductor {
     private sound: SoundController,
     private input: DrumInput
   ) {
-    this.input.on("note", (note: number) => this.handlePlayerNote(note));
-    this.input.on("progress", (payload: DrumProgressPayload) =>
+    this.register("note", (note: number) => this.handlePlayerNote(note));
+    this.register("progress", (payload: DrumProgressPayload) =>
       this.hud.showPlayerInput(payload.progress, payload.success)
     );
-    this.input.on("fail", () => this.conclude(false));
-    this.input.on("success", () => this.conclude(true));
+    this.register("fail", () => this.conclude(false));
+    this.register("success", () => this.conclude(true));
   }
 
-  // ℹ️ Plays the reference melody and then hands control to the player ℹ️
+  // ?? Plays the reference melody and then hands control to the player ??
   run(plan: MelodyPlan, onFinish: RoundResultHandler): void {
     if (this.isRunning) return;
 
@@ -41,14 +42,21 @@ export class RoundConductor {
     });
   }
 
-  // ℹ️ Stops any running round, used when the scene shuts down ℹ️
+  // ?? Stops any running round, used when the scene shuts down ??
   cancel(): void {
     this.input.stopCapture();
     this.clearTimers();
     this.isRunning = false;
   }
 
-  // ℹ️ Steps through the AI melody, respecting per-note tempo variations ℹ️
+  destroy(): void {
+    this.cancel();
+    this.boundHandlers.forEach(([event, fn]) => this.input.off(event, fn));
+    this.boundHandlers = [];
+    this.drum.setHitHandler(undefined);
+  }
+
+  // ?? Steps through the AI melody, respecting per-note tempo variations ??
   private playSequence(plan: MelodyPlan, onComplete: () => void): void {
     const { notes, variations } = plan;
     let index = 0;
@@ -71,19 +79,19 @@ export class RoundConductor {
     step();
   }
 
-  // ℹ️ Echoes player taps with audiovisual feedback even outside capture windows ℹ️
+  // ?? Echoes player taps with audiovisual feedback even outside capture windows ??
   private handlePlayerNote(note: number): void {
     this.pulseNote(note);
   }
 
-  // ℹ️ Plays a note, flashes the drum, and shows it on the HUD center display ℹ️
+  // ?? Plays a note, flashes the drum, and shows it on the HUD center display ??
   private pulseNote(note: number, config?: Phaser.Types.Sound.SoundConfig): void {
     this.sound.playNote(note, config);
     this.drum.flash(note);
     this.hud.showCenterNote(note);
   }
 
-  // ℹ️ Finalizes a round with success/failure cues and invokes the completion handler ℹ️
+  // ?? Finalizes a round with success/failure cues and invokes the completion handler ??
   private conclude(success: boolean): void {
     if (!this.isRunning) return;
 
@@ -104,7 +112,7 @@ export class RoundConductor {
     this.completion?.(success);
   }
 
-  // ℹ️ Manages delayed callbacks so they can be canceled cleanly if needed ℹ️
+  // ?? Manages delayed callbacks so they can be canceled cleanly if needed ??
   private queueTimer(delay: number, callback: () => void): void {
     const timer = this.scene.time.delayedCall(delay, () => {
       this.activeTimers = this.activeTimers.filter((t) => t !== timer);
@@ -113,9 +121,15 @@ export class RoundConductor {
     this.activeTimers.push(timer);
   }
 
-  // ℹ️ Removes any scheduled callbacks when the round is aborted ℹ️
+  // ?? Removes any scheduled callbacks when the round is aborted ??
   private clearTimers(): void {
     this.activeTimers.forEach((timer) => timer.remove(false));
     this.activeTimers = [];
   }
+
+  private register(event: string, handler: (...args: any[]) => void): void {
+    this.input.on(event, handler);
+    this.boundHandlers.push([event, handler]);
+  }
 }
+
