@@ -1,9 +1,9 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 export const mitigationAgency: MechanicDefinition = {
+  ...getImplementedMechanicMeta("mitigation-agency"),
   id: "mitigation-agency",
-  name: "Mitigation Agency",
-  shortLabel: "Mitigation",
   category: "Agency",
   summary: "The run gains stabilize charges that can smooth the next risky roll.",
   detail:
@@ -23,7 +23,7 @@ export const mitigationAgency: MechanicDefinition = {
       {
         id: "stabilize",
         label: `Stabilize (${state.player.mitigationCharges})`,
-        description: "Spend a charge for guard and +18 focus on the next attack.",
+        description: "Spend 1 charge: gain 2 guard and +18 hit chance for your next attack.",
         kind: "stabilize",
         baseHitChance: 100,
         baseDamage: 0,

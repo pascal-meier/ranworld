@@ -4,7 +4,6 @@ import { LAB_THEME, textStyle } from "../ui/theme.js";
 import { createPanel } from "../ui/widgets.js";
 
 export class OverlayScene extends Phaser.Scene {
-  private visibleOverlay = false;
   private readonly handleChange = () => this.render();
 
   constructor() {
@@ -16,8 +15,7 @@ export class OverlayScene extends Phaser.Scene {
 
     this.input.keyboard?.on("keydown-TAB", (event: KeyboardEvent) => {
       event.preventDefault();
-      this.visibleOverlay = !this.visibleOverlay;
-      this.render();
+      labStore.toggleDevOverlay();
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -30,7 +28,7 @@ export class OverlayScene extends Phaser.Scene {
   private render(): void {
     this.children.removeAll(true);
 
-    if (!this.visibleOverlay) {
+    if (!labStore.isDevOverlayVisible()) {
       return;
     }
 

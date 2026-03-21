@@ -1,3 +1,4 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 const environments = [
@@ -28,9 +29,8 @@ const environments = [
 ];
 
 export const environmentalRandomness: MechanicDefinition = {
+  ...getImplementedMechanicMeta("environmental-randomness"),
   id: "environmental-randomness",
-  name: "Environmental Randomness",
-  shortLabel: "Env RNG",
   category: "Context Variance",
   summary: "Every combat rolls a battlefield condition with unique modifiers.",
   detail:

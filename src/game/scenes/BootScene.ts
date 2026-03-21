@@ -38,6 +38,50 @@ export class BootScene extends Phaser.Scene {
       "node-reward-symbol",
       "assets/ui/icons/nodes/node-reward-symbol-v1.png"
     );
+    this.load.image(
+      "node-flee-symbol",
+      "assets/ui/icons/nodes/node-flee-symbol-v1.png"
+    );
+    this.load.image(
+      "feedback-win",
+      "assets/ui/feedback/win-popup-v1.png"
+    );
+    this.load.image(
+      "feedback-fail",
+      "assets/ui/feedback/fail-popup-v1.png"
+    );
+    this.load.image(
+      "planet-background",
+      "assets/backgrounds/space/planet-background-v1.png"
+    );
+    this.load.image(
+      "planet-01",
+      "assets/illustrations/planets/planet-01.png"
+    );
+    this.load.image(
+      "planet-02",
+      "assets/illustrations/planets/planet-02.png"
+    );
+    this.load.image(
+      "planet-03",
+      "assets/illustrations/planets/planet-03.png"
+    );
+    this.load.image(
+      "planet-04",
+      "assets/illustrations/planets/planet-04.png"
+    );
+    this.load.image(
+      "planet-05",
+      "assets/illustrations/planets/planet-05.png"
+    );
+    this.load.image(
+      "planet-06",
+      "assets/illustrations/planets/planet-06.png"
+    );
+    this.load.image(
+      "planet-07",
+      "assets/illustrations/planets/planet-07.png"
+    );
   }
 
   create(): void {

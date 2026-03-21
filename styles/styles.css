@@ -1,6 +1,20 @@
+@font-face {
+  font-family: "Pixelify Sans";
+  src: url("../assets/fonts/Pixelify_Sans/static/PixelifySans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Pixelify Sans";
+  src: url("../assets/fonts/Pixelify_Sans/static/PixelifySans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+
 :root {
   color-scheme: dark;
-  font-family: monospace;
+  font-family: "Pixelify Sans", monospace;
   background:
     linear-gradient(rgba(120, 215, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(120, 215, 255, 0.05) 1px, transparent 1px),

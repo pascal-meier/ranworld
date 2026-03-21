@@ -1,9 +1,9 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 export const layeredRewardStructures: MechanicDefinition = {
+  ...getImplementedMechanicMeta("layered-reward-structures"),
   id: "layered-reward-structures",
-  name: "Layered Reward Structures",
-  shortLabel: "Layered Rewards",
   category: "Motivation",
   summary: "Every reward choice also pushes a slower research track.",
   detail:

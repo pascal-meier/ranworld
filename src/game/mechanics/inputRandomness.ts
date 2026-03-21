@@ -1,10 +1,11 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 const actionPool = [
   {
     id: "strike",
-    label: "Strike",
-    description: "Reliable hit, fixed pressure.",
+    label: "Balanced Attack",
+    description: "78% hit chance, 6 damage.",
     kind: "attack" as const,
     baseHitChance: 78,
     baseDamage: 6,
@@ -13,8 +14,8 @@ const actionPool = [
   },
   {
     id: "jab",
-    label: "Jab",
-    description: "High hit chance, low damage.",
+    label: "Quick Attack",
+    description: "88% hit chance, 4 damage.",
     kind: "attack" as const,
     baseHitChance: 88,
     baseDamage: 4,
@@ -23,8 +24,8 @@ const actionPool = [
   },
   {
     id: "heavy",
-    label: "Heavy Swing",
-    description: "Lower hit chance, bigger payoff.",
+    label: "Heavy Attack",
+    description: "66% hit chance, 8 damage.",
     kind: "attack" as const,
     baseHitChance: 66,
     baseDamage: 8,
@@ -34,7 +35,7 @@ const actionPool = [
   {
     id: "guard",
     label: "Guard",
-    description: "Block the incoming intent.",
+    description: "Gain 6 guard. Blocks the next enemy attack.",
     kind: "guard" as const,
     baseHitChance: 100,
     baseDamage: 0,
@@ -43,8 +44,8 @@ const actionPool = [
   },
   {
     id: "focus",
-    label: "Focus",
-    description: "Bank accuracy for the next attack.",
+    label: "Calibrate",
+    description: "Gain +16 hit chance for your next attack.",
     kind: "focus" as const,
     baseHitChance: 100,
     baseDamage: 0,
@@ -54,9 +55,8 @@ const actionPool = [
 ];
 
 export const inputRandomness: MechanicDefinition = {
+  ...getImplementedMechanicMeta("input-randomness"),
   id: "input-randomness",
-  name: "Input Randomness",
-  shortLabel: "Input RNG",
   category: "Action Space",
   summary: "Combat options are drawn from a rotating action pool each round.",
   detail:

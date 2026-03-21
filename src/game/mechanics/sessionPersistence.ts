@@ -1,9 +1,9 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 export const sessionPersistence: MechanicDefinition = {
+  ...getImplementedMechanicMeta("session-persistence"),
   id: "session-persistence",
-  name: "Session Persistence",
-  shortLabel: "Persistence",
   category: "Meta Progression",
   summary: "Archived knowledge from earlier runs becomes a live in-run modifier.",
   detail:

@@ -1,11 +1,12 @@
 import { LabEngine } from "./LabEngine.js";
 import { loadMeta, saveMeta } from "./storage.js";
-import type { MechanicId, MetaProgress, RunState } from "../types.js";
+import type { MechanicId, MetaProgress, RunState, TutorialId } from "../types.js";
 
 class LabStore extends Phaser.Events.EventEmitter {
   private engine: LabEngine | null = null;
   private meta: MetaProgress = loadMeta();
   private queuedSeed = this.generateSeedValue();
+  private devOverlayVisible = false;
 
   getState(): RunState | null {
     return this.engine?.state ?? null;
@@ -13,6 +14,26 @@ class LabStore extends Phaser.Events.EventEmitter {
 
   getMeta(): MetaProgress {
     return this.meta;
+  }
+
+  hasSeenTutorial(id: TutorialId): boolean {
+    return Boolean(this.meta.seenTutorials[id]);
+  }
+
+  markTutorialSeen(id: TutorialId): void {
+    if (this.meta.seenTutorials[id]) {
+      return;
+    }
+
+    this.meta = {
+      ...this.meta,
+      seenTutorials: {
+        ...this.meta.seenTutorials,
+        [id]: true,
+      },
+    };
+    saveMeta(this.meta);
+    this.emitChange();
   }
 
   getSeedPreview(): number {
@@ -25,6 +46,15 @@ class LabStore extends Phaser.Events.EventEmitter {
 
   getDebugLines(): string[] {
     return this.engine?.getDebugLines() ?? [];
+  }
+
+  isDevOverlayVisible(): boolean {
+    return this.devOverlayVisible;
+  }
+
+  toggleDevOverlay(): void {
+    this.devOverlayVisible = !this.devOverlayVisible;
+    this.emitChange();
   }
 
   rerollSeed(): void {
@@ -48,6 +78,11 @@ class LabStore extends Phaser.Events.EventEmitter {
     this.persistAndEmit();
   }
 
+  choosePlanet(planetId: string): void {
+    this.engine?.choosePlanet(planetId);
+    this.persistAndEmit();
+  }
+
   resolveCombatAction(actionId: string): void {
     this.engine?.resolveCombatAction(actionId);
     this.persistAndEmit();
@@ -60,6 +95,11 @@ class LabStore extends Phaser.Events.EventEmitter {
 
   chooseReward(choiceId: string): void {
     this.engine?.chooseReward(choiceId);
+    this.persistAndEmit();
+  }
+
+  rerollCurrentOffer(): void {
+    this.engine?.rerollCurrentOffer();
     this.persistAndEmit();
   }
 

@@ -1,9 +1,9 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 export const softFailureCompensation: MechanicDefinition = {
+  ...getImplementedMechanicMeta("soft-failure-compensation"),
   id: "soft-failure-compensation",
-  name: "Soft Failure Compensation",
-  shortLabel: "Soft Failure",
   category: "Fairness",
   summary: "Misses build pity, and one lethal mistake can be softened into a comeback.",
   detail:
@@ -34,10 +34,12 @@ export const softFailureCompensation: MechanicDefinition = {
       note: `${preview.note} Pity +${state.player.pity}%.`.trim(),
     };
   },
-  onAfterCombat: ({ state, log }, won, notes) => {
-    const missedAttack = notes.some((note) => note.includes("missed"));
+  onAfterCombatAction: ({ state, log }, resolution) => {
+    if (resolution.action.kind !== "attack") {
+      return;
+    }
 
-    if (!won || missedAttack) {
+    if (!resolution.hit) {
       state.player.pity = Math.min(state.player.pity + 10, 30);
       log(`Soft Failure Compensation increased pity to ${state.player.pity}%.`);
       return;

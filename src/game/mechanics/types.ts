@@ -10,6 +10,32 @@ import type {
   RunState,
 } from "../types.js";
 
+export type MechanicLayerId = "L1" | "L2" | "L3" | "L4";
+export type MechanicUpgradeTrack = "ship-upgrade" | "world-modifier";
+export type MechanicCatalogStatus = "implemented" | "planned";
+
+export interface MechanicTaxonomyMeta {
+  tableId: string;
+  layerId: MechanicLayerId;
+  categoryId: string;
+  upgradeTrack: MechanicUpgradeTrack;
+  observation: string;
+}
+
+export interface MechanicCatalogEntry extends MechanicTaxonomyMeta {
+  name: string;
+  shortLabel: string;
+  status: MechanicCatalogStatus;
+  runtimeId?: MechanicId;
+}
+
+export interface ImplementedMechanicMeta extends MechanicTaxonomyMeta {
+  name: string;
+  shortLabel: string;
+  status: "implemented";
+  runtimeId: MechanicId;
+}
+
 export interface MechanicContext {
   engine: LabEngine;
   state: RunState;
@@ -45,10 +71,8 @@ export interface RewardSelection {
   notes: string[];
 }
 
-export interface MechanicDefinition {
+export interface MechanicDefinition extends ImplementedMechanicMeta {
   id: MechanicId;
-  name: string;
-  shortLabel: string;
   category: string;
   summary: string;
   detail: string;
@@ -68,6 +92,10 @@ export interface MechanicDefinition {
     context: MechanicContext,
     resolution: ActionResolution
   ) => void;
+  onAfterCombatAction?: (
+    context: MechanicContext,
+    resolution: ActionResolution
+  ) => void;
   onAfterCombat?: (
     context: MechanicContext,
     won: boolean,
@@ -75,6 +103,10 @@ export interface MechanicDefinition {
   ) => void;
   onBuildEvent?: (context: MechanicContext, event: EventState) => EventState;
   onResolveEvent?: (
+    context: MechanicContext,
+    resolution: EventResolution
+  ) => void;
+  onAfterEventResolution?: (
     context: MechanicContext,
     resolution: EventResolution
   ) => void;

@@ -1,9 +1,9 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 export const biasedExpectations: MechanicDefinition = {
+  ...getImplementedMechanicMeta("biased-expectations"),
   id: "biased-expectations",
-  name: "Biased Expectations",
-  shortLabel: "Bias",
   category: "Presentation",
   summary: "The surfaced hit chance is nudged away from the underlying value.",
   detail:
@@ -14,6 +14,10 @@ export const biasedExpectations: MechanicDefinition = {
   },
   onPreviewCombatAction: ({ state }, preview, action) => {
     if (action.kind !== "attack" || preview.actualHitChance === null) {
+      return preview;
+    }
+
+    if (state.activeMechanics.includes("probability-transparency")) {
       return preview;
     }
 

@@ -1,17 +1,30 @@
 import { labStore } from "../core/LabStore.js";
-import { getMechanicDefinition } from "../mechanics/index.js";
+import { allMechanics, getMechanicDefinition } from "../mechanics/index.js";
 import { LAB_THEME, textStyle } from "../ui/theme.js";
 import { createButton, createPanel, createTag } from "../ui/widgets.js";
+import { createScreenLayout, insetRect } from "../ui/layout.js";
+import { createInfoCard, renderFittedSprite, renderSectionHeader } from "../ui/components.js";
 
 export class SetupScene extends Phaser.Scene {
   private readonly handleChange = () => this.render();
+  private readonly handleResize = () => this.render();
+  private backgroundLayer?: Phaser.GameObjects.Container;
+  private chromeLayer?: Phaser.GameObjects.Container;
+  private contentLayer?: Phaser.GameObjects.Container;
+  private footerLayer?: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: "SetupScene" });
   }
 
   create(): void {
+    this.backgroundLayer = this.add.container(0, 0);
+    this.chromeLayer = this.add.container(0, 0);
+    this.contentLayer = this.add.container(0, 0);
+    this.footerLayer = this.add.container(0, 0);
+
     labStore.on("changed", this.handleChange);
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize);
 
     this.input.keyboard?.on("keydown-ENTER", () => {
       labStore.startRun();
@@ -21,117 +34,162 @@ export class SetupScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       labStore.off("changed", this.handleChange);
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize);
     });
 
     this.render();
   }
 
   private render(): void {
-    this.children.removeAll(true);
+    this.backgroundLayer?.removeAll(true);
+    this.chromeLayer?.removeAll(true);
+    this.contentLayer?.removeAll(true);
+    this.footerLayer?.removeAll(true);
 
     const { width, height } = this.scale;
+    const layout = createScreenLayout(width, height, {
+      margin: 20,
+      top: 64,
+      gap: 14,
+      headerHeight: 154,
+      footerHeight: 62,
+    });
+    const content = insetRect(layout.content, 12);
     const meta = labStore.getMeta();
     const seed = labStore.getSeedPreview();
+    const showDevVisualPass = labStore.isDevOverlayVisible();
 
-    this.add.rectangle(width / 2, height / 2, width, height, LAB_THEME.background, 1);
-    this.add.rectangle(width / 2, 18, width, 36, 0x0b1a26, 1);
-
-    this.add.text(18, 10, "RANDOMNESS MECHANICS LAB", textStyle(13)).setOrigin(0);
-    this.add
-      .text(
-        18,
-        26,
-        "Seeded prototype for testing randomness systems.",
-        textStyle(9, LAB_THEME.textMuted, "left", 360)
+    this.backgroundLayer?.add(this.add.rectangle(width / 2, height / 2, width, height, LAB_THEME.background, 1));
+    this.backgroundLayer?.add(this.add.rectangle(width / 2, 20, width, 40, 0x0b1a26, 1));
+    this.chromeLayer?.add(
+      renderSectionHeader(
+      this,
+      24,
+      14,
+      "PLANETFALL MECHANICS LAB",
+      "Endless seeded planet-hopping roguelike for testing randomness systems.",
+      width - 48
       )
-      .setOrigin(0);
+    );
 
-    createPanel(this, 16, 52, width - 32, 102);
-    this.add.text(28, 66, "RUN SETUP", textStyle(11)).setOrigin(0);
-    this.add
-      .text(
-        28,
-        88,
-        `Seed ${seed}\nArchive ${meta.archive}\nRuns ${meta.completedRuns}\nBest ${meta.bestDepth}/4`,
-        textStyle(9, LAB_THEME.text, "left", 120)
+    this.chromeLayer?.add(createPanel(this, layout.header.x, layout.header.y, layout.header.width, layout.header.height));
+    this.chromeLayer?.add(
+      createInfoCard(
+      this,
+      {
+        x: layout.header.x + 12,
+        y: layout.header.y + 12,
+        width: 210,
+        height: layout.header.height - 24,
+      },
+      "RUN SETUP",
+      [`Seed ${seed}`, `Archive ${meta.archive}`, `Runs ${meta.completedRuns}`, `Best planet ${meta.bestPlanet}`],
+      LAB_THEME.text,
+      LAB_THEME.panel
       )
-      .setOrigin(0);
+    );
 
-    if (this.textures.exists("player-idle")) {
-      this.add.image(252, 108, "player-idle").setScale(2.45).setOrigin(0.5);
+    const playerSprite = renderFittedSprite(this, "player-idle", {
+      x: width / 2 - 58,
+      y: layout.header.y + 12,
+      width: 180,
+      height: layout.header.height - 24,
+    });
+    if (playerSprite) {
+      this.chromeLayer?.add(playerSprite);
     }
 
-    createButton(this, {
-      x: width - 190,
-      y: 66,
-      width: 162,
-      height: 40,
-      label: "START RUN",
+    const buttonWidth = 214;
+    const buttonX = layout.header.x + layout.header.width - buttonWidth - 16;
+
+    this.chromeLayer?.add(createButton(this, {
+      x: buttonX,
+      y: layout.header.y + 18,
+      width: buttonWidth,
+      height: 48,
+      label: "START EXPED.",
       detail: "",
       onClick: () => {
         labStore.startRun();
         this.scene.start("RunScene");
       },
       fill: 0x1d4d6c,
-    });
+    }));
 
-    createButton(this, {
-      x: width - 190,
-      y: 112,
-      width: 162,
-      height: 32,
-      label: "REROLL",
+    this.chromeLayer?.add(createButton(this, {
+      x: buttonX,
+      y: layout.header.y + 76,
+      width: buttonWidth,
+      height: 40,
+      label: "NEW SEED",
       detail: "",
       onClick: () => labStore.rerollSeed(),
-    });
+    }));
 
-    createPanel(this, 16, 168, width - 32, height - 184, LAB_THEME.panelMuted);
-    this.add.text(28, 182, "VISUAL PASS", textStyle(11)).setOrigin(0);
+    if (showDevVisualPass) {
+      this.contentLayer?.add(
+        createPanel(this, layout.content.x, layout.content.y, layout.content.width, layout.content.height, LAB_THEME.panelMuted)
+      );
+      this.contentLayer?.add(renderSectionHeader(this, content.x + 4, content.y + 6, "DEV PREVIEW"));
 
-    createPanel(this, 28, 202, width - 56, 50, LAB_THEME.panel);
-    createPanel(this, 28, 258, width - 56, 80, LAB_THEME.panel);
+      this.contentLayer?.add(createPanel(this, content.x + 4, content.y + 38, content.width - 8, 74, LAB_THEME.panel));
+      this.contentLayer?.add(createPanel(this, content.x + 4, content.y + 118, content.width - 8, content.height - 126, LAB_THEME.panel));
+      this.contentLayer?.add(this.add.text(content.x + 20, content.y + 54, "ASSET STRIP", textStyle(10)).setOrigin(0));
+      this.contentLayer?.add(this.add.text(content.x + 20, content.y + 134, "IMPLEMENTED MECHANICS", textStyle(10)).setOrigin(0));
 
-    if (this.textures.exists("enemy-calibration-drone")) {
-      this.add.image(306, 226, "enemy-calibration-drone").setScale(1.42).setOrigin(0.5);
-    }
-
-    if (this.textures.exists("event-terminal")) {
-      this.add.image(400, 226, "event-terminal").setScale(0.66).setOrigin(0.5);
-    }
-
-    if (this.textures.exists("reward-cache-sheet")) {
-      this.add
-        .image(492, 226, "reward-cache-sheet")
-        .setCrop(0, 0, 128, 128)
-        .setDisplaySize(24, 24)
-        .setOrigin(0.5);
-    }
-
-    this.add.text(40, 216, "ASSET STRIP", textStyle(9)).setOrigin(0);
-    this.add.text(40, 272, "MVP MODULES", textStyle(9)).setOrigin(0);
-
-    const mechanicIds = [
-      "input-randomness",
-      "output-randomness",
-      "environmental-randomness",
-      "mitigation-agency",
-      "biased-expectations",
-      "session-persistence",
-      "layered-reward-structures",
-      "soft-failure-compensation",
-    ] as const;
-
-    let x = 40;
-    let y = 288;
-
-    for (const mechanicId of mechanicIds) {
-      createTag(this, x, y, getMechanicDefinition(mechanicId).shortLabel);
-      x += 108;
-
-      if (x > width - 120) {
-        x = 40;
-        y += 24;
+      const enemySprite = renderFittedSprite(this, "enemy-calibration-drone", {
+        x: content.x + 260,
+        y: content.y + 44,
+        width: 120,
+        height: 58,
+      });
+      if (enemySprite) {
+        this.contentLayer?.add(enemySprite);
       }
+      const eventSprite = renderFittedSprite(this, "event-terminal", {
+        x: content.x + 386,
+        y: content.y + 44,
+        width: 96,
+        height: 58,
+      });
+      if (eventSprite) {
+        this.contentLayer?.add(eventSprite);
+      }
+
+      if (this.textures.exists("reward-cache-sheet")) {
+        this.contentLayer?.add(this.add
+          .image(content.x + 506, content.y + 74, "reward-cache-sheet")
+          .setCrop(0, 0, 128, 128)
+          .setDisplaySize(28, 28)
+          .setOrigin(0.5));
+      }
+
+      let x = content.x + 16;
+      let y = content.y + 154;
+
+      for (const mechanicId of allMechanics.map((mechanic) => mechanic.id)) {
+        this.contentLayer?.add(createTag(this, x, y, getMechanicDefinition(mechanicId).shortLabel));
+        x += 112;
+
+        if (x > content.x + content.width - 132) {
+          x = content.x + 16;
+          y += 24;
+        }
+      }
+    } else {
+      this.footerLayer?.add(
+        createPanel(this, layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height, LAB_THEME.panelAlt)
+      );
+      this.footerLayer?.add(this.add.text(layout.footer.x + 16, layout.footer.y + 12, "ACTIVE UPGRADES", textStyle(9)).setOrigin(0));
+      this.footerLayer?.add(
+        this.add.text(
+          layout.footer.x + 16,
+          layout.footer.y + 36,
+          "No active upgrades yet. Starter mechanics will appear here once the run begins.",
+          textStyle(8, LAB_THEME.textMuted, "left", layout.footer.width - 32)
+        )
+        .setOrigin(0)
+      );
     }
   }
 }

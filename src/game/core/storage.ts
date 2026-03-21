@@ -5,8 +5,9 @@ const STORAGE_KEY = "randomness-mechanics-lab.meta";
 const defaultMeta: MetaProgress = {
   archive: 0,
   completedRuns: 0,
-  bestDepth: 0,
+  bestPlanet: 0,
   lastSeed: 0,
+  seenTutorials: {},
 };
 
 export function loadMeta(): MetaProgress {
@@ -22,8 +23,9 @@ export function loadMeta(): MetaProgress {
     return {
       archive: parsed.archive ?? 0,
       completedRuns: parsed.completedRuns ?? 0,
-      bestDepth: parsed.bestDepth ?? 0,
+      bestPlanet: parsed.bestPlanet ?? (parsed as { bestDepth?: number }).bestDepth ?? 0,
       lastSeed: parsed.lastSeed ?? 0,
+      seenTutorials: parsed.seenTutorials ?? {},
     };
   } catch {
     return { ...defaultMeta };

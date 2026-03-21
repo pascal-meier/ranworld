@@ -14,7 +14,7 @@ export const LAB_THEME = {
   positive: "#8ce5c2",
   danger: "#ff8b8b",
   tag: 0x203948,
-  font: "monospace",
+  font: '"Pixelify Sans", monospace',
 };
 
 export function textStyle(
@@ -23,13 +23,17 @@ export function textStyle(
   align: "left" | "center" | "right" = "left",
   wrapWidth?: number
 ): Phaser.Types.GameObjects.Text.TextStyle {
+  const resolvedSize = Math.max(10, size);
+
   return {
     fontFamily: LAB_THEME.font,
-    fontSize: `${size}px`,
-    fontStyle: size >= 12 ? "bold" : "normal",
+    fontSize: `${resolvedSize}px`,
+    fontStyle: resolvedSize >= 12 ? "bold" : "normal",
     color,
     align,
-    lineSpacing: 2,
+    lineSpacing: 0,
+    resolution: 1,
+    padding: { x: 0, y: 1 },
     ...(wrapWidth ? { wordWrap: { width: wrapWidth, useAdvancedWrap: true } } : {}),
   };
 }

@@ -15,8 +15,8 @@ const config: RuntimeGameConfig = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 640,
-    height: 360,
+    width: 960,
+    height: 540,
   },
   scene: [],
 };

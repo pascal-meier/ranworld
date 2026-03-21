@@ -1,5 +1,6 @@
 export type LabPhase =
   | "setup"
+  | "planet-select"
   | "draft"
   | "map"
   | "combat"
@@ -7,7 +8,9 @@ export type LabPhase =
   | "reward"
   | "run-end";
 
-export type NodeKind = "combat" | "event" | "reward";
+export type NodeKind = "combat" | "event" | "reward" | "boss" | "flee";
+
+export type TutorialId = "map-basics";
 
 export type MechanicId =
   | "input-randomness"
@@ -15,15 +18,22 @@ export type MechanicId =
   | "environmental-randomness"
   | "mitigation-agency"
   | "biased-expectations"
+  | "reroll-mechanics"
+  | "probability-transparency"
+  | "consistent-rng-feedback"
   | "session-persistence"
+  | "variable-reward-schedules"
+  | "progressive-probability-systems"
+  | "bad-luck-protection"
   | "layered-reward-structures"
   | "soft-failure-compensation";
 
 export interface MetaProgress {
   archive: number;
   completedRuns: number;
-  bestDepth: number;
+  bestPlanet: number;
   lastSeed: number;
+  seenTutorials: Partial<Record<TutorialId, boolean>>;
 }
 
 export interface NodeDefinition {
@@ -57,9 +67,10 @@ export interface CombatActionPreview {
 
 export interface CombatState {
   enemyName: string;
+  enemyRole: "landing" | "boss";
   enemyHp: number;
   enemyMaxHp: number;
-  enemyIntent: number;
+  enemyAttack: number;
   round: number;
   environmentName: string;
   environmentDescription: string;
@@ -107,6 +118,13 @@ export interface MechanicDraftState {
   canSkip: boolean;
 }
 
+export interface PlanetChoice {
+  id: string;
+  name: string;
+  imageKey: string;
+  description: string;
+}
+
 export interface ProbabilityEntry {
   label: string;
   shown: string;
@@ -120,8 +138,11 @@ export interface PlayerState {
   supplies: number;
   focus: number;
   guard: number;
+  rerollCharges: number;
   mitigationCharges: number;
   pity: number;
+  progressiveScanBonus: number;
+  badLuckGuard: number;
   archiveGain: number;
   research: number;
   softFailShield: number;
@@ -132,7 +153,13 @@ export interface RunState {
   seed: number;
   phase: LabPhase;
   depth: number;
-  maxDepth: number;
+  planet: number;
+  planetName: string;
+  planetChoices: PlanetChoice[];
+  selectedPlanetId: string | null;
+  selectedPlanetImageKey: string | null;
+  currentSite: number;
+  sitesPerPlanet: number;
   currentColumn: number;
   map: NodeDefinition[][];
   activeMechanics: MechanicId[];

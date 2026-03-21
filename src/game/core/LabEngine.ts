@@ -10,12 +10,13 @@ import type {
   CombatAction,
   CombatActionPreview,
   CombatState,
-  EventChoice,
   EventState,
   MechanicId,
   MetaProgress,
   NodeDefinition,
   NodeKind,
+  PlanetChoice,
+  PlayerState,
   ProbabilityEntry,
   RewardChoice,
   RewardState,
@@ -23,12 +24,22 @@ import type {
 } from "../types.js";
 
 const MAX_ACTIVE_MECHANICS = 3;
+const PLANET_SITES = 4;
+const PLANET_IMAGE_KEYS = [
+  "planet-01",
+  "planet-02",
+  "planet-03",
+  "planet-04",
+  "planet-05",
+  "planet-06",
+  "planet-07",
+] as const;
 
 const baseCombatActions: CombatAction[] = [
   {
     id: "strike",
-    label: "Strike",
-    description: "Reliable fixed damage with medium accuracy.",
+    label: "Balanced Attack",
+    description: "78% hit chance, 6 damage.",
     kind: "attack",
     baseHitChance: 78,
     baseDamage: 6,
@@ -38,7 +49,7 @@ const baseCombatActions: CombatAction[] = [
   {
     id: "guard",
     label: "Guard",
-    description: "Block the incoming enemy intent.",
+    description: "Gain 6 guard. Blocks the next enemy attack.",
     kind: "guard",
     baseHitChance: 100,
     baseDamage: 0,
@@ -47,8 +58,8 @@ const baseCombatActions: CombatAction[] = [
   },
   {
     id: "focus",
-    label: "Focus",
-    description: "Store +16 accuracy for the next attack.",
+    label: "Calibrate",
+    description: "Gain +16 hit chance for your next attack.",
     kind: "focus",
     baseHitChance: 100,
     baseDamage: 0,
@@ -57,37 +68,64 @@ const baseCombatActions: CombatAction[] = [
   },
 ];
 
+interface PlanetRewardLedger {
+  maxHp: number;
+  supplies: number;
+  mitigationCharges: number;
+  archiveGain: number;
+  research: number;
+}
+
+const emptyPlanetRewardLedger = (): PlanetRewardLedger => ({
+  maxHp: 0,
+  supplies: 0,
+  mitigationCharges: 0,
+  archiveGain: 0,
+  research: 0,
+});
+
 export class LabEngine {
   public readonly rng: SeededRng;
   public readonly meta: MetaProgress;
   public readonly state: RunState;
   private activeNodeId: string | null = null;
+  private planetRewardLedger = emptyPlanetRewardLedger();
 
   constructor(seed: number, meta: MetaProgress) {
     this.rng = new SeededRng(seed);
     this.meta = meta;
 
-    const map = this.buildMap();
+    const planetChoices = this.buildPlanetChoices(1);
+    const map = this.buildPlanetMap(1);
 
     this.state = {
       seed,
       phase: "draft",
       depth: 0,
-      maxDepth: map.length,
+      planet: 1,
+      planetName: "UNSELECTED",
+      planetChoices,
+      selectedPlanetId: null,
+      selectedPlanetImageKey: null,
+      currentSite: 1,
+      sitesPerPlanet: PLANET_SITES,
       currentColumn: 0,
       map,
       activeMechanics: [],
       retiredMechanics: [],
       logs: [],
-      summary: "Pick a starting mechanic to define this run's lens.",
+      summary: "Pick a starting mechanic before touching down on the first planet.",
       player: {
-        hp: 24,
-        maxHp: 24,
+        hp: 50,
+        maxHp: 50,
         supplies: 2,
         focus: 0,
         guard: 0,
+        rerollCharges: 0,
         mitigationCharges: 0,
         pity: 0,
+        progressiveScanBonus: 0,
+        badLuckGuard: 0,
         archiveGain: 0,
         research: 0,
         softFailShield: 0,
@@ -102,52 +140,105 @@ export class LabEngine {
       victory: false,
     };
 
-    this.log(`Seed ${seed} initialized. Node map length: ${map.length}.`);
+    this.log(`Seed ${seed} initialized. Choose a first planet.`);
   }
 
-  private buildMap(): NodeDefinition[][] {
-    const columnKinds: NodeKind[][] = [
-      ["combat", "event"],
-      this.rng.shuffle<NodeKind>(["combat", "reward"]),
-      this.rng.shuffle<NodeKind>(["combat", "event"]),
-      this.rng.shuffle<NodeKind>(["reward", "combat"]),
+  private buildPlanetChoices(planet: number): PlanetChoice[] {
+    const descriptors = [
+      "Gentle biosphere with steady readings.",
+      "Sparse crust with clean landing vectors.",
+      "Violent climate and dangerous mineral pressure.",
+      "Chaotic biomes with unstable surface routes.",
+      "Dense storms and signal interference.",
+      "Fragmented landmasses with hidden caches.",
+      "Harsh atmosphere with high encounter risk.",
     ];
 
-    return columnKinds.map((kinds, column) =>
+    const names = [
+      this.rollPlanetName(planet),
+      this.rollPlanetName(planet),
+      this.rollPlanetName(planet),
+      this.rollPlanetName(planet),
+    ];
+
+    return this.rng
+      .shuffle([...PLANET_IMAGE_KEYS])
+      .slice(0, 2)
+      .map((imageKey, index) => ({
+        id: `planet-choice-${planet}-${index}`,
+        name: names[index],
+        imageKey,
+        description: descriptors[this.rng.int(0, descriptors.length - 1)],
+      }));
+  }
+
+  private buildPlanetMap(planet: number): NodeDefinition[][] {
+    const landingColumns: NodeKind[][] = [
+      this.rng.shuffle<NodeKind>(["combat", "event"]),
+      this.rng.shuffle<NodeKind>(["combat", "reward"]),
+      this.rng.shuffle<NodeKind>(["event", "reward"]),
+      // Site 4 is always the planet climax: boss fight or flee.
+      ["boss", "flee"],
+    ];
+
+    return landingColumns.map((kinds, column) =>
       kinds.map((kind, lane) => ({
-        id: `node-${column}-${lane}`,
+        id: `planet-${planet}-node-${column}-${lane}`,
         kind,
         lane,
         column,
-        title: this.getNodeTitle(kind, column),
+        title: this.getNodeTitle(kind, column, lane),
         description: this.getNodeDescription(kind),
         cleared: false,
       }))
     );
   }
 
-  private getNodeTitle(kind: NodeKind, column: number): string {
+  private rollPlanetName(planet: number): string {
+    const prefixes = ["Ash", "Glass", "Mire", "Halo", "Rust", "Storm", "Blue", "Cinder"];
+    const suffixes = ["Reach", "Hollow", "Veil", "Basin", "Spindle", "Crown", "Delta", "Orbit"];
+
+    return `${this.rng.pick(prefixes)} ${this.rng.pick(suffixes)} ${planet}`;
+  }
+
+  private getNodeTitle(kind: NodeKind, column: number, lane: number): string {
     if (kind === "combat") {
-      return `Skirmish ${column + 1}`;
+      return column === 0 ? "Ridge Fight" : "Dust Fight";
     }
 
     if (kind === "event") {
-      return "Signal Event";
+      return lane === 0 ? "Beacon Site" : "Ruined Relay";
     }
 
-    return "Reward Cache";
+    if (kind === "reward") {
+      return lane === 0 ? "Supply Cache" : "Mineral Cache";
+    }
+
+    if (kind === "boss") {
+      return "Boss LZ";
+    }
+
+    return "Flee Orbit";
   }
 
   private getNodeDescription(kind: NodeKind): string {
     if (kind === "combat") {
-      return "One repeatable combat type, ideal for comparing random pressure.";
+      return "Hostile waypoint with one repeatable combat encounter.";
     }
 
     if (kind === "event") {
-      return "A single risk/reward event template with transparent outcomes.";
+      return "A risky discovery that trades safety against valuable information.";
     }
 
-    return "A clean reward choice screen for pacing and motivation experiments.";
+    if (kind === "reward") {
+      return "A clean upgrade pickup for the current planet.";
+    }
+
+    if (kind === "boss") {
+      return "Fight the planet boss and carry your planetary gains forward.";
+    }
+
+    return "Abort the expedition, lose this planet's upgrades, and move on.";
   }
 
   private buildDraft(isStarter: boolean): RunState["draft"] {
@@ -162,8 +253,8 @@ export class LabEngine {
     return {
       title: isStarter ? "Starter Mechanic" : "Mechanic Draft",
       description: isStarter
-        ? "Begin with one controlled randomness layer."
-        : "Choose one new mechanic before the next node. Active cap: 3.",
+        ? "Choose one randomness lens before the first touchdown."
+        : "Choose one new mechanic before the next waypoint. Active cap: 3.",
       choices,
       canSkip: !isStarter,
     };
@@ -206,9 +297,36 @@ export class LabEngine {
     }
 
     this.state.draft = null;
-    this.state.phase = "map";
-    this.state.summary = `Select one node from column ${this.state.currentColumn + 1}.`;
+    this.state.phase = this.state.selectedPlanetImageKey ? "map" : "planet-select";
+    this.state.summary = this.state.selectedPlanetImageKey
+      ? this.state.currentColumn === PLANET_SITES - 1
+        ? `Final approach on ${this.state.planetName}: choose boss or flee.`
+        : `Choose one waypoint on ${this.state.planetName}.`
+      : `Choose one planet for site ${this.state.currentSite}.`;
     this.state.currentProbabilities = [];
+  }
+
+  choosePlanet(planetId: string): void {
+    if (this.state.phase !== "planet-select") {
+      return;
+    }
+
+    const choice = this.state.planetChoices.find((entry) => entry.id === planetId);
+
+    if (!choice) {
+      return;
+    }
+
+    this.state.selectedPlanetId = choice.id;
+    this.state.selectedPlanetImageKey = choice.imageKey;
+    this.state.planetName = choice.name;
+    this.state.map = this.buildPlanetMap(this.state.planet);
+    this.state.phase = "map";
+    this.state.summary =
+      this.state.currentColumn === PLANET_SITES - 1
+        ? `Final approach on ${choice.name}: choose boss or flee.`
+        : `Choose one waypoint on ${choice.name}.`;
+    this.log(`Planet selected: ${choice.name}.`);
   }
 
   private addMechanic(id: MechanicId): void {
@@ -241,7 +359,7 @@ export class LabEngine {
       return;
     }
 
-    if (node.kind === "combat") {
+    if (node.kind === "combat" || node.kind === "boss") {
       this.startCombat(node);
       return;
     }
@@ -251,27 +369,38 @@ export class LabEngine {
       return;
     }
 
-    this.startReward(node);
+    if (node.kind === "reward") {
+      this.startReward(node);
+      return;
+    }
+
+    this.fleePlanet(node);
   }
 
   private startCombat(node: NodeDefinition): void {
     this.activeNodeId = node.id;
+    const isBoss = node.kind === "boss";
+    const enemyMaxHp = isBoss
+      ? 18 + this.state.planet * 5 + this.rng.int(0, 3)
+      : 10 + this.state.planet * 2 + this.state.currentSite + this.rng.int(0, 2);
 
-    const enemyMaxHp = 12 + this.state.depth * 3 + this.rng.int(0, 2);
     const combat: CombatState = {
-      enemyName: "Calibration Drone",
+      enemyName: isBoss ? `${this.state.planetName} Warden` : "Landing Drone",
+      enemyRole: isBoss ? "boss" : "landing",
       enemyHp: enemyMaxHp,
       enemyMaxHp,
-      enemyIntent: this.rollEnemyIntent(),
+      enemyAttack: this.rollEnemyAttack(isBoss),
       round: 1,
-      environmentName: "Controlled Chamber",
-      environmentDescription: "Baseline arena with no extra variance.",
+      environmentName: isBoss ? "Core Basin" : "Controlled Chamber",
+      environmentDescription: isBoss
+        ? "The surface collapses into a violent boss arena with elevated pressure."
+        : "A baseline waypoint with no extra variance.",
       environmentHitShift: 0,
       environmentGuardShift: 0,
       expectationBias: 0,
       actions: baseCombatActions.map((action) => ({ ...action })),
       previews: [],
-      lastSummary: [`Entering ${node.title}.`],
+      lastSummary: [isBoss ? `Boss signal locked on ${this.state.planetName}.` : `Entering ${node.title}.`],
     };
 
     const context = this.createContext();
@@ -293,12 +422,15 @@ export class LabEngine {
     this.state.event = null;
     this.state.reward = null;
     this.state.phase = "combat";
-    this.state.summary = `${combat.enemyName} engaged. Resolve the turn and inspect the overlay.`;
+    this.state.summary = isBoss
+      ? `Boss encounter on ${this.state.planetName}.`
+      : `${combat.enemyName} engaged at ${node.title}.`;
     this.refreshCombatPreviews();
   }
 
-  private rollEnemyIntent(): number {
-    return 4 + this.state.depth + this.rng.int(0, 3);
+  private rollEnemyAttack(isBoss = false): number {
+    const base = isBoss ? 6 + this.state.planet : 4 + this.state.planet;
+    return base + this.rng.int(0, 3);
   }
 
   private refreshCombatPreviews(): void {
@@ -327,10 +459,7 @@ export class LabEngine {
       shownHitChance:
         action.kind === "attack"
           ? Phaser.Math.Clamp(
-              action.baseHitChance +
-                player.focus +
-                player.pity +
-                combat.environmentHitShift,
+              action.baseHitChance + player.focus + player.pity + combat.environmentHitShift,
               5,
               98
             )
@@ -338,16 +467,15 @@ export class LabEngine {
       actualHitChance:
         action.kind === "attack"
           ? Phaser.Math.Clamp(
-              action.baseHitChance +
-                player.focus +
-                player.pity +
-                combat.environmentHitShift,
+              action.baseHitChance + player.focus + player.pity + combat.environmentHitShift,
               5,
               98
             )
           : null,
       expectedDamage:
-        action.kind === "attack" ? `${action.baseDamage}` : `${action.guardGain || action.focusGain}`,
+        action.kind === "attack"
+          ? `${action.baseDamage}`
+          : `${action.guardGain || action.focusGain}`,
       note: action.kind === "attack" ? "Attack preview." : "Support action.",
     };
 
@@ -373,7 +501,8 @@ export class LabEngine {
       return;
     }
 
-    const preview = combat.previews.find((entry) => entry.actionId === action.id) ?? this.buildCombatPreview(action);
+    const preview =
+      combat.previews.find((entry) => entry.actionId === action.id) ?? this.buildCombatPreview(action);
     const resolution: ActionResolution = {
       action,
       shownHitChance: preview.shownHitChance,
@@ -394,11 +523,7 @@ export class LabEngine {
     }
 
     if (action.kind === "attack") {
-      const finalChance = Phaser.Math.Clamp(
-        (resolution.actualHitChance ?? 100) + resolution.chanceShift,
-        5,
-        98
-      );
+      const finalChance = Phaser.Math.Clamp((resolution.actualHitChance ?? 100) + resolution.chanceShift, 5, 98);
       resolution.actualHitChance = finalChance;
       resolution.hit = this.rng.chance(finalChance);
 
@@ -411,11 +536,9 @@ export class LabEngine {
         }
 
         combat.enemyHp = Math.max(0, combat.enemyHp - resolution.damage);
-        resolution.notes.push(`${action.label} hit for ${resolution.damage}.`);
+      resolution.notes.push(`${action.label} hit for ${resolution.damage}.`);
       } else {
-        resolution.notes.push(
-          `${action.label} missed at ${finalChance}% actual hit chance.`
-        );
+        resolution.notes.push(`${action.label} missed at ${finalChance}% actual hit chance.`);
       }
 
       this.state.player.focus = 0;
@@ -423,9 +546,7 @@ export class LabEngine {
 
     if (action.kind === "guard") {
       this.state.player.guard += Math.max(0, action.guardGain + combat.environmentGuardShift);
-      resolution.notes.push(
-        `Guard prepared ${this.state.player.guard} block for the enemy turn.`
-      );
+      resolution.notes.push(`Guard prepared ${this.state.player.guard} block for the next enemy attack.`);
     }
 
     if (action.kind === "focus") {
@@ -437,19 +558,17 @@ export class LabEngine {
       this.state.player.mitigationCharges -= 1;
       this.state.player.guard += action.guardGain;
       this.state.player.focus += action.focusGain;
-      resolution.notes.push(
-        `Stabilize spent 1 charge for +${action.focusGain} focus and ${action.guardGain} guard.`
-      );
+      resolution.notes.push(`Stabilize spent 1 charge for +${action.focusGain} focus and ${action.guardGain} guard.`);
     }
 
     if (combat.enemyHp <= 0) {
-      resolution.notes.push("Enemy defeated.");
+      resolution.notes.push(combat.enemyRole === "boss" ? "Boss defeated." : "Enemy defeated.");
       this.finishCombat(true, resolution.notes);
       return;
     }
 
-    const incomingDamage = Math.max(0, combat.enemyIntent - this.state.player.guard);
-    resolution.prevented = combat.enemyIntent - incomingDamage;
+    const incomingDamage = Math.max(0, combat.enemyAttack - this.state.player.guard);
+    resolution.prevented = combat.enemyAttack - incomingDamage;
     resolution.enemyDamage = incomingDamage;
 
     if (incomingDamage > 0) {
@@ -461,31 +580,50 @@ export class LabEngine {
 
     this.state.player.guard = 0;
 
+    for (const mechanic of this.getActiveMechanics()) {
+      mechanic.onAfterCombatAction?.(this.createContext(), resolution);
+    }
+
     if (this.state.player.hp <= 0 && !this.tryPreventDefeat("combat")) {
       this.finishCombat(false, resolution.notes);
       return;
     }
 
     combat.round += 1;
-    combat.enemyIntent = this.rollEnemyIntent();
+    combat.enemyAttack = this.rollEnemyAttack(combat.enemyRole === "boss");
     combat.lastSummary = resolution.notes;
     this.state.summary = resolution.notes[resolution.notes.length - 1] ?? "Combat updated.";
     this.refreshCombatPreviews();
   }
 
   private finishCombat(won: boolean, notes: string[]): void {
+    const combat = this.state.combat;
+
+    if (!combat) {
+      return;
+    }
+
+    if (!won && this.state.player.hp <= 0) {
+      this.endRun(false, "The expedition collapsed in combat.");
+      return;
+    }
+
+    if (won && combat.enemyRole === "boss") {
+      this.state.player.supplies += 1;
+      this.state.player.archiveGain += 2;
+      notes.push("Boss cleared: +1 supply and +2 archive shards.");
+      this.completePlanet(notes[notes.length - 1] ?? "Planet boss defeated.");
+      return;
+    }
+
     if (won) {
       this.state.player.supplies += 1;
-      notes.push("Combat reward: +1 supply.");
+      this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + 2);
+      notes.push("Waypoint reward: +1 supply and +2 HP.");
     }
 
     for (const mechanic of this.getActiveMechanics()) {
       mechanic.onAfterCombat?.(this.createContext(), won, notes);
-    }
-
-    if (!won && this.state.player.hp <= 0) {
-      this.endRun(false, "The prototype run collapsed during combat.");
-      return;
     }
 
     this.advanceAfterNode(notes[notes.length - 1] ?? "Combat resolved.");
@@ -495,18 +633,18 @@ export class LabEngine {
     this.activeNodeId = node.id;
 
     let event: EventState = {
-      title: "Signal Cache",
+      title: "Signal Relay",
       description:
-        "A fractured beacon offers a safe calibration or a risky scan for archived knowledge.",
+        "A cracked relay on the surface offers a safe repair or a risky deep scan for archived data.",
       options: [
         {
           id: "stabilize-signal",
-          label: "Stabilize",
+          label: "Patch Relay",
           description: "Take a guaranteed +4 HP.",
         },
         {
           id: "scan-deep",
-          label: "Scan Deep",
+          label: "Deep Scan",
           description: "65%: +2 archive shards. Fail: take 4 damage.",
           shownChance: 65,
           actualChance: 65,
@@ -524,15 +662,13 @@ export class LabEngine {
     this.state.combat = null;
     this.state.reward = null;
     this.state.phase = "event";
-    this.state.summary = `${node.title}: compare a safe reward against a risky one.`;
+    this.state.summary = `${node.title}: compare a safe repair against a risky scan.`;
     this.state.currentProbabilities = event.options
       .filter((option) => option.actualChance !== undefined || option.shownChance !== undefined)
       .map((option) => ({
         label: option.label,
-        shown:
-          option.shownChance === undefined ? "n/a" : `${Math.round(option.shownChance)}%`,
-        actual:
-          option.actualChance === undefined ? "n/a" : `${Math.round(option.actualChance)}%`,
+        shown: option.shownChance === undefined ? "n/a" : `${Math.round(option.shownChance)}%`,
+        actual: option.actualChance === undefined ? "n/a" : `${Math.round(option.actualChance)}%`,
       }));
   }
 
@@ -562,7 +698,7 @@ export class LabEngine {
 
     if (choiceId === "stabilize-signal") {
       this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + 4);
-      resolution.notes.push("Signal stabilized: +4 HP.");
+      resolution.notes.push("Relay patched: +4 HP.");
     } else {
       const actualChance = resolution.actualChance ?? 65;
       resolution.success = this.rng.chance(actualChance);
@@ -576,8 +712,12 @@ export class LabEngine {
       }
     }
 
+    for (const mechanic of this.getActiveMechanics()) {
+      mechanic.onAfterEventResolution?.(this.createContext(), resolution);
+    }
+
     if (this.state.player.hp <= 0 && !this.tryPreventDefeat("event")) {
-      this.endRun(false, "The run ended inside a volatile event.");
+      this.endRun(false, "The expedition broke apart during a surface event.");
       return;
     }
 
@@ -592,7 +732,7 @@ export class LabEngine {
         id: "field-repair",
         label: "Field Repair",
         description: "Restore 5 HP.",
-        type: "heal" as const,
+        type: "heal",
         amount: 5,
         secondary: [],
       },
@@ -600,7 +740,7 @@ export class LabEngine {
         id: "armor-plating",
         label: "Armor Plating",
         description: "Gain +3 max HP and heal 3.",
-        type: "max-hp" as const,
+        type: "max-hp",
         amount: 3,
         secondary: [],
       },
@@ -608,7 +748,7 @@ export class LabEngine {
         id: "supply-crate",
         label: "Supply Crate",
         description: "Gain 2 supplies.",
-        type: "supplies" as const,
+        type: "supplies",
         amount: 2,
         secondary: [],
       },
@@ -616,15 +756,15 @@ export class LabEngine {
         id: "stabilizer-kit",
         label: "Stabilizer Kit",
         description: "Gain 1 mitigation charge.",
-        type: "mitigation" as const,
+        type: "mitigation",
         amount: 1,
         secondary: [],
       },
       {
         id: "archive-cache",
         label: "Archive Cache",
-        description: "Bank 2 archive shards for the meta layer.",
-        type: "archive" as const,
+        description: "Bank 2 archive shards for the run.",
+        type: "archive",
         amount: 2,
         secondary: [],
       },
@@ -640,7 +780,7 @@ export class LabEngine {
 
     const reward: RewardState = {
       title: node.title,
-      description: "Pick one clean reward and compare immediate versus delayed incentives.",
+      description: "Pick one planetary upgrade package before moving to the next waypoint.",
       choices,
     };
 
@@ -648,7 +788,7 @@ export class LabEngine {
     this.state.combat = null;
     this.state.event = null;
     this.state.phase = "reward";
-    this.state.summary = "Choose exactly one reward package.";
+    this.state.summary = "Choose one planetary upgrade package.";
     this.state.currentProbabilities = [];
   }
 
@@ -664,6 +804,8 @@ export class LabEngine {
     if (!choice) {
       return;
     }
+
+    const before = this.clonePlayer(this.state.player);
 
     if (choice.type === "heal") {
       this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + choice.amount);
@@ -688,14 +830,197 @@ export class LabEngine {
 
     const selection: RewardSelection = {
       choice,
-      notes: [`Reward selected: ${choice.label}.`],
+      notes: [`Planetary upgrade selected: ${choice.label}.`],
     };
 
     for (const mechanic of this.getActiveMechanics()) {
       mechanic.onAfterReward?.(this.createContext(), selection);
     }
 
+    this.capturePlanetRewardDelta(before, this.state.player);
     this.advanceAfterNode(selection.notes[selection.notes.length - 1] ?? "Reward claimed.");
+  }
+
+  rerollCurrentOffer(): void {
+    if (!this.hasMechanic("reroll-mechanics") || this.state.player.rerollCharges <= 0) {
+      return;
+    }
+
+    if (this.state.phase !== "combat" && this.state.phase !== "event" && this.state.phase !== "reward") {
+      return;
+    }
+
+    this.state.player.rerollCharges -= 1;
+
+    if (this.state.phase === "combat" && this.state.combat) {
+      let actions = baseCombatActions.map((action) => ({ ...action }));
+
+      for (const mechanic of this.getActiveMechanics()) {
+        if (mechanic.onBuildCombatActions) {
+          actions = mechanic.onBuildCombatActions(this.createContext(), actions);
+        }
+      }
+
+      this.state.combat.actions = actions;
+      this.state.combat.lastSummary = [`Reroll spent: combat actions redrawn.`];
+      this.state.summary = "Combat actions redrawn.";
+      this.refreshCombatPreviews();
+      this.log(`Reroll spent in combat. ${this.state.player.rerollCharges} remaining.`);
+      return;
+    }
+
+    if (this.state.phase === "event" && this.state.event) {
+      let event: EventState = {
+        title: "Signal Relay",
+        description:
+          "A cracked relay on the surface offers a safe repair or a risky deep scan for archived data.",
+        options: [
+          {
+            id: "stabilize-signal",
+            label: "Patch Relay",
+            description: "Take a guaranteed +4 HP.",
+          },
+          {
+            id: "scan-deep",
+            label: "Deep Scan",
+            description: "65%: +2 archive shards. Fail: take 4 damage.",
+            shownChance: 65,
+            actualChance: 65,
+          },
+        ],
+      };
+
+      for (const mechanic of this.getActiveMechanics()) {
+        if (mechanic.onBuildEvent) {
+          event = mechanic.onBuildEvent(this.createContext(), event);
+        }
+      }
+
+      this.state.event = event;
+      this.state.currentProbabilities = event.options
+        .filter((option) => option.actualChance !== undefined || option.shownChance !== undefined)
+        .map((option) => ({
+          label: option.label,
+          shown: option.shownChance === undefined ? "n/a" : `${Math.round(option.shownChance)}%`,
+          actual: option.actualChance === undefined ? "n/a" : `${Math.round(option.actualChance)}%`,
+        }));
+      this.state.summary = "Event options redrawn.";
+      this.log(`Reroll spent in event. ${this.state.player.rerollCharges} remaining.`);
+      return;
+    }
+
+    if (this.state.phase === "reward" && this.state.reward) {
+      const rewardPool: RewardChoice[] = this.rng.shuffle([
+        {
+          id: "field-repair",
+          label: "Field Repair",
+          description: "Restore 5 HP.",
+          type: "heal",
+          amount: 5,
+          secondary: [],
+        },
+        {
+          id: "armor-plating",
+          label: "Armor Plating",
+          description: "Gain +3 max HP and heal 3.",
+          type: "max-hp",
+          amount: 3,
+          secondary: [],
+        },
+        {
+          id: "supply-crate",
+          label: "Supply Crate",
+          description: "Gain 2 supplies.",
+          type: "supplies",
+          amount: 2,
+          secondary: [],
+        },
+        {
+          id: "stabilizer-kit",
+          label: "Stabilizer Kit",
+          description: "Gain 1 mitigation charge.",
+          type: "mitigation",
+          amount: 1,
+          secondary: [],
+        },
+        {
+          id: "archive-cache",
+          label: "Archive Cache",
+          description: "Bank 2 archive shards for the run.",
+          type: "archive",
+          amount: 2,
+          secondary: [],
+        },
+      ]);
+
+      let choices = rewardPool.slice(0, 3);
+
+      for (const mechanic of this.getActiveMechanics()) {
+        if (mechanic.onBuildRewardChoices) {
+          choices = mechanic.onBuildRewardChoices(this.createContext(), choices);
+        }
+      }
+
+      this.state.reward.choices = choices;
+      this.state.summary = "Reward packages redrawn.";
+      this.log(`Reroll spent on rewards. ${this.state.player.rerollCharges} remaining.`);
+    }
+  }
+
+  private capturePlanetRewardDelta(before: PlayerState, after: PlayerState): void {
+    this.planetRewardLedger.maxHp += Math.max(0, after.maxHp - before.maxHp);
+    this.planetRewardLedger.supplies += Math.max(0, after.supplies - before.supplies);
+    this.planetRewardLedger.mitigationCharges += Math.max(0, after.mitigationCharges - before.mitigationCharges);
+    this.planetRewardLedger.archiveGain += Math.max(0, after.archiveGain - before.archiveGain);
+    this.planetRewardLedger.research += Math.max(0, after.research - before.research);
+  }
+
+  private fleePlanet(node: NodeDefinition): void {
+    this.activeNodeId = node.id;
+    this.revertPlanetUpgrades();
+    this.state.depth += 1;
+    this.completePlanet(`Fled ${this.state.planetName} and lost this planet's upgrades.`);
+  }
+
+  private revertPlanetUpgrades(): void {
+    const player = this.state.player;
+
+    player.maxHp = Math.max(8, player.maxHp - this.planetRewardLedger.maxHp);
+    player.hp = Math.min(player.hp, player.maxHp);
+    player.supplies = Math.max(0, player.supplies - this.planetRewardLedger.supplies);
+    player.mitigationCharges = Math.max(0, player.mitigationCharges - this.planetRewardLedger.mitigationCharges);
+    player.archiveGain = Math.max(0, player.archiveGain - this.planetRewardLedger.archiveGain);
+    player.research = Math.max(0, player.research - this.planetRewardLedger.research);
+  }
+
+  private completePlanet(summary: string): void {
+    const resolvedNode = this.state.map[this.state.currentColumn]?.find((node) => node.id === this.activeNodeId);
+
+    if (resolvedNode) {
+      resolvedNode.cleared = true;
+    }
+
+    this.state.player.guard += 1;
+    this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + 20);
+
+    this.planetRewardLedger = emptyPlanetRewardLedger();
+    this.activeNodeId = null;
+    this.state.combat = null;
+    this.state.event = null;
+    this.state.reward = null;
+    this.state.draft = null;
+    this.state.currentProbabilities = [];
+    this.state.currentColumn = 0;
+    this.state.currentSite = 1;
+    this.state.planet += 1;
+    this.state.planetName = "UNSELECTED";
+    this.state.selectedPlanetId = null;
+    this.state.selectedPlanetImageKey = null;
+    this.state.planetChoices = this.buildPlanetChoices(this.state.planet);
+    this.state.map = this.buildPlanetMap(this.state.planet);
+    this.state.phase = "planet-select";
+    this.state.summary = `${summary} Choose the next planet.`;
+    this.log(`Planet ${this.state.planet} available for selection.`);
   }
 
   private tryPreventDefeat(source: "combat" | "event"): boolean {
@@ -719,14 +1044,22 @@ export class LabEngine {
 
     this.state.depth += 1;
     this.state.currentColumn += 1;
+    this.state.currentSite = Math.min(this.state.currentColumn + 1, this.state.sitesPerPlanet);
     this.activeNodeId = null;
     this.state.combat = null;
     this.state.event = null;
     this.state.reward = null;
     this.state.currentProbabilities = [];
 
-    if (this.state.currentColumn >= this.state.maxDepth) {
-      this.endRun(true, summary);
+    if (this.state.currentColumn >= this.state.sitesPerPlanet) {
+      this.completePlanet(summary);
+      return;
+    }
+
+    if (this.state.currentColumn === this.state.sitesPerPlanet - 1) {
+      this.state.draft = null;
+      this.state.phase = "map";
+      this.state.summary = `${summary} Final approach: boss or flee.`;
       return;
     }
 
@@ -747,14 +1080,14 @@ export class LabEngine {
     this.state.currentProbabilities = [];
 
     this.meta.completedRuns += 1;
-    this.meta.bestDepth = Math.max(this.meta.bestDepth, this.state.depth);
+    this.meta.bestPlanet = Math.max(this.meta.bestPlanet, this.state.planet);
     this.meta.lastSeed = this.state.seed;
-    this.meta.archive += this.state.player.archiveGain + (victory ? 1 : 0);
+    this.meta.archive += this.state.player.archiveGain;
 
-    this.log(
-      victory
-        ? `Run complete. Meta archive is now ${this.meta.archive}.`
-        : `Run failed. Meta archive is now ${this.meta.archive}.`
-    );
+    this.log(`Expedition failed. Meta archive is now ${this.meta.archive}.`);
+  }
+
+  private clonePlayer(player: PlayerState): PlayerState {
+    return { ...player };
   }
 }

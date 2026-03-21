@@ -1,9 +1,9 @@
+import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
 export const outputRandomness: MechanicDefinition = {
+  ...getImplementedMechanicMeta("output-randomness"),
   id: "output-randomness",
-  name: "Output Randomness",
-  shortLabel: "Output RNG",
   category: "Outcome Variance",
   summary: "Attacks add hit jitter, damage spread, and rare crit swings.",
   detail:
