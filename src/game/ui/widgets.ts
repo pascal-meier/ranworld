@@ -1,5 +1,6 @@
 import { LAB_THEME } from "./theme.js";
 import { UIButton, UIPanel, UITag, type UIButtonConfig } from "./objects.js";
+import { attachDisplayObject, type DisplayParent } from "./display.js";
 
 export function createPanel(
   scene: Phaser.Scene,
@@ -8,16 +9,18 @@ export function createPanel(
   width: number,
   height: number,
   fill = LAB_THEME.panel,
-  border = LAB_THEME.borderSoft
+  border = LAB_THEME.borderSoft,
+  parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  return new UIPanel(scene, x, y, width, height, fill, border);
+  return attachDisplayObject(scene, new UIPanel(scene, x, y, width, height, fill, border), parent);
 }
 
 export function createButton(
   scene: Phaser.Scene,
-  config: UIButtonConfig
+  config: UIButtonConfig,
+  parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  return new UIButton(scene, config);
+  return attachDisplayObject(scene, new UIButton(scene, config), parent);
 }
 
 export function createTag(
@@ -25,7 +28,8 @@ export function createTag(
   x: number,
   y: number,
   label: string,
-  fill = LAB_THEME.tag
+  fill = LAB_THEME.tag,
+  parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  return new UITag(scene, x, y, label, fill);
+  return attachDisplayObject(scene, new UITag(scene, x, y, label, fill), parent);
 }

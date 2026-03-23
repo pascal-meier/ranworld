@@ -22,6 +22,11 @@ The goal is not lots of content. The goal is strong presentation for a controlle
 - [ ] `assets/ui/icons/system/icon-research.png`
 - [ ] `assets/ui/icons/system/icon-warning.png`
 
+### Resources
+- [x] `assets/ui/resources/archive-shard-bw-v1.png`
+- [x] `assets/ui/resources/archive-bank-v1.png`
+- [x] `assets/ui/resources/supply-token-v1.png`
+
 ### Icons: nodes
 - [ ] `assets/ui/icons/nodes/node-combat.png`
 - [ ] `assets/ui/icons/nodes/node-event.png`

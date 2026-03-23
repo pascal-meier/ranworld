@@ -22,6 +22,7 @@ import type {
   RewardState,
   RunState,
 } from "../types.js";
+import { REROLL_SUPPLY_COST } from "./balance.js";
 
 const MAX_ACTIVE_MECHANICS = 3;
 const PLANET_SITES = 4;
@@ -842,7 +843,11 @@ export class LabEngine {
   }
 
   rerollCurrentOffer(): void {
-    if (!this.hasMechanic("reroll-mechanics") || this.state.player.rerollCharges <= 0) {
+    if (
+      !this.hasMechanic("reroll-mechanics") ||
+      this.state.player.rerollCharges <= 0 ||
+      this.state.player.supplies < REROLL_SUPPLY_COST
+    ) {
       return;
     }
 
@@ -851,6 +856,7 @@ export class LabEngine {
     }
 
     this.state.player.rerollCharges -= 1;
+    this.state.player.supplies -= REROLL_SUPPLY_COST;
 
     if (this.state.phase === "combat" && this.state.combat) {
       let actions = baseCombatActions.map((action) => ({ ...action }));
@@ -865,7 +871,9 @@ export class LabEngine {
       this.state.combat.lastSummary = [`Reroll spent: combat actions redrawn.`];
       this.state.summary = "Combat actions redrawn.";
       this.refreshCombatPreviews();
-      this.log(`Reroll spent in combat. ${this.state.player.rerollCharges} remaining.`);
+      this.log(
+        `Reroll spent in combat. ${this.state.player.rerollCharges} charges and ${this.state.player.supplies} supplies remaining.`
+      );
       return;
     }
 
@@ -905,7 +913,9 @@ export class LabEngine {
           actual: option.actualChance === undefined ? "n/a" : `${Math.round(option.actualChance)}%`,
         }));
       this.state.summary = "Event options redrawn.";
-      this.log(`Reroll spent in event. ${this.state.player.rerollCharges} remaining.`);
+      this.log(
+        `Reroll spent in event. ${this.state.player.rerollCharges} charges and ${this.state.player.supplies} supplies remaining.`
+      );
       return;
     }
 
@@ -963,7 +973,9 @@ export class LabEngine {
 
       this.state.reward.choices = choices;
       this.state.summary = "Reward packages redrawn.";
-      this.log(`Reroll spent on rewards. ${this.state.player.rerollCharges} remaining.`);
+      this.log(
+        `Reroll spent on rewards. ${this.state.player.rerollCharges} charges and ${this.state.player.supplies} supplies remaining.`
+      );
     }
   }
 

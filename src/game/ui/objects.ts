@@ -1,4 +1,5 @@
 import { LAB_THEME, textStyle } from "./theme.js";
+import { makeRectangle, makeText } from "./display.js";
 
 export interface UIButtonConfig {
   x: number;
@@ -10,6 +11,7 @@ export interface UIButtonConfig {
   onClick: () => void;
   fill?: number;
   border?: number;
+  disabled?: boolean;
 }
 
 export class UIPanel extends Phaser.GameObjects.Container {
@@ -22,31 +24,21 @@ export class UIPanel extends Phaser.GameObjects.Container {
     fill = LAB_THEME.panel,
     border = LAB_THEME.borderSoft
   ) {
-    const shadow = scene.add
-      .rectangle(x + 4, y + 4, width, height, LAB_THEME.panelShadow, 0.45)
-      .setOrigin(0);
+    const shadow = makeRectangle(scene, 4, 4, width, height, LAB_THEME.panelShadow, 0.45, null);
+    const background = makeRectangle(scene, 0, 0, width, height, fill, 0.97, null).setStrokeStyle(2, border, 1);
+    const topStripe = makeRectangle(scene, 2, 2, width - 4, 8, LAB_THEME.panelLine, 1, null);
+    const cornerA = makeRectangle(scene, 0, 0, 8, 8, border, 1, null);
+    const cornerB = makeRectangle(scene, width - 8, 0, 8, 8, border, 1, null);
+    const cornerC = makeRectangle(scene, 0, height - 8, 8, 8, border, 1, null);
+    const cornerD = makeRectangle(scene, width - 8, height - 8, 8, 8, border, 1, null);
 
-    const background = scene.add
-      .rectangle(x, y, width, height, fill, 0.97)
-      .setStrokeStyle(2, border, 1)
-      .setOrigin(0);
-
-    const topStripe = scene.add
-      .rectangle(x + 2, y + 2, width - 4, 8, LAB_THEME.panelLine, 1)
-      .setOrigin(0);
-
-    const cornerA = scene.add.rectangle(x, y, 8, 8, border, 1).setOrigin(0);
-    const cornerB = scene.add.rectangle(x + width - 8, y, 8, 8, border, 1).setOrigin(0);
-    const cornerC = scene.add.rectangle(x, y + height - 8, 8, 8, border, 1).setOrigin(0);
-    const cornerD = scene.add.rectangle(x + width - 8, y + height - 8, 8, 8, border, 1).setOrigin(0);
-
-    super(scene, 0, 0, [shadow, background, topStripe, cornerA, cornerB, cornerC, cornerD]);
-    scene.add.existing(this);
+    super(scene, x, y, [shadow, background, topStripe, cornerA, cornerB, cornerC, cornerD]);
   }
 }
 
 export class UIButton extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, config: UIButtonConfig) {
+    const disabled = Boolean(config.disabled);
     const compact = config.height <= 36;
     const medium = config.height > 36 && config.height <= 50;
     const showDetail = Boolean(config.detail) && !compact;
@@ -55,57 +47,56 @@ export class UIButton extends Phaser.GameObjects.Container {
     const labelY = compact ? config.y + 9 : showDetail ? config.y + 6 : config.y + 10;
     const detailY = medium ? config.y + 23 : config.y + 25;
     const accentWidth = compact ? 5 : 6;
-    const contentX = config.x + 18 + accentWidth;
-    const idleFill = config.fill ?? LAB_THEME.panelAlt;
-    const idleBorder = config.border ?? LAB_THEME.border;
+    const idleFill = disabled ? 0x24343d : config.fill ?? LAB_THEME.panelAlt;
+    const idleBorder = disabled ? 0x4a5d69 : config.border ?? LAB_THEME.border;
+    const accentFill = disabled ? 0x5d707d : LAB_THEME.accentFill;
+    const labelColor = disabled ? LAB_THEME.textMuted : LAB_THEME.text;
+    const detailColor = disabled ? "#78909d" : LAB_THEME.textMuted;
+    const localContentX = 18 + accentWidth;
+    const localLabelY = labelY - config.y;
+    const localDetailY = detailY - config.y;
 
-    const shadow = scene.add
-      .rectangle(config.x + 4, config.y + 4, config.width, config.height, LAB_THEME.panelShadow, 0.45)
-      .setOrigin(0);
-
-    const background = scene.add
-      .rectangle(config.x, config.y, config.width, config.height, idleFill, 1)
-      .setStrokeStyle(2, idleBorder, 1)
-      .setOrigin(0);
-
-    const accentBar = scene.add
-      .rectangle(
-        config.x + 6,
-        config.y + 6,
-        accentWidth,
-        Math.max(10, config.height - 12),
-        LAB_THEME.accentFill,
-        1
-      )
-      .setOrigin(0);
-
-    const label = scene.add
-      .text(
-        contentX,
-        labelY,
-        config.label,
-        textStyle(labelSize, LAB_THEME.text, "left", config.width - 28 - accentWidth)
-      )
-      .setLineSpacing(-2)
-      .setOrigin(0);
+    const shadow = makeRectangle(scene, 4, 4, config.width, config.height, LAB_THEME.panelShadow, 0.45, null);
+    const background = makeRectangle(scene, 0, 0, config.width, config.height, idleFill, 1, null).setStrokeStyle(2, idleBorder, 1);
+    const accentBar = makeRectangle(
+      scene,
+      6,
+      6,
+      accentWidth,
+      Math.max(10, config.height - 12),
+      accentFill,
+      1,
+      null
+    );
+    const label = makeText(
+      scene,
+      localContentX,
+      localLabelY,
+      config.label,
+      textStyle(labelSize, labelColor, "left", config.width - 28 - accentWidth),
+      null
+    ).setLineSpacing(-2);
 
     const children: Phaser.GameObjects.GameObject[] = [shadow, background, accentBar, label];
 
     if (showDetail) {
-      const detail = scene.add
-        .text(
-          contentX,
-          detailY,
-          config.detail ?? "",
-          textStyle(detailSize, LAB_THEME.textMuted, "left", config.width - 28 - accentWidth)
-        )
-        .setLineSpacing(-2)
-        .setOrigin(0);
+      const detail = makeText(
+        scene,
+        localContentX,
+        localDetailY,
+        config.detail ?? "",
+        textStyle(detailSize, detailColor, "left", config.width - 28 - accentWidth),
+        null
+      ).setLineSpacing(-2);
       children.push(detail);
     }
 
-    super(scene, 0, 0, children);
-    scene.add.existing(this);
+    super(scene, config.x, config.y, children);
+
+    if (disabled) {
+      this.setAlpha(0.7);
+      return;
+    }
 
     background.setInteractive({ useHandCursor: true });
     background.on("pointerover", () => {
@@ -123,15 +114,11 @@ export class UIButton extends Phaser.GameObjects.Container {
 export class UITag extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, label: string, fill = LAB_THEME.tag) {
     const width = Math.max(92, label.length * 8 + 24);
-    const background = scene.add
-      .rectangle(x, y, width, 22, fill, 1)
-      .setStrokeStyle(1, LAB_THEME.borderSoft, 1)
-      .setOrigin(0);
-    const marker = scene.add.rectangle(x + 5, y + 5, 5, 12, LAB_THEME.accentFill, 1).setOrigin(0);
-    const text = scene.add.text(x + 16, y + 4, label, textStyle(8)).setOrigin(0);
+    const background = makeRectangle(scene, 0, 0, width, 22, fill, 1, null).setStrokeStyle(1, LAB_THEME.borderSoft, 1);
+    const marker = makeRectangle(scene, 5, 5, 5, 12, LAB_THEME.accentFill, 1, null);
+    const text = makeText(scene, 16, 4, label, textStyle(8), null);
 
-    super(scene, 0, 0, [background, marker, text]);
-    scene.add.existing(this);
+    super(scene, x, y, [background, marker, text]);
   }
 }
 
@@ -147,15 +134,11 @@ export class UIInfoCard extends Phaser.GameObjects.Container {
     titleColor = LAB_THEME.text,
     fill = LAB_THEME.panelAlt
   ) {
-    const panel = new UIPanel(scene, x, y, width, height, fill);
-    const titleText = scene.add.text(x + 12, y + 10, title, textStyle(9, titleColor)).setOrigin(0);
+    const panel = new UIPanel(scene, 0, 0, width, height, fill);
+    const titleText = makeText(scene, 12, 10, title, textStyle(9, titleColor), null);
     const bodyCopy = Array.isArray(body) ? body.join("\n") : body;
-    const bodyText = scene.add
-      .text(x + 12, y + 28, bodyCopy, textStyle(8, LAB_THEME.text, "left", width - 24))
-      .setLineSpacing(-2)
-      .setOrigin(0);
+    const bodyText = makeText(scene, 12, 28, bodyCopy, textStyle(8, LAB_THEME.text, "left", width - 24), null).setLineSpacing(-2);
 
-    super(scene, 0, 0, [panel, titleText, bodyText]);
-    scene.add.existing(this);
+    super(scene, x, y, [panel, titleText, bodyText]);
   }
 }

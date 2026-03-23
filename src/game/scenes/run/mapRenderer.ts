@@ -5,6 +5,7 @@ import { createPanel } from "../../ui/widgets.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import type { NodeDefinition, NodeKind } from "../../types.js";
 import { renderTutorialInfoButton } from "../../ui/tutorialOverlay.js";
+import { makeCircle, makeGraphics, makeText } from "../../ui/display.js";
 
 function describeNodeChoice(kind: NodeKind): { heading: string; detail: string; accent: string } {
   if (kind === "combat") {
@@ -51,20 +52,18 @@ function renderNodeChoiceCard(
   node: NodeDefinition,
   x: number,
   y: number,
-  width: number
+  width: number,
+  parent: Phaser.GameObjects.Container
 ): void {
   const copy = describeNodeChoice(node.kind);
 
-  createPanel(scene, x, y, width, 62, LAB_THEME.panelAlt);
-  scene.add.text(x + 12, y + 10, `${copy.heading} / ${node.title.toUpperCase()}`, textStyle(8, copy.accent)).setOrigin(0);
-  scene.add
-    .text(x + 12, y + 28, copy.detail, textStyle(8, LAB_THEME.textMuted, "left", width - 24))
-    .setLineSpacing(-2)
-    .setOrigin(0);
+  createPanel(scene, x, y, width, 62, LAB_THEME.panelAlt, LAB_THEME.borderSoft, parent);
+  makeText(scene, x + 12, y + 10, `${copy.heading} / ${node.title.toUpperCase()}`, textStyle(8, copy.accent), parent);
+  makeText(scene, x + 12, y + 28, copy.detail, textStyle(8, LAB_THEME.textMuted, "left", width - 24), parent).setLineSpacing(-2);
 }
 
 export function renderMapPhase(ctx: RunRenderContext, onOpenTutorial?: () => void): void {
-  const { scene, state, width, contentInner } = ctx;
+  const { scene, state, width, contentInner, phaseRoot } = ctx;
   renderMainPanel(ctx);
   renderPlanetBackdrop(ctx);
   const currentNodes = state.map[state.currentColumn] ?? [];
@@ -82,17 +81,18 @@ export function renderMapPhase(ctx: RunRenderContext, onOpenTutorial?: () => voi
       ? `${state.planetName.toUpperCase()} FINAL APPROACH`
       : `${state.planetName.toUpperCase()} WAYPOINTS`,
     availableSummary,
-    contentInner.width - (onOpenTutorial ? 140 : 8)
+    contentInner.width - (onOpenTutorial ? 140 : 8),
+    phaseRoot
   );
   if (onOpenTutorial) {
-    renderTutorialInfoButton(scene, contentInner.x + contentInner.width - 116, contentInner.y + 4, "BRIEFING", onOpenTutorial);
+    renderTutorialInfoButton(scene, contentInner.x + contentInner.width - 116, contentInner.y + 4, "BRIEFING", onOpenTutorial, phaseRoot);
   }
 
   if (state.selectedPlanetImageKey) {
-    renderPlanetSprite(scene, state.selectedPlanetImageKey, width / 2, contentInner.y + 190, 290, 210, 0.96);
+    renderPlanetSprite(scene, state.selectedPlanetImageKey, width / 2, contentInner.y + 190, 290, 210, 0.96, phaseRoot);
   }
 
-  const graphics = scene.add.graphics();
+  const graphics = makeGraphics(scene, phaseRoot);
   const cx = width / 2;
   const cy = contentInner.y + 190;
   const waypointPositions = [
@@ -132,8 +132,8 @@ export function renderMapPhase(ctx: RunRenderContext, onOpenTutorial?: () => voi
     }
 
     previousWaypoint = pos;
-    scene.add.circle(pos.x, pos.y, 10, 0x8ce5c2, 1);
-    scene.add.circle(pos.x, pos.y, 18, 0x1d4d6c, 0.25);
+    makeCircle(scene, pos.x, pos.y, 10, 0x8ce5c2, 1, phaseRoot);
+    makeCircle(scene, pos.x, pos.y, 18, 0x1d4d6c, 0.25, phaseRoot);
   }
 
   for (const node of currentNodes) {
@@ -151,10 +151,10 @@ export function renderMapPhase(ctx: RunRenderContext, onOpenTutorial?: () => voi
   }
 
   if (currentNodes[0]) {
-    renderNodeChoiceCard(scene, currentNodes[0], contentInner.x + 6, contentInner.y + 64, 210);
+    renderNodeChoiceCard(scene, currentNodes[0], contentInner.x + 6, contentInner.y + 64, 210, phaseRoot);
   }
 
   if (currentNodes[1]) {
-    renderNodeChoiceCard(scene, currentNodes[1], contentInner.x + contentInner.width - 216, contentInner.y + 188, 210);
+    renderNodeChoiceCard(scene, currentNodes[1], contentInner.x + contentInner.width - 216, contentInner.y + 188, 210, phaseRoot);
   }
 }

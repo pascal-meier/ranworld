@@ -2,7 +2,7 @@ import { LabEngine } from "./LabEngine.js";
 import { loadMeta, saveMeta } from "./storage.js";
 import type { MechanicId, MetaProgress, RunState, TutorialId } from "../types.js";
 
-class LabStore extends Phaser.Events.EventEmitter {
+export class LabStore extends Phaser.Events.EventEmitter {
   private engine: LabEngine | null = null;
   private meta: MetaProgress = loadMeta();
   private queuedSeed = this.generateSeedValue();
@@ -128,5 +128,3 @@ class LabStore extends Phaser.Events.EventEmitter {
     this.emit("changed");
   }
 }
-
-export const labStore = new LabStore();

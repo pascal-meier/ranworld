@@ -1,6 +1,16 @@
 import { getImplementedMechanicMeta } from "./catalog.js";
 import type { MechanicDefinition } from "./types.js";
 
+export function getSessionPersistenceBonus(archive: number): {
+  hpBoost: number;
+  supplyBoost: number;
+} {
+  return {
+    hpBoost: Math.min(archive, 4),
+    supplyBoost: Math.floor(archive / 2),
+  };
+}
+
 export const sessionPersistence: MechanicDefinition = {
   ...getImplementedMechanicMeta("session-persistence"),
   id: "session-persistence",
@@ -11,8 +21,7 @@ export const sessionPersistence: MechanicDefinition = {
   effectText: "On pickup, stored archive grants up to +4 max HP and extra supplies based on past runs.",
   onAdded: ({ engine, state, log }) => {
     const archive = engine.meta.archive;
-    const hpBoost = Math.min(archive, 4);
-    const supplyBoost = Math.floor(archive / 2);
+    const { hpBoost, supplyBoost } = getSessionPersistenceBonus(archive);
 
     state.player.maxHp += hpBoost;
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + hpBoost);

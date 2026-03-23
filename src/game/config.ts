@@ -1,3 +1,5 @@
+import { LAB_PLUGIN_KEY, LabPlugin } from "./core/LabPlugin.js";
+
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement | null;
 
 type RuntimeGameConfig = Phaser.Types.Core.GameConfig & {
@@ -17,6 +19,15 @@ const config: RuntimeGameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 960,
     height: 540,
+  },
+  plugins: {
+    global: [
+      {
+        key: LAB_PLUGIN_KEY,
+        plugin: LabPlugin,
+        start: true,
+      },
+    ],
   },
   scene: [],
 };

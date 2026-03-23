@@ -1,6 +1,6 @@
-import { labStore } from "../core/LabStore.js";
+import { BaseScene } from "./BaseScene.js";
 
-export class BootScene extends Phaser.Scene {
+export class BootScene extends BaseScene {
   constructor() {
     super({ key: "BootScene" });
   }
@@ -51,6 +51,18 @@ export class BootScene extends Phaser.Scene {
       "assets/ui/feedback/fail-popup-v1.png"
     );
     this.load.image(
+      "archive-shard",
+      "assets/ui/resources/archive-shard-bw-v1.png"
+    );
+    this.load.image(
+      "archive-bank",
+      "assets/ui/resources/archive-bank-v1.png"
+    );
+    this.load.image(
+      "supply-token",
+      "assets/ui/resources/supply-token-v1.png"
+    );
+    this.load.image(
       "planet-background",
       "assets/backgrounds/space/planet-background-v1.png"
     );
@@ -85,7 +97,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    labStore.returnToSetup("new");
+    this.lab.returnToSetup("new");
     this.scene.launch("OverlayScene");
     this.scene.start("SetupScene");
   }

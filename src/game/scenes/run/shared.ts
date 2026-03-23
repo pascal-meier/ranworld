@@ -4,6 +4,8 @@ import { getMechanicDefinition } from "../../mechanics/index.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import { createPanel, createButton } from "../../ui/widgets.js";
 import { createScreenLayout, insetRect, type LayoutRect, type ScreenLayout } from "../../ui/layout.js";
+import { makeCircle, makeGraphics, makeImage, makeRectangle, makeText, type DisplayParent } from "../../ui/display.js";
+import { REROLL_SUPPLY_COST } from "../../core/balance.js";
 
 export interface RunRenderContext {
   scene: Phaser.Scene;
@@ -12,16 +14,25 @@ export interface RunRenderContext {
   height: number;
   layout: ScreenLayout;
   contentInner: LayoutRect;
+  phaseRoot: DisplayParent;
+  overlayRoot: DisplayParent;
+  onSelectNode: (nodeId: string) => void;
 }
 
-export function createRunRenderContext(scene: Phaser.Scene, state: RunState): RunRenderContext {
+export function createRunRenderContext(
+  scene: Phaser.Scene,
+  state: RunState,
+  phaseRoot: DisplayParent,
+  overlayRoot: DisplayParent,
+  onSelectNode: (nodeId: string) => void
+): RunRenderContext {
   const { width, height } = scene.scale;
   const layout = createScreenLayout(width, height, {
     margin: 16,
     top: 12,
     gap: 12,
     headerHeight: 52,
-    footerHeight: 112,
+    footerHeight: 156,
   });
 
   return {
@@ -31,53 +42,56 @@ export function createRunRenderContext(scene: Phaser.Scene, state: RunState): Ru
     height,
     layout,
     contentInner: insetRect(layout.content, 12),
+    phaseRoot,
+    overlayRoot,
+    onSelectNode,
   };
 }
 
 export function renderRunFrame(ctx: RunRenderContext): void {
-  const { scene, width, height } = ctx;
+  const { scene, width, height, phaseRoot } = ctx;
 
-  scene.add.rectangle(width / 2, height / 2, width, height, LAB_THEME.background, 1);
-  scene.add.rectangle(width / 2, 20, width, 40, 0x0b1a26, 1);
+  makeRectangle(scene, 0, 0, width, height, LAB_THEME.background, 1, phaseRoot).setOrigin(0);
+  makeRectangle(scene, 0, 0, width, 40, 0x0b1a26, 1, phaseRoot).setOrigin(0);
 }
 
 export function renderHud(ctx: RunRenderContext): void {
-  const { scene, state, width, layout } = ctx;
-  createPanel(scene, layout.header.x, layout.header.y, layout.header.width, layout.header.height);
+  const { scene, state, width, layout, phaseRoot } = ctx;
+  createPanel(scene, layout.header.x, layout.header.y, layout.header.width, layout.header.height, LAB_THEME.panel, LAB_THEME.borderSoft, phaseRoot);
 
-  scene.add
-    .text(
-      layout.header.x + 12,
-      layout.header.y + 10,
-      `PLANET ${state.planet}  SITE ${state.currentSite}/${state.sitesPerPlanet}  HP ${state.player.hp}/${state.player.maxHp}  SUP ${state.player.supplies}  FOC ${state.player.focus}  CHG ${state.player.mitigationCharges}`,
-      textStyle(9, LAB_THEME.text, "left", width - 56)
-    )
-    .setOrigin(0);
+  makeText(
+    scene,
+    layout.header.x + 12,
+    layout.header.y + 10,
+    `PLANET ${state.planet}  SITE ${state.currentSite}/${state.sitesPerPlanet}  HP ${state.player.hp}/${state.player.maxHp}  SUP ${state.player.supplies}  FOC ${state.player.focus}  CHG ${state.player.mitigationCharges}`,
+    textStyle(9, LAB_THEME.text, "left", width - 56),
+    phaseRoot
+  );
 
   const moduleText =
     state.activeMechanics.length > 0
       ? state.activeMechanics.map((id) => getMechanicDefinition(id).shortLabel).join(" / ")
       : "none";
 
-  scene.add
-    .text(
-      layout.header.x + 12,
-      layout.header.y + 28,
-      `${state.selectedPlanetImageKey ? state.planetName.toUpperCase() : "SELECT PLANET"}  |  MODULES ${moduleText}  |  M MODS`,
-      textStyle(8, LAB_THEME.textMuted, "left", width - 56)
-    )
-    .setOrigin(0);
+  makeText(
+    scene,
+    layout.header.x + 12,
+    layout.header.y + 28,
+    `${state.selectedPlanetImageKey ? state.planetName.toUpperCase() : "SELECT PLANET"}  |  MODULES ${moduleText}  |  M MODS`,
+    textStyle(8, LAB_THEME.textMuted, "left", width - 56),
+    phaseRoot
+  );
 }
 
 export function renderMainPanel(ctx: RunRenderContext, fill = LAB_THEME.panel): void {
-  const { scene, layout } = ctx;
-  createPanel(scene, layout.content.x, layout.content.y, layout.content.width, layout.content.height, fill);
+  const { scene, layout, phaseRoot } = ctx;
+  createPanel(scene, layout.content.x, layout.content.y, layout.content.width, layout.content.height, fill, LAB_THEME.borderSoft, phaseRoot);
 }
 
 export function renderUpgradePanel(ctx: RunRenderContext): void {
-  const { scene, state, width, layout } = ctx;
-  createPanel(scene, layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height, LAB_THEME.panelAlt);
-  scene.add.text(layout.footer.x + 16, layout.footer.y + 12, "ACTIVE UPGRADES", textStyle(9)).setOrigin(0);
+  const { scene, state, width, layout, phaseRoot } = ctx;
+  createPanel(scene, layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height, LAB_THEME.panelAlt, LAB_THEME.borderSoft, phaseRoot);
+  makeText(scene, layout.footer.x + 16, layout.footer.y + 12, "ACTIVE UPGRADES", textStyle(9), phaseRoot);
 
   const copy =
     state.activeMechanics.length > 0
@@ -89,13 +103,18 @@ export function renderUpgradePanel(ctx: RunRenderContext): void {
           .join("  |  ")
       : "No active upgrades yet.";
 
-  scene.add
-    .text(layout.footer.x + 16, layout.footer.y + 36, copy, textStyle(8, LAB_THEME.textMuted, "left", width - 64))
-    .setOrigin(0);
+  makeText(
+    scene,
+    layout.footer.x + 16,
+    layout.footer.y + 36,
+    copy,
+    textStyle(8, LAB_THEME.textMuted, "left", width - 64),
+    phaseRoot
+  );
 }
 
 export function renderPlanetBackdrop(ctx: RunRenderContext): void {
-  const { scene, contentInner } = ctx;
+  const { scene, contentInner, phaseRoot } = ctx;
   const frame: LayoutRect = {
     x: contentInner.x,
     y: contentInner.y + 44,
@@ -103,14 +122,7 @@ export function renderPlanetBackdrop(ctx: RunRenderContext): void {
     height: Math.min(280, contentInner.height - 56),
   };
 
-  scene.add.rectangle(
-    frame.x + frame.width / 2,
-    frame.y + frame.height / 2,
-    frame.width,
-    frame.height,
-    0x08121a,
-    1
-  );
+  makeRectangle(scene, frame.x, frame.y, frame.width, frame.height, 0x08121a, 1, phaseRoot).setOrigin(0);
 
   if (scene.textures.exists("planet-background")) {
     renderPlanetSprite(
@@ -120,7 +132,8 @@ export function renderPlanetBackdrop(ctx: RunRenderContext): void {
       frame.y + frame.height / 2,
       frame.width - 24,
       frame.height - 28,
-      0.28
+      0.28,
+      phaseRoot
     );
   }
 }
@@ -132,7 +145,8 @@ export function renderPlanetSprite(
   y: number,
   maxWidth: number,
   maxHeight: number,
-  alpha = 1
+  alpha = 1,
+  parent?: DisplayParent
 ): void {
   if (!scene.textures.exists(key)) {
     return;
@@ -141,7 +155,7 @@ export function renderPlanetSprite(
   const texture = scene.textures.get(key).getSourceImage() as { width: number; height: number };
   const scale = Math.min(maxWidth / texture.width, maxHeight / texture.height);
 
-  scene.add.image(x, y, key).setScale(scale).setAlpha(alpha).setOrigin(0.5);
+  makeImage(scene, x, y, key, parent).setScale(scale).setAlpha(alpha).setOrigin(0.5);
 }
 
 export function renderRerollButton(
@@ -149,25 +163,32 @@ export function renderRerollButton(
   x: number,
   y: number,
   width: number,
-  onClick: () => void
+  onClick: () => void,
+  disabled = false
 ): boolean {
-  const { state, scene } = ctx;
+  const { state, scene, phaseRoot } = ctx;
 
-  if (!state.activeMechanics.includes("reroll-mechanics") || state.player.rerollCharges <= 0) {
+  if (!state.activeMechanics.includes("reroll-mechanics")) {
     return false;
   }
+
+  const unavailable =
+    disabled ||
+    state.player.rerollCharges <= 0 ||
+    state.player.supplies < REROLL_SUPPLY_COST;
 
   createButton(scene, {
     x,
     y,
     width,
     height: 26,
-    label: `REROLL ${state.player.rerollCharges}`,
+    label: `REROLL ${state.player.rerollCharges} / ${REROLL_SUPPLY_COST} SUP`,
     detail: "",
     onClick,
     fill: 0x284861,
     border: LAB_THEME.borderSoft,
-  });
+    disabled: unavailable,
+  }, phaseRoot);
 
   return true;
 }
@@ -179,10 +200,10 @@ export function renderActiveMechanicEffects(
   width: number,
   maxLines: number
 ): void {
-  const { scene, state } = ctx;
+  const { scene, state, phaseRoot, onSelectNode } = ctx;
 
   if (state.activeMechanics.length === 0) {
-    scene.add.text(x, y, "No active modules.", textStyle(8, LAB_THEME.textMuted, "left", width)).setOrigin(0);
+    makeText(scene, x, y, "No active modules.", textStyle(8, LAB_THEME.textMuted, "left", width), phaseRoot);
     return;
   }
 
@@ -191,20 +212,38 @@ export function renderActiveMechanicEffects(
     return `${mechanic.shortLabel} [${mechanic.tableId} / ${mechanic.upgradeTrack === "ship-upgrade" ? "ship" : "world"}]: ${mechanic.effectText}`;
   });
 
-  scene.add.text(x, y, lines.join("\n"), textStyle(8, LAB_THEME.textMuted, "left", width)).setOrigin(0);
+  makeText(scene, x, y, lines.join("\n"), textStyle(8, LAB_THEME.textMuted, "left", width), phaseRoot);
 }
 
-export function renderModifiersPanel(ctx: RunRenderContext): void {
-  const { scene, state, width, height } = ctx;
+export function renderModifiersPanel(ctx: RunRenderContext, onClose: () => void): void {
+  const { scene, state, width, height, overlayRoot } = ctx;
 
-  scene.add.rectangle(width / 2, height / 2, width, height, 0x02060a, 0.72);
-  createPanel(scene, 34, 52, width - 68, height - 104, 0x0c1c27, LAB_THEME.border);
+  makeRectangle(scene, 0, 0, width, height, 0x02060a, 0.72, overlayRoot)
+    .setOrigin(0)
+    .setInteractive({ useHandCursor: false })
+    .on("pointerdown", onClose);
+  const panel = createPanel(scene, 34, 52, width - 68, height - 104, 0x0c1c27, LAB_THEME.border, overlayRoot);
+  panel
+    .setSize(width - 68, height - 104)
+    .setInteractive(new Phaser.Geom.Rectangle(0, 0, width - 68, height - 104), Phaser.Geom.Rectangle.Contains)
+    .on("pointerdown", onClose);
 
-  scene.add.text(52, 72, "ACTIVE MODIFIERS", textStyle(13)).setOrigin(0);
-  scene.add.text(52, 96, "Press M or Esc to close.", textStyle(8, LAB_THEME.textMuted)).setOrigin(0);
+  makeText(scene, 52, 72, "ACTIVE MODIFIERS", textStyle(13), overlayRoot);
+  makeText(scene, 52, 96, "Press M or Esc to close.", textStyle(8, LAB_THEME.textMuted), overlayRoot);
+  createButton(scene, {
+    x: width - 176,
+    y: 68,
+    width: 120,
+    height: 26,
+    label: "SCHLIESSEN",
+    detail: "",
+    onClick: onClose,
+    fill: 0x284861,
+    border: LAB_THEME.borderSoft,
+  }, overlayRoot);
 
   if (state.activeMechanics.length === 0) {
-    scene.add.text(52, 126, "No active modifiers yet.", textStyle(10, LAB_THEME.textMuted)).setOrigin(0);
+    makeText(scene, 52, 126, "No active modifiers yet.", textStyle(10, LAB_THEME.textMuted), overlayRoot);
     return;
   }
 
@@ -212,26 +251,31 @@ export function renderModifiersPanel(ctx: RunRenderContext): void {
   for (const mechanicId of state.activeMechanics) {
     const mechanic = getMechanicDefinition(mechanicId);
 
-    createPanel(scene, 48, y, width - 96, 76, LAB_THEME.panelAlt);
-    scene.add
-      .text(
-        62,
-        y + 8,
-        `${mechanic.shortLabel.toUpperCase()}  /  ${mechanic.tableId}  /  ${getUpgradeTrackLabel(mechanic.upgradeTrack).toUpperCase()}`,
-        textStyle(9, LAB_THEME.text)
-      )
-      .setOrigin(0);
-    scene.add
-      .text(
-        62,
-        y + 24,
-        `${getLayerName(mechanic.layerId)} / ${getCategoryName(mechanic.categoryId)}`,
-        textStyle(8, LAB_THEME.accent, "left", width - 128)
-      )
-      .setOrigin(0);
-    scene.add
-      .text(62, y + 42, mechanic.effectText, textStyle(9, LAB_THEME.textMuted, "left", width - 128))
-      .setOrigin(0);
+    createPanel(scene, 48, y, width - 96, 76, LAB_THEME.panelAlt, LAB_THEME.borderSoft, overlayRoot);
+    makeText(
+      scene,
+      62,
+      y + 8,
+      `${mechanic.shortLabel.toUpperCase()}  /  ${mechanic.tableId}  /  ${getUpgradeTrackLabel(mechanic.upgradeTrack).toUpperCase()}`,
+      textStyle(9, LAB_THEME.text),
+      overlayRoot
+    );
+    makeText(
+      scene,
+      62,
+      y + 24,
+      `${getLayerName(mechanic.layerId)} / ${getCategoryName(mechanic.categoryId)}`,
+      textStyle(8, LAB_THEME.accent, "left", width - 128),
+      overlayRoot
+    );
+    makeText(
+      scene,
+      62,
+      y + 42,
+      mechanic.effectText,
+      textStyle(9, LAB_THEME.textMuted, "left", width - 128),
+      overlayRoot
+    );
 
     y += 84;
   }
@@ -263,32 +307,34 @@ export function renderNode(
   x: number,
   y: number
 ): void {
-  const { scene, state } = ctx;
+  const { scene, state, phaseRoot, onSelectNode } = ctx;
   const selectable = node.column === state.currentColumn;
   const cleared = node.cleared || node.column < state.currentColumn;
   const nodeRadius = selectable ? 29 : 25;
   const baseSize = selectable ? 60 : 50;
   const symbolSize = selectable ? 32 : 26;
 
-  const circle = scene.add.circle(
+  const circle = makeCircle(
+    scene,
     x,
     y,
     nodeRadius,
     cleared ? 0x254a44 : selectable ? 0x1d4d6c : 0x152636,
-    0.35
+    0.35,
+    phaseRoot
   );
 
   if (selectable && !cleared) {
     circle.setInteractive({ useHandCursor: true });
-    circle.on("pointerdown", () => scene.events.emit("run-node-selected", node.id));
+    circle.on("pointerdown", () => onSelectNode(node.id));
   }
 
   if (scene.textures.exists("node-base")) {
-    const base = scene.add.image(x, y, "node-base").setDisplaySize(baseSize, baseSize);
+    const base = makeImage(scene, x, y, "node-base", phaseRoot).setDisplaySize(baseSize, baseSize);
 
     if (selectable && !cleared) {
       base.setInteractive({ useHandCursor: true });
-      base.on("pointerdown", () => scene.events.emit("run-node-selected", node.id));
+      base.on("pointerdown", () => onSelectNode(node.id));
     }
 
     if (cleared) {
@@ -299,14 +345,12 @@ export function renderNode(
   const symbolKey = getNodeSymbolKey(node.kind);
   if (node.kind === "boss" && scene.textures.exists("node-combat-symbol")) {
     const bossSwordSize = selectable ? 32 : 27;
-    const leftSword = scene.add
-      .image(x - 6, y - 1, "node-combat-symbol")
+    const leftSword = makeImage(scene, x - 6, y - 1, "node-combat-symbol", phaseRoot)
       .setDisplaySize(bossSwordSize, bossSwordSize)
       .setFlipX(true)
       .setAngle(-32)
       .setTint(0xe9f4ff);
-    const rightSword = scene.add
-      .image(x + 6, y - 1, "node-combat-symbol")
+    const rightSword = makeImage(scene, x + 6, y - 1, "node-combat-symbol", phaseRoot)
       .setDisplaySize(bossSwordSize, bossSwordSize)
       .setAngle(32)
       .setTint(0xe9f4ff);
@@ -316,7 +360,7 @@ export function renderNode(
       rightSword.setAlpha(0.65);
     }
   } else if (symbolKey && scene.textures.exists(symbolKey)) {
-    const symbol = scene.add.image(x, y, symbolKey);
+    const symbol = makeImage(scene, x, y, symbolKey, phaseRoot);
 
     if (node.kind === "flee") {
       symbol
@@ -334,9 +378,7 @@ export function renderNode(
 
   const labelY = node.lane === 0 ? y - 48 : y + 40;
   const labelOriginY = node.lane === 0 ? 1 : 0;
-  scene.add
-    .text(x, labelY, node.title, textStyle(8, LAB_THEME.textMuted, "center", 120))
-    .setOrigin(0.5, labelOriginY);
+  makeText(scene, x, labelY, node.title, textStyle(8, LAB_THEME.textMuted, "center", 120), phaseRoot).setOrigin(0.5, labelOriginY);
 }
 
 export function renderEventOption(
@@ -345,7 +387,8 @@ export function renderEventOption(
   x: number,
   y: number,
   width: number,
-  onClick: () => void
+  onClick: () => void,
+  parent?: DisplayParent
 ): void {
   const chanceCopy =
     option.shownChance !== undefined || option.actualChance !== undefined
@@ -360,7 +403,7 @@ export function renderEventOption(
     label: option.label.toUpperCase(),
     detail: `${option.description}${chanceCopy}`,
     onClick,
-  });
+  }, parent);
 }
 
 export function renderRewardChoice(
@@ -369,7 +412,8 @@ export function renderRewardChoice(
   x: number,
   y: number,
   width: number,
-  onClick: () => void
+  onClick: () => void,
+  parent?: DisplayParent
 ): void {
   createButton(scene, {
     x,
@@ -379,5 +423,5 @@ export function renderRewardChoice(
     label: choice.label.toUpperCase(),
     detail: choice.description,
     onClick,
-  });
+  }, parent);
 }

@@ -1,6 +1,7 @@
 import { LAB_THEME, textStyle } from "./theme.js";
 import type { LayoutRect } from "./layout.js";
 import { UIInfoCard } from "./objects.js";
+import { attachDisplayObject, makeContainer, makeImage, makeText, type DisplayParent } from "./display.js";
 
 export function createInfoCard(
   scene: Phaser.Scene,
@@ -8,9 +9,14 @@ export function createInfoCard(
   title: string,
   body: string | string[],
   titleColor = LAB_THEME.text,
-  fill = LAB_THEME.panelAlt
+  fill = LAB_THEME.panelAlt,
+  parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  return new UIInfoCard(scene, rect.x, rect.y, rect.width, rect.height, title, body, titleColor, fill);
+  return attachDisplayObject(
+    scene,
+    new UIInfoCard(scene, rect.x, rect.y, rect.width, rect.height, title, body, titleColor, fill),
+    parent
+  );
 }
 
 export function renderSectionHeader(
@@ -19,26 +25,33 @@ export function renderSectionHeader(
   y: number,
   title: string,
   subtitle?: string,
-  subtitleWidth?: number
+  subtitleWidth?: number,
+  parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  const titleText = scene.add.text(x, y, title, textStyle(13)).setOrigin(0);
+  const titleText = makeText(scene, 0, 0, title, textStyle(13), null);
   const children: Phaser.GameObjects.GameObject[] = [titleText];
 
   if (subtitle) {
-    const subtitleText = scene.add
-      .text(x, y + 22, subtitle, textStyle(10, LAB_THEME.textMuted, "left", subtitleWidth))
-      .setOrigin(0);
+    const subtitleText = makeText(
+      scene,
+      0,
+      22,
+      subtitle,
+      textStyle(10, LAB_THEME.textMuted, "left", subtitleWidth),
+      null
+    );
     children.push(subtitleText);
   }
 
-  return scene.add.container(0, 0, children);
+  return makeContainer(scene, x, y, children, parent);
 }
 
 export function renderFittedSprite(
   scene: Phaser.Scene,
   key: string,
   rect: LayoutRect,
-  alpha = 1
+  alpha = 1,
+  parent?: DisplayParent
 ): Phaser.GameObjects.Image | null {
   if (!scene.textures.exists(key)) {
     return null;
@@ -47,8 +60,13 @@ export function renderFittedSprite(
   const texture = scene.textures.get(key).getSourceImage() as { width: number; height: number };
   const scale = Math.min(rect.width / texture.width, rect.height / texture.height);
 
-  return scene.add
-    .image(rect.x + rect.width / 2, rect.y + rect.height / 2, key)
+  return makeImage(
+    scene,
+    rect.x + rect.width / 2,
+    rect.y + rect.height / 2,
+    key,
+    parent
+  )
     .setScale(scale)
     .setAlpha(alpha)
     .setOrigin(0.5);

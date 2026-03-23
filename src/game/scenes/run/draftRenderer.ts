@@ -6,16 +6,17 @@ import { getMechanicDefinition } from "../../mechanics/index.js";
 import { getUpgradeTrackLabel } from "../../mechanics/catalog.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import type { MechanicId } from "../../types.js";
+import { makeText } from "../../ui/display.js";
 
 export function renderDraftPhase(
   ctx: RunRenderContext,
   onChooseMechanic: (id: MechanicId | null) => void
 ): void {
-  const { scene, state, contentInner } = ctx;
+  const { scene, state, contentInner, phaseRoot } = ctx;
   const draft = state.draft!;
 
   renderMainPanel(ctx);
-  renderSectionHeader(scene, contentInner.x + 4, contentInner.y + 6, draft.title.toUpperCase(), draft.description, contentInner.width - 8);
+  renderSectionHeader(scene, contentInner.x + 4, contentInner.y + 6, draft.title.toUpperCase(), draft.description, contentInner.width - 8, phaseRoot);
 
   const gap = 18;
   const buttonWidth = Math.floor((contentInner.width - gap * 2) / 3);
@@ -31,7 +32,7 @@ export function renderDraftPhase(
       label: mechanic.shortLabel.toUpperCase(),
       detail: `${getUpgradeTrackLabel(mechanic.upgradeTrack)}. ${mechanic.effectText}`,
       onClick: () => onChooseMechanic(mechanicId),
-    });
+    }, phaseRoot);
     x += buttonWidth + gap;
   }
 
@@ -45,17 +46,17 @@ export function renderDraftPhase(
       detail: "",
       onClick: () => onChooseMechanic(null),
       fill: 0x284861,
-    });
+    }, phaseRoot);
   }
 
   if (state.activeMechanics.length >= 3) {
-    scene.add
-      .text(
-        contentInner.x + 4,
-        contentInner.y + 214,
-        "Choosing a new mechanic rotates out the oldest active one.",
-        textStyle(8, LAB_THEME.accent, "left", contentInner.width - 8)
-      )
-      .setOrigin(0);
+    makeText(
+      scene,
+      contentInner.x + 4,
+      contentInner.y + 214,
+      "Choosing a new mechanic rotates out the oldest active one.",
+      textStyle(8, LAB_THEME.accent, "left", contentInner.width - 8),
+      phaseRoot
+    );
   }
 }
