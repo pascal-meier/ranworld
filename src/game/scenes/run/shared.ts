@@ -4,7 +4,7 @@ import { getMechanicDefinition } from "../../mechanics/index.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import { createPanel, createButton } from "../../ui/widgets.js";
 import { createScreenLayout, insetRect, type LayoutRect, type ScreenLayout } from "../../ui/layout.js";
-import { makeCircle, makeGraphics, makeImage, makeRectangle, makeText, type DisplayParent } from "../../ui/display.js";
+import { makeCircle, makeFrameImage, makeGraphics, makeImage, makeRectangle, makeText, type DisplayParent } from "../../ui/display.js";
 import { REROLL_SUPPLY_COST } from "../../core/balance.js";
 
 export interface RunRenderContext {
@@ -17,6 +17,14 @@ export interface RunRenderContext {
   phaseRoot: DisplayParent;
   overlayRoot: DisplayParent;
   onSelectNode: (nodeId: string) => void;
+}
+
+export function getCenteredX(totalWidth: number, parentWidth: number): number {
+  return Math.floor((parentWidth - totalWidth) / 2);
+}
+
+export function getVerticalStackY(index: number, height: number, gap: number, startY: number): number {
+  return startY + index * (height + gap);
 }
 
 export function createRunRenderContext(
@@ -59,14 +67,23 @@ export function renderHud(ctx: RunRenderContext): void {
   const { scene, state, width, layout, phaseRoot } = ctx;
   createPanel(scene, layout.header.x, layout.header.y, layout.header.width, layout.header.height, LAB_THEME.panel, LAB_THEME.borderSoft, phaseRoot);
 
-  makeText(
-    scene,
-    layout.header.x + 12,
-    layout.header.y + 10,
-    `PLANET ${state.planet}  SITE ${state.currentSite}/${state.sitesPerPlanet}  HP ${state.player.hp}/${state.player.maxHp}  SUP ${state.player.supplies}  FOC ${state.player.focus}  CHG ${state.player.mitigationCharges}`,
-    textStyle(9, LAB_THEME.text, "left", width - 56),
-    phaseRoot
-  );
+  let currentX = layout.header.x + 12;
+  const currentY = layout.header.y + 10;
+  
+  const drawStat = (frame: string, text: string, spacing: number) => {
+    makeFrameImage(scene, currentX, currentY + 5, "ui-icons", frame, phaseRoot).setDisplaySize(12, 12).setOrigin(0, 0.5);
+    currentX += 16;
+    const txt = makeText(scene, currentX, currentY, text, textStyle(9, LAB_THEME.text), phaseRoot);
+    currentX += txt.width + spacing;
+  };
+
+  const planetText = makeText(scene, currentX, currentY, `PLANET ${state.planet}   SITE ${state.currentSite}/${state.sitesPerPlanet}`, textStyle(9, LAB_THEME.text), phaseRoot);
+  currentX += planetText.width + 16;
+  
+  drawStat("status-heal", `${state.player.hp}/${state.player.maxHp}`, 12);
+  drawStat("icon-supplies", `${state.player.supplies}`, 12);
+  drawStat("icon-focus", `${state.player.focus}`, 12);
+  drawStat("status-warning", `${state.player.mitigationCharges}`, 12);
 
   const moduleText =
     state.activeMechanics.length > 0
@@ -329,8 +346,8 @@ export function renderNode(
     circle.on("pointerdown", () => onSelectNode(node.id));
   }
 
-  if (scene.textures.exists("node-base")) {
-    const base = makeImage(scene, x, y, "node-base", phaseRoot).setDisplaySize(baseSize, baseSize);
+  if (scene.textures.exists("ui-icons")) {
+    const base = makeFrameImage(scene, x, y, "ui-icons", "node-base-style", phaseRoot).setDisplaySize(baseSize, baseSize);
 
     if (selectable && !cleared) {
       base.setInteractive({ useHandCursor: true });
@@ -343,14 +360,14 @@ export function renderNode(
   }
 
   const symbolKey = getNodeSymbolKey(node.kind);
-  if (node.kind === "boss" && scene.textures.exists("node-combat-symbol")) {
+  if (node.kind === "boss" && scene.textures.exists("ui-icons")) {
     const bossSwordSize = selectable ? 32 : 27;
-    const leftSword = makeImage(scene, x - 6, y - 1, "node-combat-symbol", phaseRoot)
+    const leftSword = makeFrameImage(scene, x - 6, y - 1, "ui-icons", "node-combat-symbol", phaseRoot)
       .setDisplaySize(bossSwordSize, bossSwordSize)
       .setFlipX(true)
       .setAngle(-32)
       .setTint(0xe9f4ff);
-    const rightSword = makeImage(scene, x + 6, y - 1, "node-combat-symbol", phaseRoot)
+    const rightSword = makeFrameImage(scene, x + 6, y - 1, "ui-icons", "node-combat-symbol", phaseRoot)
       .setDisplaySize(bossSwordSize, bossSwordSize)
       .setAngle(32)
       .setTint(0xe9f4ff);
@@ -359,8 +376,8 @@ export function renderNode(
       leftSword.setAlpha(0.65);
       rightSword.setAlpha(0.65);
     }
-  } else if (symbolKey && scene.textures.exists(symbolKey)) {
-    const symbol = makeImage(scene, x, y, symbolKey, phaseRoot);
+  } else if (symbolKey) {
+    const symbol = makeFrameImage(scene, x, y, "ui-icons", symbolKey, phaseRoot);
 
     if (node.kind === "flee") {
       symbol
@@ -379,49 +396,4 @@ export function renderNode(
   const labelY = node.lane === 0 ? y - 48 : y + 40;
   const labelOriginY = node.lane === 0 ? 1 : 0;
   makeText(scene, x, labelY, node.title, textStyle(8, LAB_THEME.textMuted, "center", 120), phaseRoot).setOrigin(0.5, labelOriginY);
-}
-
-export function renderEventOption(
-  scene: Phaser.Scene,
-  option: EventChoice,
-  x: number,
-  y: number,
-  width: number,
-  onClick: () => void,
-  parent?: DisplayParent
-): void {
-  const chanceCopy =
-    option.shownChance !== undefined || option.actualChance !== undefined
-      ? ` ${option.shownChance ?? option.actualChance}% / ${option.actualChance ?? option.shownChance}%`
-      : "";
-
-  createButton(scene, {
-    x,
-    y,
-    width,
-    height: 42,
-    label: option.label.toUpperCase(),
-    detail: `${option.description}${chanceCopy}`,
-    onClick,
-  }, parent);
-}
-
-export function renderRewardChoice(
-  scene: Phaser.Scene,
-  choice: RewardChoice,
-  x: number,
-  y: number,
-  width: number,
-  onClick: () => void,
-  parent?: DisplayParent
-): void {
-  createButton(scene, {
-    x,
-    y,
-    width,
-    height: 64,
-    label: choice.label.toUpperCase(),
-    detail: choice.description,
-    onClick,
-  }, parent);
 }

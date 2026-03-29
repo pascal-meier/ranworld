@@ -34,6 +34,6 @@ export function textStyle(
     lineSpacing: 0,
     resolution: 1,
     padding: { x: 0, y: 1 },
-    ...(wrapWidth ? { wordWrap: { width: wrapWidth, useAdvancedWrap: true } } : {}),
+    ...(wrapWidth ? { wordWrap: { width: Math.max(10, wrapWidth), useAdvancedWrap: true } } : {}),
   };
 }

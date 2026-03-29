@@ -1,4 +1,5 @@
-import type { RunRenderContext } from "./shared.js";
+import type { RunState } from "../../types.js";
+import { PhaseView } from "./PhaseView.js";
 import { renderMainPanel, renderPlanetBackdrop, renderPlanetSprite, renderNode } from "./shared.js";
 import { renderSectionHeader } from "../../ui/components.js";
 import { createPanel } from "../../ui/widgets.js";
@@ -62,99 +63,112 @@ function renderNodeChoiceCard(
   makeText(scene, x + 12, y + 28, copy.detail, textStyle(8, LAB_THEME.textMuted, "left", width - 24), parent).setLineSpacing(-2);
 }
 
-export function renderMapPhase(ctx: RunRenderContext, onOpenTutorial?: () => void): void {
-  const { scene, state, width, contentInner, phaseRoot } = ctx;
-  renderMainPanel(ctx);
-  renderPlanetBackdrop(ctx);
-  const currentNodes = state.map[state.currentColumn] ?? [];
-  const availableSummary = state.currentColumn === state.sitesPerPlanet - 1
-    ? "Boss keeps this planet's gains. Flee skips the risk but drops planet rewards."
-    : currentNodes
-        .map((node) => `${describeNodeChoice(node.kind).heading}: ${describeNodeChoice(node.kind).detail}`)
-        .join("  |  ");
+export class MapPhaseView extends PhaseView {
+  private headerContainer!: Phaser.GameObjects.Container;
+  private mapContainer!: Phaser.GameObjects.Container;
+  private onOpenTutorial?: () => void;
 
-  renderSectionHeader(
-    scene,
-    contentInner.x + 4,
-    contentInner.y + 6,
-    state.currentColumn === state.sitesPerPlanet - 1
-      ? `${state.planetName.toUpperCase()} FINAL APPROACH`
-      : `${state.planetName.toUpperCase()} WAYPOINTS`,
-    availableSummary,
-    contentInner.width - (onOpenTutorial ? 140 : 8),
-    phaseRoot
-  );
-  if (onOpenTutorial) {
-    renderTutorialInfoButton(scene, contentInner.x + contentInner.width - 116, contentInner.y + 4, "BRIEFING", onOpenTutorial, phaseRoot);
+  public build(): void {
+    const localCtx = { ...this.ctx, phaseRoot: this.container };
+    
+    renderMainPanel(localCtx);
+    renderPlanetBackdrop(localCtx);
+
+    this.headerContainer = this.scene.add.container(0, 0);
+    this.mapContainer = this.scene.add.container(0, 0);
+    this.container.add([this.headerContainer, this.mapContainer]);
   }
 
-  if (state.selectedPlanetImageKey) {
-    renderPlanetSprite(scene, state.selectedPlanetImageKey, width / 2, contentInner.y + 190, 290, 210, 0.96, phaseRoot);
-  }
+  updateState(state: RunState, onOpenTutorial?: () => void): void {
+    const { scene, width, contentInner } = this.ctx;
+    this.onOpenTutorial = onOpenTutorial;
 
-  const graphics = makeGraphics(scene, phaseRoot);
-  const cx = width / 2;
-  const cy = contentInner.y + 190;
-  const waypointPositions = [
-    [
-      { x: cx - 116, y: cy - 68 },
-      { x: cx + 122, y: cy + 56 },
-    ],
-    [
-      { x: cx - 132, y: cy + 56 },
-      { x: cx + 128, y: cy - 64 },
-    ],
-    [
-      { x: cx - 86, y: cy - 84 },
-      { x: cx + 94, y: cy + 72 },
-    ],
-    [
-      { x: cx - 76, y: cy - 56 },
-      { x: cx + 82, y: cy + 60 },
-    ],
-  ] as const;
+    // Fast-rebuild header
+    this.headerContainer.removeAll(true);
+    const currentNodes = state.map[state.currentColumn] ?? [];
+    const availableSummary = state.currentColumn === state.sitesPerPlanet - 1
+      ? "Boss keeps this planet's gains. Flee skips the risk but drops planet rewards."
+      : currentNodes
+          .map((node) => `${describeNodeChoice(node.kind).heading}: ${describeNodeChoice(node.kind).detail}`)
+          .join("  |  ");
 
-  let previousWaypoint: { x: number; y: number } | null = null;
-
-  for (let column = 0; column < state.currentColumn; column += 1) {
-    const clearedNode = state.map[column].find((node) => node.cleared);
-    if (!clearedNode) {
-      continue;
+    renderSectionHeader(
+      scene,
+      contentInner.x + 4,
+      contentInner.y + 6,
+      state.currentColumn === state.sitesPerPlanet - 1
+        ? `${state.planetName.toUpperCase()} FINAL APPROACH`
+        : `${state.planetName.toUpperCase()} WAYPOINTS`,
+      availableSummary,
+      contentInner.width - (this.onOpenTutorial ? 140 : 8),
+      this.headerContainer
+    );
+    if (this.onOpenTutorial) {
+      renderTutorialInfoButton(scene, contentInner.x + contentInner.width - 116, contentInner.y + 4, "BRIEFING", this.onOpenTutorial, this.headerContainer);
     }
 
-    const pos = waypointPositions[column][clearedNode.lane];
-    if (previousWaypoint) {
-      graphics.lineStyle(2, 0x31596a, 0.8);
-      graphics.beginPath();
-      graphics.moveTo(previousWaypoint.x, previousWaypoint.y);
-      graphics.lineTo(pos.x, pos.y);
-      graphics.strokePath();
+    // Fast-rebuild map
+    this.mapContainer.removeAll(true);
+
+    if (state.selectedPlanetImageKey) {
+      renderPlanetSprite(scene, state.selectedPlanetImageKey, width / 2, contentInner.y + 190, 290, 210, 0.96, this.mapContainer);
     }
 
-    previousWaypoint = pos;
-    makeCircle(scene, pos.x, pos.y, 10, 0x8ce5c2, 1, phaseRoot);
-    makeCircle(scene, pos.x, pos.y, 18, 0x1d4d6c, 0.25, phaseRoot);
-  }
+    const graphics = makeGraphics(scene, this.mapContainer);
+    const cx = width / 2;
+    const cy = contentInner.y + 190;
+    const waypointPositions = [
+      [{ x: cx - 116, y: cy - 68 }, { x: cx + 122, y: cy + 56 }],
+      [{ x: cx - 132, y: cy + 56 }, { x: cx + 128, y: cy - 64 }],
+      [{ x: cx - 86,  y: cy - 84 }, { x: cx + 94,  y: cy + 72 }],
+      [{ x: cx - 76,  y: cy - 56 }, { x: cx + 82,  y: cy + 60 }],
+    ] as const;
 
-  for (const node of currentNodes) {
-    const pos = waypointPositions[state.currentColumn][node.lane];
+    let previousWaypoint: { x: number; y: number } | null = null;
 
-    if (previousWaypoint) {
-      graphics.lineStyle(2, 0x31596a, 0.8);
-      graphics.beginPath();
-      graphics.moveTo(previousWaypoint.x, previousWaypoint.y);
-      graphics.lineTo(pos.x, pos.y);
-      graphics.strokePath();
+    for (let column = 0; column < state.currentColumn; column += 1) {
+      const clearedNode = state.map[column].find((node) => node.cleared);
+      if (!clearedNode) {
+        continue;
+      }
+
+      const pos = waypointPositions[column][clearedNode.lane];
+      if (previousWaypoint) {
+        graphics.lineStyle(2, 0x31596a, 0.8);
+        graphics.beginPath();
+        graphics.moveTo(previousWaypoint.x, previousWaypoint.y);
+        graphics.lineTo(pos.x, pos.y);
+        graphics.strokePath();
+      }
+
+      previousWaypoint = pos;
+      makeCircle(scene, pos.x, pos.y, 10, 0x8ce5c2, 1, this.mapContainer);
+      makeCircle(scene, pos.x, pos.y, 18, 0x1d4d6c, 0.25, this.mapContainer);
     }
 
-    renderNode(ctx, node, pos.x, pos.y);
-  }
+    // Context for node buttons to mount to mapContainer
+    const mapCtx = { ...this.ctx, phaseRoot: this.mapContainer };
 
-  if (currentNodes[0]) {
-    renderNodeChoiceCard(scene, currentNodes[0], contentInner.x + 6, contentInner.y + 64, 210, phaseRoot);
-  }
+    for (const node of currentNodes) {
+      const pos = waypointPositions[state.currentColumn][node.lane];
 
-  if (currentNodes[1]) {
-    renderNodeChoiceCard(scene, currentNodes[1], contentInner.x + contentInner.width - 216, contentInner.y + 188, 210, phaseRoot);
+      if (previousWaypoint) {
+        graphics.lineStyle(2, 0x31596a, 0.8);
+        graphics.beginPath();
+        graphics.moveTo(previousWaypoint.x, previousWaypoint.y);
+        graphics.lineTo(pos.x, pos.y);
+        graphics.strokePath();
+      }
+
+      renderNode(mapCtx, node, pos.x, pos.y);
+    }
+
+    if (currentNodes[0]) {
+      renderNodeChoiceCard(scene, currentNodes[0], contentInner.x + 6, contentInner.y + 64, 210, this.mapContainer);
+    }
+
+    if (currentNodes[1]) {
+      renderNodeChoiceCard(scene, currentNodes[1], contentInner.x + contentInner.width - 216, contentInner.y + 188, 210, this.mapContainer);
+    }
   }
 }

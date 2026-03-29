@@ -34,6 +34,7 @@ export interface MetaProgress {
   bestPlanet: number;
   lastSeed: number;
   seenTutorials: Partial<Record<TutorialId, boolean>>;
+  upgrades: Record<string, number>;
 }
 
 export interface NodeDefinition {
@@ -63,6 +64,7 @@ export interface CombatActionPreview {
   actualHitChance: number | null;
   expectedDamage: string;
   note: string;
+  breakdown?: string[];
 }
 
 export interface CombatState {
@@ -80,6 +82,8 @@ export interface CombatState {
   actions: CombatAction[];
   previews: CombatActionPreview[];
   lastSummary: string[];
+  lastActionId: string | null;
+  lastActionKind: string | null;
 }
 
 export interface EventChoice {

@@ -75,7 +75,36 @@ export function makeImage(
   key: string,
   parent?: DisplayTarget
 ): Phaser.GameObjects.Image {
-  return attachDisplayObject(scene, new Phaser.GameObjects.Image(scene, x, y, key), parent);
+  const image = new Phaser.GameObjects.Image(scene, x, y, key);
+  return attachDisplayObject(scene, image, parent);
+}
+
+export function makeFrameImage(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  key: string,
+  frame: string | number,
+  parent?: DisplayTarget
+): Phaser.GameObjects.Image {
+  const image = new Phaser.GameObjects.Image(scene, x, y, key, frame);
+  return attachDisplayObject(scene, image, parent);
+}
+
+export function makeNineSlice(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  key: string,
+  width: number,
+  height: number,
+  left: number,
+  right: number,
+  top: number,
+  bottom: number,
+  parent?: DisplayTarget
+): Phaser.GameObjects.NineSlice {
+  return attachDisplayObject(scene, new Phaser.GameObjects.NineSlice(scene, x, y, key, undefined, width, height, left, right, top, bottom), parent);
 }
 
 export function makeGraphics(

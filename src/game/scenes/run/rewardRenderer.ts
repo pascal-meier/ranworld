@@ -1,47 +1,75 @@
-import type { RunRenderContext } from "./shared.js";
-import { renderMainPanel, renderRerollButton, renderActiveMechanicEffects, renderRewardChoice } from "./shared.js";
+import type { RunState } from "../../types.js";
+import { PhaseView } from "./PhaseView.js";
+import { UI_EVENTS } from "../../events.js";
+import { renderMainPanel, renderRerollButton, renderActiveMechanicEffects, getCenteredX, type RunRenderContext } from "./shared.js";
+import type { UIRewardCard } from "../../ui/components/RewardCard.js";
 import { renderSectionHeader } from "../../ui/components.js";
 import { createPanel } from "../../ui/widgets.js";
+import { LAB_THEME } from "../../ui/theme.js";
 import { makeImage } from "../../ui/display.js";
 
-export function renderRewardPhase(
-  ctx: RunRenderContext,
-  onChooseReward: (choiceId: string) => void,
-  onReroll: () => void
-): void {
-  const { scene, state, width, contentInner, phaseRoot } = ctx;
-  const reward = state.reward!;
-  const gap = 18;
-  const choiceW = Math.floor((contentInner.width - gap * 2) / 3);
+export class RewardPhaseView extends PhaseView {
+  private headerContainer!: Phaser.GameObjects.Container;
+  private optionsLayer!: Phaser.GameObjects.Container;
 
-  renderMainPanel(ctx);
-  renderSectionHeader(
-    scene,
-    contentInner.x + 4,
-    contentInner.y + 6,
-    `${reward.title.toUpperCase()} / ${state.planetName.toUpperCase()}`,
-    reward.description,
-    contentInner.width - 180,
-    phaseRoot
-  );
-
-  createPanel(scene, width - 176, contentInner.y + 8, 132, 124, 0x1a3342, undefined, phaseRoot);
-  createPanel(scene, contentInner.x + 4, contentInner.y + 62, contentInner.width - 180, 72, 0x1a3342, undefined, phaseRoot);
-  renderActiveMechanicEffects(ctx, contentInner.x + 16, contentInner.y + 76, contentInner.width - 204, 3);
-
-  if (scene.textures.exists("reward-cache-sheet")) {
-    makeImage(scene, width - 110, contentInner.y + 70, "reward-cache-sheet", phaseRoot)
-      .setCrop(0, 0, 128, 128)
-      .setDisplaySize(72, 72)
-      .setOrigin(0.5);
+  constructor(
+    scene: Phaser.Scene,
+    ctx: RunRenderContext
+  ) {
+    super(scene, ctx);
   }
 
-  createPanel(scene, contentInner.x + 4, contentInner.y + 150, contentInner.width - 8, 96, 0x1a3342, undefined, phaseRoot);
-  renderRerollButton(ctx, width - 180, contentInner.y + 158, 152, onReroll);
+  public build(): void {
+    const { scene, width, contentInner, layout } = this.ctx;
+    const localCtx = { ...this.ctx, phaseRoot: this.container };
+    
+    // Background and frame
+    renderMainPanel(localCtx);
 
-  let x = contentInner.x + 4;
-  for (const choice of reward.choices) {
-    renderRewardChoice(scene, choice, x, contentInner.y + 168, choiceW, () => onChooseReward(choice.id), phaseRoot);
-    x += choiceW + gap;
+    // Illustration Backdrop (Right Side)
+    const backdropX = contentInner.x + contentInner.width - 80;
+    const backdropY = contentInner.y + 60;
+    createPanel(scene, backdropX - 60, backdropY - 45, 120, 110, 0x1a3342, undefined, this.container);
+    
+    this.headerContainer = scene.add.container(0, 0);
+    this.optionsLayer = scene.add.container(0, 0);
+    this.container.add([this.headerContainer, this.optionsLayer]);
+  }
+
+  updateState(state: RunState): void {
+    const { scene, width, contentInner } = this.ctx;
+    const reward = state.reward!;
+
+    this.headerContainer.removeAll(true);
+    renderSectionHeader(
+      scene,
+      contentInner.x + 4,
+      contentInner.y + 6,
+      `${reward.title.toUpperCase()} / ${state.planetName.toUpperCase()}`,
+      reward.description,
+      contentInner.width - 180,
+      this.headerContainer
+    );
+
+    this.optionsLayer.removeAll(true).setVisible(true).setAlpha(1);
+    
+    const count = reward.choices.length;
+    const gap = 16;
+    const cardW = 160;
+    const cardH = 92;
+    const totalW = (count * cardW) + ((count - 1) * gap);
+    
+    let x = contentInner.x + getCenteredX(totalW, contentInner.width);
+    const selectionY = contentInner.y + contentInner.height - cardH - 12;
+
+    // Background Panel for selections
+    createPanel(scene, contentInner.x + 8, selectionY - 8, contentInner.width - 16, cardH + 16, 0x1a3342, LAB_THEME.borderSoft, this.optionsLayer);
+
+    for (const choice of reward.choices) {
+      const card = this.scene.add.uiRewardCard(x, selectionY, cardW, cardH);
+      card.setReward(choice);
+      this.optionsLayer.add(card);
+      x += cardW + gap;
+    }
   }
 }

@@ -6,21 +6,21 @@ The goal is not lots of content. The goal is strong presentation for a controlle
 ## MVP Needs
 
 ### UI
-- [ ] `assets/ui/panels/panel-main.png`
-- [ ] `assets/ui/panels/panel-muted.png`
-- [ ] `assets/ui/buttons/button-primary.png`
-- [ ] `assets/ui/buttons/button-secondary.png`
-- [ ] `assets/ui/buttons/button-hover.png`
+- [x] `assets/ui/panels/panel-main.png`
+- [x] `assets/ui/panels/panel-muted.png`
+- [x] `assets/ui/buttons/button-primary.png`
+- [x] `assets/ui/buttons/button-secondary.png`
+- [x] `assets/ui/buttons/button-hover.png`
 
 ### Icons: system
-- [ ] `assets/ui/icons/system/icon-hp.png`
-- [ ] `assets/ui/icons/system/icon-guard.png`
-- [ ] `assets/ui/icons/system/icon-focus.png`
-- [ ] `assets/ui/icons/system/icon-supplies.png`
-- [ ] `assets/ui/icons/system/icon-seed.png`
-- [ ] `assets/ui/icons/system/icon-archive.png`
-- [ ] `assets/ui/icons/system/icon-research.png`
-- [ ] `assets/ui/icons/system/icon-warning.png`
+- [x] `assets/ui/icons/system/icon-hp.png`
+- [x] `assets/ui/icons/system/icon-guard.png`
+- [x] `assets/ui/icons/system/icon-focus.png`
+- [x] `assets/ui/icons/system/icon-supplies.png`
+- [x] `assets/ui/icons/system/icon-seed.png`
+- [x] `assets/ui/icons/system/icon-archive.png`
+- [x] `assets/ui/icons/system/icon-research.png`
+- [x] `assets/ui/icons/system/icon-warning.png`
 
 ### Resources
 - [x] `assets/ui/resources/archive-shard-bw-v1.png`
@@ -28,58 +28,65 @@ The goal is not lots of content. The goal is strong presentation for a controlle
 - [x] `assets/ui/resources/supply-token-v1.png`
 
 ### Icons: nodes
-- [ ] `assets/ui/icons/nodes/node-combat.png`
-- [ ] `assets/ui/icons/nodes/node-event.png`
-- [ ] `assets/ui/icons/nodes/node-reward.png`
-- [ ] `assets/ui/icons/nodes/node-draft.png`
+- [x] `assets/ui/icons/nodes/node-combat.png`
+- [x] `assets/ui/icons/nodes/node-event.png`
+- [x] `assets/ui/icons/nodes/node-reward.png`
+- [x] `assets/ui/icons/nodes/node-draft.png`
 
 ### Icons: mechanics
-- [ ] `assets/ui/icons/mechanics/mechanic-input-randomness.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-output-randomness.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-environmental-randomness.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-mitigation-agency.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-biased-expectations.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-session-persistence.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-layered-reward-structures.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-soft-failure-compensation.png`
+- [x] `assets/ui/icons/mechanics/mechanic-input-randomness.png`
+- [x] `assets/ui/icons/mechanics/mechanic-output-randomness.png`
+- [x] `assets/ui/icons/mechanics/mechanic-environmental-randomness.png`
+- [x] `assets/ui/icons/mechanics/mechanic-mitigation-agency.png`
+- [x] `assets/ui/icons/mechanics/mechanic-biased-expectations.png`
+- [x] `assets/ui/icons/mechanics/mechanic-session-persistence.png`
+- [x] `assets/ui/icons/mechanics/mechanic-layered-reward-structures.png`
+- [x] `assets/ui/icons/mechanics/mechanic-soft-failure-compensation.png`
 
 ## Less Text-Based Presentation Layer
 
 ### Player: portrait or simple actor
-- [ ] `assets/actors/player/player-idle.png`
-- [ ] `assets/actors/player/player-guard.png`
-- [ ] `assets/actors/player/player-focus.png`
-- [ ] `assets/actors/player/player-hit.png`
-- [ ] `assets/actors/player/player-low-hp.png`
+- [x] `assets/actors/player/player-idle.png`
+- [x] `assets/actors/player/player-guard.png`
+- [x] `assets/actors/player/player-focus.png`
+- [x] `assets/actors/player/player-hit.png`
+- [x] `assets/actors/player/player-low-hp.png`
 
 ### Enemies: same mechanics, different visual shells
-- [ ] `assets/actors/enemies/enemy-calibration-drone.png`
-- [ ] `assets/actors/enemies/enemy-scrap-hound.png`
-- [ ] `assets/actors/enemies/enemy-glass-engine.png`
+- [x] `assets/actors/enemies/enemy-calibration-drone.png`
+- [x] `assets/actors/enemies/enemy-warden-v1.png`
+- [x] `assets/actors/enemies/enemy-scrap-hound.png`
+- [x] `assets/actors/enemies/enemy-glass-engine.png`
 
 ### Event presenters
-- [ ] `assets/actors/events/event-analyst.png`
-- [ ] `assets/actors/events/event-terminal.png`
+- [x] `assets/actors/events/event-analyst.png`
+- [x] `assets/actors/events/event-terminal.png`
 
 ### Reward presenters
-- [ ] `assets/actors/rewards/reward-cache.png`
+- [x] `assets/actors/rewards/reward-cache.png`
+- [x] `assets/actors/rewards/reward-medkit-v1.png`
+- [x] `assets/actors/rewards/reward-plating-v1.png`
+- [x] `assets/actors/rewards/reward-supply-crate-v1.png`
 - [ ] `assets/actors/rewards/reward-archive-shard.png`
 - [ ] `assets/actors/rewards/reward-stabilizer-kit.png`
 
 ### Intent icons
-- [ ] `assets/ui/icons/intents/intent-attack.png`
-- [ ] `assets/ui/icons/intents/intent-guard.png`
-- [ ] `assets/ui/icons/intents/intent-focus.png`
-- [ ] `assets/ui/icons/intents/intent-risk.png`
-- [ ] `assets/ui/icons/intents/intent-reward.png`
+- [x] `assets/ui/icons/intents/intent-attack.png`
+- [x] `assets/ui/icons/intents/intent-guard.png`
+- [x] `assets/ui/icons/intents/intent-focus.png`
+- [x] `assets/ui/icons/intents/intent-risk.png`
+- [x] `assets/ui/icons/intents/intent-reward.png`
+- [x] `assets/ui/icons/actions/action-strike-v1.png`
+- [x] `assets/ui/icons/actions/action-guard-v1.png`
+- [x] `assets/ui/icons/actions/action-calibrate-v1.png`
 
 ### Status overlays
-- [ ] `assets/ui/icons/status/status-hit.png`
-- [ ] `assets/ui/icons/status/status-miss.png`
-- [ ] `assets/ui/icons/status/status-crit.png`
-- [ ] `assets/ui/icons/status/status-block.png`
-- [ ] `assets/ui/icons/status/status-heal.png`
-- [ ] `assets/ui/icons/status/status-warning.png`
+- [x] `assets/ui/icons/status/status-hit.png`
+- [x] `assets/ui/icons/status/status-miss.png`
+- [x] `assets/ui/icons/status/status-crit.png`
+- [x] `assets/ui/icons/status/status-block.png`
+- [x] `assets/ui/icons/status/status-heal.png`
+- [x] `assets/ui/icons/status/status-warning.png`
 
 ### Encounter art
 - [ ] `assets/illustrations/encounters/encounter-combat.png`
@@ -87,36 +94,37 @@ The goal is not lots of content. The goal is strong presentation for a controlle
 - [ ] `assets/illustrations/rewards/reward-cache-scene.png`
 
 ### Environment backdrops
-- [ ] `assets/backgrounds/environments/env-controlled-chamber.png`
-- [ ] `assets/backgrounds/environments/env-ion-storm.png`
-- [ ] `assets/backgrounds/environments/env-clear-corridor.png`
-- [ ] `assets/backgrounds/environments/env-dust-field.png`
-- [ ] `assets/backgrounds/environments/env-echo-vault.png`
+- [x] `assets/backgrounds/environments/env-controlled-chamber.png`
+- [x] `assets/backgrounds/combat/arena-floor-v1.png`
+- [x] `assets/backgrounds/environments/env-ion-storm.png`
+- [x] `assets/backgrounds/environments/env-clear-corridor.png`
+- [x] `assets/backgrounds/environments/env-dust-field.png`
+- [x] `assets/backgrounds/environments/env-echo-vault.png`
 
 ### Stage props
-- [ ] `assets/props/combat/prop-console.png`
-- [ ] `assets/props/combat/prop-barrier.png`
-- [ ] `assets/props/combat/prop-sparks.png`
-- [ ] `assets/props/events/prop-terminal.png`
-- [ ] `assets/props/rewards/prop-crate.png`
+- [/] `assets/props/combat/prop-console.png`
+- [/] `assets/props/combat/prop-barrier.png`
+- [x] `assets/props/combat/prop-sparks.png` (SOLVED VIA CODE: Phaser Particles)
+- [x] `assets/props/events/prop-terminal.png` (Re-using event-terminal.png)
+- [/] `assets/props/rewards/prop-crate.png`
 
 ### VFX
-- [ ] `assets/vfx/combat/vfx-hit.png`
-- [ ] `assets/vfx/combat/vfx-miss.png`
-- [ ] `assets/vfx/combat/vfx-crit.png`
-- [ ] `assets/vfx/combat/vfx-block.png`
-- [ ] `assets/vfx/ui/vfx-reward-pick.png`
-- [ ] `assets/vfx/ui/vfx-mechanic-pick.png`
+- [x] `assets/vfx/combat/vfx-hit.png` (Created prior)
+- [x] `assets/vfx/combat/vfx-miss.png` (Created prior)
+- [x] `assets/vfx/combat/vfx-crit.png` (SOLVED VIA CODE: Camera Shake + Tinting vfx-hit)
+- [x] `assets/vfx/combat/vfx-block.png` (Created prior)
+- [x] `assets/vfx/ui/vfx-reward-pick.png` (SOLVED VIA CODE: Phaser Tweens Pulse/Fade)
+- [x] `assets/vfx/ui/vfx-mechanic-pick.png` (SOLVED VIA CODE: Phaser Tweens Pulse/Fade)
 
 ### Audio
-- [ ] `assets/audio/ui/sfx-ui-click.wav`
-- [ ] `assets/audio/ui/sfx-ui-confirm.wav`
-- [ ] `assets/audio/combat/sfx-hit.wav`
-- [ ] `assets/audio/combat/sfx-miss.wav`
-- [ ] `assets/audio/combat/sfx-block.wav`
-- [ ] `assets/audio/combat/sfx-crit.wav`
-- [ ] `assets/audio/rewards/sfx-reward.wav`
-- [ ] `assets/audio/ambient/amb-lab-loop.wav`
+- [x] `assets/audio/ui/sfx-ui-click.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/ui/sfx-ui-confirm.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/combat/sfx-hit.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/combat/sfx-miss.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/combat/sfx-block.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/combat/sfx-crit.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/rewards/sfx-reward.wav` (SOLVED VIA CODE: SynthesisManager)
+- [x] `assets/audio/ambient/amb-lab-loop.wav` (SOLVED VIA CODE: SynthesisManager Drone)
 
 ## Naming Rules
 
@@ -141,26 +149,62 @@ The goal is not lots of content. The goal is strong presentation for a controlle
 
 ## Recommended First Pass
 
-- [ ] `assets/ui/icons/nodes/node-combat.png`
-- [ ] `assets/ui/icons/nodes/node-event.png`
-- [ ] `assets/ui/icons/nodes/node-reward.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-input-randomness.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-output-randomness.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-environmental-randomness.png`
-- [ ] `assets/ui/icons/mechanics/mechanic-mitigation-agency.png`
-- [ ] `assets/actors/player/player-idle.png`
-- [ ] `assets/actors/enemies/enemy-calibration-drone.png`
-- [ ] `assets/actors/events/event-terminal.png`
-- [ ] `assets/actors/rewards/reward-cache.png`
-- [ ] `assets/backgrounds/environments/env-controlled-chamber.png`
+- [x] `assets/ui/icons/nodes/node-combat.png`
+- [x] `assets/ui/icons/nodes/node-event.png`
+- [x] `assets/ui/icons/nodes/node-reward.png`
+- [x] `assets/ui/icons/mechanics/mechanic-input-randomness.png`
+- [x] `assets/ui/icons/mechanics/mechanic-output-randomness.png`
+- [x] `assets/ui/icons/mechanics/mechanic-environmental-randomness.png`
+- [x] `assets/ui/icons/mechanics/mechanic-mitigation-agency.png`
+- [x] `assets/actors/player/player-idle.png`
+- [x] `assets/actors/enemies/enemy-calibration-drone.png`
+- [x] `assets/actors/events/event-terminal.png`
+- [x] `assets/actors/rewards/reward-cache.png`
+- [x] `assets/backgrounds/environments/env-controlled-chamber.png`
 
 ## Priority Order
 
-- [ ] 1. Node icons
-- [ ] 2. Mechanic icons
-- [ ] 3. Player + one enemy + one event presenter + one reward presenter
-- [ ] 4. Core environment backdrop
-- [ ] 5. Button and panel assets
-- [ ] 6. Intent and status icons
+- [x] 1. Node icons
+- [x] 2. Mechanic icons
+- [x] 3. Player + one enemy + one event presenter + one reward presenter
+- [x] 4. Core environment backdrop
+- [x] 5. Button and panel assets
+- [x] 6. Intent and status icons
 - [ ] 7. Core SFX
 - [ ] 8. Extra enemies, props, and VFX polish
+
+## Cleanup Tasks (Manual Background Removal)
+List of generated assets that currently have backgrounds and need manual transparency cleanup:
+
+- [ ] `assets/actors/enemies/enemy-warden-v1.png`
+- [ ] `assets/actors/enemies/enemy-scrap-hound-v1.png`
+- [ ] `assets/actors/enemies/enemy-glass-engine-v1.png`
+- [ ] `assets/actors/player/player-low-hp-v1.png` (High Priority)
+- [ ] `assets/actors/player/player-guard-v1.png`
+- [ ] `assets/actors/player/player-focus-v1.png`
+- [ ] `assets/actors/player/player-hit-v1.png`
+- [ ] `assets/actors/events/event-analyst-v1.png`
+- [ ] `assets/actors/rewards/reward-medkit-v1.png`
+- [ ] `assets/actors/rewards/reward-plating-v1.png`
+- [ ] `assets/actors/rewards/reward-supply-crate-v1.png`
+- [ ] `assets/ui/icons/actions/action-strike-v1.png`
+- [ ] `assets/ui/icons/actions/action-guard-v1.png`
+- [ ] `assets/ui/icons/actions/action-calibrate-v1.png`
+- [ ] `assets/ui/icons/status/status-heal-v1.png`
+- [ ] `assets/ui/icons/status/status-warning-v1.png`
+- [ ] `assets/backgrounds/combat/arena-floor-v1.png`
+- [ ] `assets/vfx/combat/vfx-hit-v1.png`
+- [ ] `assets/vfx/combat/vfx-miss-v1.png`
+- [ ] `assets/vfx/combat/vfx-block-v1.png`
+- [ ] `assets/actors/rewards/reward-archive-shard-v1.png`
+- [ ] `assets/actors/rewards/reward-stabilizer-kit-v1.png`
+- [ ] `assets/actors/props/prop-console-v1.png`
+- [ ] `assets/actors/props/prop-barrier-v1.png`
+- [ ] `assets/ui/panels/panel-main-v1.png`
+- [ ] `assets/ui/panels/button-primary-v1.png`
+- [ ] `assets/ui/panels/button-hover-v1.png`
+- [ ] `assets/ui/icons/nodes/node-draft-v1.png`
+- [ ] `assets/ui/icons/mechanics/mechanic-biased-expectations-v1.png`
+- [ ] `assets/ui/icons/mechanics/mechanic-session-persistence-v1.png`
+- [ ] `assets/ui/icons/mechanics/mechanic-layered-reward-structures-v1.png`
+- [ ] `assets/ui/icons/mechanics/mechanic-soft-failure-compensation-v1.png`

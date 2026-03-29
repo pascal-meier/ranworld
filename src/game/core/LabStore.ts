@@ -1,6 +1,7 @@
 import { LabEngine } from "./LabEngine.js";
 import { loadMeta, saveMeta } from "./storage.js";
 import type { MechanicId, MetaProgress, RunState, TutorialId } from "../types.js";
+import { META_UPGRADES, getUpgradeLevel, canAffordUpgrade, getUpgradeCost } from "./metaUpgrades.js";
 
 export class LabStore extends Phaser.Events.EventEmitter {
   private engine: LabEngine | null = null;
@@ -101,6 +102,27 @@ export class LabStore extends Phaser.Events.EventEmitter {
   rerollCurrentOffer(): void {
     this.engine?.rerollCurrentOffer();
     this.persistAndEmit();
+  }
+
+  purchaseMetaUpgrade(upgradeId: string): void {
+    const upgrade = META_UPGRADES.find(u => u.id === upgradeId);
+    if (!upgrade) return;
+
+    const currentLevel = getUpgradeLevel(this.meta.upgrades, upgradeId);
+    const cost = getUpgradeCost(upgrade, currentLevel);
+    
+    if (cost !== null && canAffordUpgrade(this.meta.archive, upgrade, currentLevel)) {
+      this.meta = {
+        ...this.meta,
+        archive: this.meta.archive - cost,
+        upgrades: {
+          ...this.meta.upgrades,
+          [upgradeId]: currentLevel + 1
+        }
+      };
+      saveMeta(this.meta);
+      this.emitChange();
+    }
   }
 
   returnToSetup(mode: "same" | "new" = "new"): void {

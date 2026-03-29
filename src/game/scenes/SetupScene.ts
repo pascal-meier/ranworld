@@ -7,6 +7,7 @@ import { createInfoCard, renderFittedSprite, renderSectionHeader } from "../ui/c
 import { makeImage, makeRectangle, makeText } from "../ui/display.js";
 import { attachImageTooltip } from "../ui/tooltip.js";
 import { BaseScene } from "./BaseScene.js";
+import { META_UPGRADES, getUpgradeLevel, canAffordUpgrade, getUpgradeCost } from "../core/metaUpgrades.js";
 
 export class SetupScene extends BaseScene {
   private readonly handleChange = () => this.render();
@@ -181,55 +182,52 @@ export class SetupScene extends BaseScene {
       onClick: () => this.lab.rerollSeed(),
     }, this.chromeLayer);
 
+    createPanel(this, layout.content.x, layout.content.y, layout.content.width, layout.content.height, LAB_THEME.panel, LAB_THEME.borderSoft, this.contentLayer);
+    renderSectionHeader(this, content.x + 4, content.y + 6, "RESEARCH TERMINAL", "Invest Archive Shards to permanently upgrade your next expedition.", undefined, this.contentLayer);
+
+    let upgradeY = content.y + 44;
+    META_UPGRADES.forEach((upgrade) => {
+      const currentLevel = getUpgradeLevel(meta.upgrades, upgrade.id);
+      const cost = getUpgradeCost(upgrade, currentLevel);
+      const isMax = currentLevel >= upgrade.maxLevel;
+      const canAfford = cost !== null && canAffordUpgrade(meta.archive, upgrade, currentLevel);
+
+      createPanel(this, content.x + 4, upgradeY, content.width - 8, 48, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this.contentLayer);
+      
+      makeText(this, content.x + 16, upgradeY + 12, `${upgrade.name} (LVL ${currentLevel}/${upgrade.maxLevel})`, textStyle(9, LAB_THEME.text), this.contentLayer);
+      makeText(this, content.x + 16, upgradeY + 28, upgrade.description, textStyle(8, LAB_THEME.textMuted), this.contentLayer);
+
+      const btnLabel = isMax ? "MAXED" : `RESEARCH (${cost})`;
+      createButton(this, {
+        x: content.x + content.width - 150,
+        y: upgradeY + 8,
+        width: 140,
+        height: 32,
+        label: btnLabel,
+        disabled: isMax || !canAfford,
+        onClick: () => this.lab.purchaseMetaUpgrade(upgrade.id),
+        fill: canAfford ? 0x1d4d6c : LAB_THEME.panelMuted
+      }, this.contentLayer);
+
+      upgradeY += 56;
+    });
+
     if (showDevVisualPass) {
-      createPanel(this, layout.content.x, layout.content.y, layout.content.width, layout.content.height, LAB_THEME.panelMuted, LAB_THEME.borderSoft, this.contentLayer);
-      renderSectionHeader(this, content.x + 4, content.y + 6, "DEV PREVIEW", undefined, undefined, this.contentLayer);
-
-      createPanel(this, content.x + 4, content.y + 38, content.width - 8, 74, LAB_THEME.panel, LAB_THEME.borderSoft, this.contentLayer);
-      createPanel(this, content.x + 4, content.y + 118, content.width - 8, content.height - 126, LAB_THEME.panel, LAB_THEME.borderSoft, this.contentLayer);
-      makeText(this, content.x + 20, content.y + 54, "ASSET STRIP", textStyle(10), this.contentLayer);
-      makeText(this, content.x + 20, content.y + 134, "IMPLEMENTED MECHANICS", textStyle(10), this.contentLayer);
-
-      const enemySprite = renderFittedSprite(this, "enemy-calibration-drone", {
-        x: content.x + 260,
-        y: content.y + 44,
-        width: 120,
-        height: 58,
-      }, 1, this.contentLayer);
-      const eventSprite = renderFittedSprite(this, "event-terminal", {
-        x: content.x + 386,
-        y: content.y + 44,
-        width: 96,
-        height: 58,
-      }, 1, this.contentLayer);
-
-      if (this.textures.exists("reward-cache-sheet")) {
-        makeImage(this, content.x + 506, content.y + 74, "reward-cache-sheet", this.contentLayer)
-          .setCrop(0, 0, 128, 128)
-          .setDisplaySize(28, 28)
-          .setOrigin(0.5);
-      }
-
-      let x = content.x + 16;
-      let y = content.y + 154;
-
-      for (const mechanicId of allMechanics.map((mechanic) => mechanic.id)) {
-        createTag(this, x, y, getMechanicDefinition(mechanicId).shortLabel, LAB_THEME.tag, this.contentLayer);
-        x += 112;
-
-        if (x > content.x + content.width - 132) {
-          x = content.x + 16;
-          y += 24;
-        }
+      // Small dev strip at bottom
+      makeText(this, layout.footer.x + 16, layout.footer.y + 12, "DEV INFO", textStyle(7, LAB_THEME.textMuted), this.footerLayer);
+      let x = layout.footer.x + 80;
+      for (const mechanicId of allMechanics.slice(0, 4).map((m) => m.id)) {
+        createTag(this, x, layout.footer.y + 10, getMechanicDefinition(mechanicId).shortLabel, LAB_THEME.tag, this.footerLayer);
+        x += 100;
       }
     } else {
       createPanel(this, layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this.footerLayer);
-      makeText(this, layout.footer.x + 16, layout.footer.y + 12, "ACTIVE UPGRADES", textStyle(9), this.footerLayer);
+      makeText(this, layout.footer.x + 16, layout.footer.y + 12, "PRE-FLIGHT STATUS", textStyle(9), this.footerLayer);
       makeText(
         this,
         layout.footer.x + 16,
         layout.footer.y + 36,
-        "No active upgrades yet. Starter mechanics will appear here once the run begins.",
+        "System checks green. Upgrades applied. Awaiting expedition start.",
         textStyle(8, LAB_THEME.textMuted, "left", layout.footer.width - 32),
         this.footerLayer
       );

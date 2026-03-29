@@ -23,6 +23,7 @@ import type {
   RunState,
 } from "../types.js";
 import { REROLL_SUPPLY_COST } from "./balance.js";
+import { getUpgradeLevel } from "./metaUpgrades.js";
 
 const MAX_ACTIVE_MECHANICS = 3;
 const PLANET_SITES = 4;
@@ -117,9 +118,9 @@ export class LabEngine {
       logs: [],
       summary: "Pick a starting mechanic before touching down on the first planet.",
       player: {
-        hp: 50,
-        maxHp: 50,
-        supplies: 2,
+        hp: 50 + getUpgradeLevel(meta.upgrades, "hp-augment") * 10,
+        maxHp: 50 + getUpgradeLevel(meta.upgrades, "hp-augment") * 10,
+        supplies: 2 + getUpgradeLevel(meta.upgrades, "supply-line"),
         focus: 0,
         guard: 0,
         rerollCharges: 0,
@@ -130,7 +131,7 @@ export class LabEngine {
         archiveGain: 0,
         research: 0,
         softFailShield: 0,
-        legacyBoost: 0,
+        legacyBoost: getUpgradeLevel(meta.upgrades, "focus-calibration") * 5,
       },
       combat: null,
       event: null,
@@ -402,7 +403,22 @@ export class LabEngine {
       actions: baseCombatActions.map((action) => ({ ...action })),
       previews: [],
       lastSummary: [isBoss ? `Boss signal locked on ${this.state.planetName}.` : `Entering ${node.title}.`],
+      lastActionId: null,
+      lastActionKind: null,
     };
+
+    const enemySeed = this.rng.int(0, 100);
+    if (!isBoss) {
+      if (enemySeed < 40) {
+        combat.enemyName = "Scrap Hound";
+      } else if (enemySeed < 70) {
+        combat.enemyName = "Landing Drone";
+      } else {
+        combat.enemyName = "Glass Engine";
+      }
+    } else {
+      combat.enemyName = `${this.state.planetName} Warden`;
+    }
 
     const context = this.createContext();
 
@@ -455,29 +471,34 @@ export class LabEngine {
     const combat = this.state.combat!;
     const player = this.state.player;
 
+    const base = action.baseHitChance;
+    const focus = player.focus;
+    const pity = player.pity;
+    const env = combat.environmentHitShift;
+    const legacy = player.legacyBoost || 0;
+    
+    let breakdown: string[] = [];
+    if (action.kind === "attack") {
+      breakdown.push(`Base: ${base}%`);
+      if (focus > 0) breakdown.push(`Focus: +${focus}%`);
+      if (pity > 0) breakdown.push(`Pity: +${pity}%`);
+      if (env !== 0) breakdown.push(`Env: ${env > 0 ? "+" : ""}${env}%`);
+      if (legacy > 0) breakdown.push(`Lab: +${legacy}%`);
+    }
+
+    const totalRaw = base + focus + pity + env + legacy;
+    const totalClamped = Phaser.Math.Clamp(totalRaw, 5, 98);
+
     let preview: CombatActionPreview = {
       actionId: action.id,
-      shownHitChance:
-        action.kind === "attack"
-          ? Phaser.Math.Clamp(
-              action.baseHitChance + player.focus + player.pity + combat.environmentHitShift,
-              5,
-              98
-            )
-          : null,
-      actualHitChance:
-        action.kind === "attack"
-          ? Phaser.Math.Clamp(
-              action.baseHitChance + player.focus + player.pity + combat.environmentHitShift,
-              5,
-              98
-            )
-          : null,
+      shownHitChance: action.kind === "attack" ? totalClamped : null,
+      actualHitChance: action.kind === "attack" ? totalClamped : null,
       expectedDamage:
         action.kind === "attack"
           ? `${action.baseDamage}`
           : `${action.guardGain || action.focusGain}`,
       note: action.kind === "attack" ? "Attack preview." : "Support action.",
+      breakdown: breakdown.length > 0 ? breakdown : undefined,
     };
 
     for (const mechanic of this.getActiveMechanics()) {
@@ -593,6 +614,8 @@ export class LabEngine {
     combat.round += 1;
     combat.enemyAttack = this.rollEnemyAttack(combat.enemyRole === "boss");
     combat.lastSummary = resolution.notes;
+    combat.lastActionId = action.id;
+    combat.lastActionKind = action.kind;
     this.state.summary = resolution.notes[resolution.notes.length - 1] ?? "Combat updated.";
     this.refreshCombatPreviews();
   }

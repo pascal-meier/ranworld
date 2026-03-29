@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 
-fs.rmSync("dist", { recursive: true, force: true });
+try { fs.rmSync("dist", { recursive: true, force: true }); } catch (e) {}
 fs.mkdirSync("dist", { recursive: true });
 
-execSync("node ./node_modules/typescript/bin/tsc", { stdio: "inherit" });
+execSync("npx --cache ./.npm-cache tsc", { stdio: "inherit" });
 
 fs.cpSync("index.html", "dist/index.html");
 fs.cpSync("styles", "dist/styles", { recursive: true });
