@@ -9,6 +9,7 @@ export const mitigationAgency: MechanicDefinition = {
   detail:
     "Instead of removing randomness, the player earns tools to shape it on purpose.",
   effectText: "Gain 2 stabilize charges and unlock Stabilize, which grants guard and +18 stored focus.",
+  iconKey: "mechanic-mitigation-agency",
   onAdded: ({ state, log }) => {
     state.player.mitigationCharges += 2;
     log("Mitigation Agency granted 2 stabilize charges.");

@@ -74,6 +74,7 @@ export class DraftPhaseView extends PhaseView {
         label: mechanic.shortLabel.toUpperCase(),
         detail: `${getUpgradeTrackLabel(mechanic.upgradeTrack)}. ${mechanic.effectText}`,
         onClick: () => this.scene.events.emit(UI_EVENTS.MECHANIC_SELECTED, mechanicId),
+        iconKey: mechanic.iconKey,
       }, this.optionsLayer);
       x += buttonWidth + gap;
     }

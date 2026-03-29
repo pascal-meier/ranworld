@@ -102,8 +102,8 @@
     },
     "icon-seed": {
       "frame": {
-        "x": 320,
-        "y": 0,
+        "x": 0,
+        "y": 64,
         "w": 64,
         "h": 64
       },
@@ -122,7 +122,7 @@
     },
     "icon-supplies": {
       "frame": {
-        "x": 0,
+        "x": 64,
         "y": 64,
         "w": 64,
         "h": 64
@@ -142,228 +142,8 @@
     },
     "icon-warning": {
       "frame": {
-        "x": 64,
-        "y": 64,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "action-calibrate": {
-      "frame": {
         "x": 128,
         "y": 64,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "action-guard": {
-      "frame": {
-        "x": 192,
-        "y": 64,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "action-strike": {
-      "frame": {
-        "x": 256,
-        "y": 64,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-base-style": {
-      "frame": {
-        "x": 320,
-        "y": 64,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-combat-symbol": {
-      "frame": {
-        "x": 0,
-        "y": 128,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-combat": {
-      "frame": {
-        "x": 64,
-        "y": 128,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-event-symbol": {
-      "frame": {
-        "x": 128,
-        "y": 128,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-event": {
-      "frame": {
-        "x": 192,
-        "y": 128,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-flee-symbol": {
-      "frame": {
-        "x": 256,
-        "y": 128,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-reward-symbol": {
-      "frame": {
-        "x": 320,
-        "y": 128,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "node-reward": {
-      "frame": {
-        "x": 0,
-        "y": 192,
         "w": 64,
         "h": 64
       },
@@ -382,8 +162,8 @@
     },
     "status-block": {
       "frame": {
-        "x": 64,
-        "y": 192,
+        "x": 192,
+        "y": 64,
         "w": 64,
         "h": 64
       },
@@ -402,28 +182,8 @@
     },
     "status-crit": {
       "frame": {
-        "x": 128,
-        "y": 192,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "status-heal": {
-      "frame": {
-        "x": 192,
-        "y": 192,
+        "x": 256,
+        "y": 64,
         "w": 64,
         "h": 64
       },
@@ -442,8 +202,8 @@
     },
     "status-hit": {
       "frame": {
-        "x": 256,
-        "y": 192,
+        "x": 0,
+        "y": 128,
         "w": 64,
         "h": 64
       },
@@ -462,28 +222,8 @@
     },
     "status-miss": {
       "frame": {
-        "x": 320,
-        "y": 192,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      }
-    },
-    "status-warning": {
-      "frame": {
-        "x": 0,
-        "y": 256,
+        "x": 64,
+        "y": 128,
         "w": 64,
         "h": 64
       },
@@ -502,8 +242,8 @@
     },
     "mechanic-environmental-randomness": {
       "frame": {
-        "x": 64,
-        "y": 256,
+        "x": 128,
+        "y": 128,
         "w": 64,
         "h": 64
       },
@@ -522,8 +262,8 @@
     },
     "mechanic-input-randomness": {
       "frame": {
-        "x": 128,
-        "y": 256,
+        "x": 192,
+        "y": 128,
         "w": 64,
         "h": 64
       },
@@ -542,8 +282,8 @@
     },
     "mechanic-mitigation-agency": {
       "frame": {
-        "x": 192,
-        "y": 256,
+        "x": 256,
+        "y": 128,
         "w": 64,
         "h": 64
       },
@@ -562,8 +302,68 @@
     },
     "mechanic-output-randomness": {
       "frame": {
-        "x": 256,
-        "y": 256,
+        "x": 0,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "mechanic-persistence": {
+      "frame": {
+        "x": 64,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "mechanic-reroll": {
+      "frame": {
+        "x": 128,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "mechanic-transparency": {
+      "frame": {
+        "x": 192,
+        "y": 192,
         "w": 64,
         "h": 64
       },
@@ -582,8 +382,8 @@
     },
     "intent-attack": {
       "frame": {
-        "x": 320,
-        "y": 256,
+        "x": 256,
+        "y": 192,
         "w": 64,
         "h": 64
       },
@@ -603,7 +403,7 @@
     "intent-focus": {
       "frame": {
         "x": 0,
-        "y": 320,
+        "y": 256,
         "w": 64,
         "h": 64
       },
@@ -623,7 +423,7 @@
     "intent-guard": {
       "frame": {
         "x": 64,
-        "y": 320,
+        "y": 256,
         "w": 64,
         "h": 64
       },
@@ -643,7 +443,7 @@
     "intent-reward": {
       "frame": {
         "x": 128,
-        "y": 320,
+        "y": 256,
         "w": 64,
         "h": 64
       },
@@ -663,7 +463,7 @@
     "intent-risk": {
       "frame": {
         "x": 192,
-        "y": 320,
+        "y": 256,
         "w": 64,
         "h": 64
       },
@@ -687,8 +487,8 @@
     "image": "ui-icons.png",
     "format": "RGBA8888",
     "size": {
-      "w": 384,
-      "h": 384
+      "w": 320,
+      "h": 320
     },
     "scale": "1"
   }

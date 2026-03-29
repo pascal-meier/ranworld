@@ -19,6 +19,7 @@ export const sessionPersistence: MechanicDefinition = {
   detail:
     "Past sessions affect the current run, turning repeat play into a lens for long-term motivation.",
   effectText: "On pickup, stored archive grants up to +4 max HP and extra supplies based on past runs.",
+  iconKey: "mechanic-persistence",
   onAdded: ({ engine, state, log }) => {
     const archive = engine.meta.archive;
     const { hpBoost, supplyBoost } = getSessionPersistenceBonus(archive);

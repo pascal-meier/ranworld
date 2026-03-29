@@ -36,7 +36,9 @@ export class RunScene extends BaseScene {
   private phaseLayer?: Phaser.GameObjects.Container;
   private overlayLayer?: Phaser.GameObjects.Container;
   private tooltipLayer?: Phaser.GameObjects.Container;
+  private bannerLayer?: Phaser.GameObjects.Container;
   private activeTutorialId?: TutorialId;
+  private lastPhase?: string;
 
   private feedback!: FeedbackManager;
   private chrome!: ChromeManager;
@@ -60,11 +62,13 @@ export class RunScene extends BaseScene {
     this.chromeLayer = this.add.container(0, 0);
     this.phaseLayer = this.add.container(0, 0);
     this.overlayLayer = this.add.container(0, 0);
+    this.bannerLayer = this.add.container(0, 0);
     this.tooltipLayer = this.add.container(0, 0);
     this.backgroundLayer.setDepth(0);
     this.phaseLayer.setDepth(10);
     this.chromeLayer.setDepth(20);
     this.overlayLayer.setDepth(30);
+    this.bannerLayer.setDepth(40);
     this.tooltipLayer.setDepth(100);
     
     this.cameras.main.setRoundPixels(true);
@@ -211,7 +215,18 @@ export class RunScene extends BaseScene {
       }
       this.activeView = view;
       this.activeView?.show(true);
+
+      // Trigger Phase Banners on transition
+      if (this.lastPhase !== state.phase) {
+          if (state.phase === "combat") {
+              this.showPhaseBanner("banner-combat-start");
+          } else if (state.phase === "planet-select") {
+              this.showPhaseBanner("banner-planet-select");
+          }
+      }
     }
+
+    this.lastPhase = state.phase;
 
     if (viewKey === "combat") {
       (this.activeView as CombatPhaseView).updateState(state, !this.feedback.areCombatActionsLocked());
@@ -284,5 +299,33 @@ export class RunScene extends BaseScene {
     }
 
     renderTutorialOverlay(this, getTutorialDefinition(this.activeTutorialId), () => this.closeTutorial(this.activeTutorialId!), this.overlayLayer);
+  }
+
+  private showPhaseBanner(key: string): void {
+    if (!this.bannerLayer || !this.textures.exists(key)) return;
+
+    this.bannerLayer.removeAll(true);
+    const { width, height } = this.scale;
+    const banner = this.add.image(width / 2, height / 2, key).setOrigin(0.5).setAlpha(0);
+    this.bannerLayer.add(banner);
+
+    // Fade in, hold, fade out
+    this.tweens.add({
+      targets: banner,
+      alpha: 1,
+      duration: 500,
+      ease: "Power2",
+      onComplete: () => {
+        this.time.delayedCall(1600, () => {
+          this.tweens.add({
+            targets: banner,
+            alpha: 0,
+            duration: 600,
+            ease: "Power2",
+            onComplete: () => banner.destroy()
+          });
+        });
+      }
+    });
   }
 }

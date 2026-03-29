@@ -409,12 +409,20 @@ export class LabEngine {
 
     const enemySeed = this.rng.int(0, 100);
     if (!isBoss) {
-      if (enemySeed < 40) {
+      if (enemySeed < 30) {
         combat.enemyName = "Scrap Hound";
-      } else if (enemySeed < 70) {
+      } else if (enemySeed < 55) {
         combat.enemyName = "Landing Drone";
-      } else {
+      } else if (enemySeed < 80) {
         combat.enemyName = "Glass Engine";
+      } else {
+        combat.enemyName = "Drone Swarm";
+      }
+
+      // Elite chance for later sites
+      if (this.state.currentSite >= 3 && this.rng.chance(35)) {
+        combat.enemyName = `Heavy Warden Elite`;
+        combat.enemyHp += 6;
       }
     } else {
       combat.enemyName = `${this.state.planetName} Warden`;

@@ -27,6 +27,7 @@ export interface MechanicCatalogEntry extends MechanicTaxonomyMeta {
   shortLabel: string;
   status: MechanicCatalogStatus;
   runtimeId?: MechanicId;
+  iconKey?: string;
 }
 
 export interface ImplementedMechanicMeta extends MechanicTaxonomyMeta {
@@ -77,6 +78,7 @@ export interface MechanicDefinition extends ImplementedMechanicMeta {
   summary: string;
   detail: string;
   effectText: string;
+  iconKey?: string;
   onAdded?: (context: MechanicContext) => void;
   onBuildCombat?: (context: MechanicContext, combat: CombatState) => void;
   onBuildCombatActions?: (

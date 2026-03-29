@@ -156,6 +156,12 @@ export class CombatPhaseView extends PhaseView {
       enemyKey = "enemy-scrap-hound";
     } else if (combat.enemyName === "Glass Engine") {
       enemyKey = "enemy-glass-engine";
+    } else if (combat.enemyName === "Drone Swarm") {
+      enemyKey = "enemy-drone-swarm";
+    } else if (combat.enemyName === "Landing Drone") {
+      enemyKey = "enemy-calibration-drone";
+    } else if (combat.enemyName.includes("Heavy Warden") || combat.enemyName.includes("Elite")) {
+      enemyKey = "enemy-heavy-warden";
     } else if (combat.enemyRole === "boss") {
       enemyKey = "enemy-warden";
     }

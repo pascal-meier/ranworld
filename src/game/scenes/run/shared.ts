@@ -70,20 +70,27 @@ export function renderHud(ctx: RunRenderContext): void {
   let currentX = layout.header.x + 12;
   const currentY = layout.header.y + 10;
   
-  const drawStat = (frame: string, text: string, spacing: number) => {
-    makeFrameImage(scene, currentX, currentY + 5, "ui-icons", frame, phaseRoot).setDisplaySize(12, 12).setOrigin(0, 0.5);
+  const drawStat = (key: string, text: string, spacing: number) => {
+    const isFrame = scene.textures.get("ui-icons").has(key);
+    if (isFrame) {
+      makeFrameImage(scene, currentX, currentY + 5, "ui-icons", key, phaseRoot).setDisplaySize(12, 12).setOrigin(0, 0.5);
+    } else {
+      makeImage(scene, currentX, currentY + 5, key, phaseRoot).setDisplaySize(12, 12).setOrigin(0, 0.5);
+    }
     currentX += 16;
     const txt = makeText(scene, currentX, currentY, text, textStyle(9, LAB_THEME.text), phaseRoot);
     currentX += txt.width + spacing;
   };
 
-  const planetText = makeText(scene, currentX, currentY, `PLANET ${state.planet}   SITE ${state.currentSite}/${state.sitesPerPlanet}`, textStyle(9, LAB_THEME.text), phaseRoot);
+  const planetText = makeText(scene, currentX, currentY, `PLN ${state.planet} / SIT ${state.currentSite}`, textStyle(9, LAB_THEME.text), phaseRoot);
   currentX += planetText.width + 16;
   
-  drawStat("status-heal", `${state.player.hp}/${state.player.maxHp}`, 12);
-  drawStat("icon-supplies", `${state.player.supplies}`, 12);
-  drawStat("icon-focus", `${state.player.focus}`, 12);
-  drawStat("status-warning", `${state.player.mitigationCharges}`, 12);
+  drawStat("status-heal", `${state.player.hp}/${state.player.maxHp}`, 10);
+  drawStat("icon-supplies", `${state.player.supplies}`, 10);
+  drawStat("icon-focus", `${state.player.focus}`, 10);
+  drawStat("status-warning", `${state.player.mitigationCharges}`, 10);
+  drawStat("icon-archive", `${state.player.archiveGain}`, 10);
+  drawStat("icon-research", `${state.player.research}`, 10);
 
   const moduleText =
     state.activeMechanics.length > 0

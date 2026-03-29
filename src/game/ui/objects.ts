@@ -29,6 +29,7 @@ export interface UIButtonConfig {
   label: string;
   detail?: string;
   onClick: () => void;
+  iconKey?: string;
   fill?: number;
   border?: number;
   disabled?: boolean;
@@ -145,6 +146,20 @@ export class UIButton extends Phaser.GameObjects.Container {
         null
       ).setLineSpacing(-2);
       children.push(detailObj);
+    }
+
+    if (config.iconKey && scene.textures.exists(config.iconKey)) {
+      const icon = scene.add.image(config.width / 2, 38, config.iconKey).setOrigin(0.5);
+      icon.setScale(Math.min(0.6, 60 / icon.height));
+      children.push(icon);
+
+      // Shift label down to accommodate icon
+      labelObj.setY(68).setOrigin(0.5, 0).setX(config.width / 2);
+      labelObj.setStyle({ align: "center" });
+      if (detailObj) {
+        detailObj.setY(82).setOrigin(0.5, 0).setX(config.width / 2);
+        detailObj.setWordWrapWidth(config.width - 20).setStyle({ align: "center" });
+      }
     }
 
     super(scene, config.x, config.y, children);

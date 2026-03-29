@@ -9,6 +9,7 @@ export const outputRandomness: MechanicDefinition = {
   detail:
     "The chosen action stays the same, but its result varies, which raises suspense and swinginess.",
   effectText: "Attack rolls add +/-10 hit chance, +/-2 damage, and a 12% crit chance for +2 damage.",
+  iconKey: "mechanic-output-randomness",
   onResolveCombatAction: (context, resolution) => {
     if (resolution.action.kind !== "attack") {
       return;

@@ -20,25 +20,13 @@ export class EventPhaseView extends PhaseView {
   }
 
   public build(): void {
-    const { scene, width, contentInner } = this.ctx;
+    const { phaseRoot } = this.ctx;
     const localCtx = { ...this.ctx, phaseRoot: this.container };
     
     renderMainPanel(localCtx);
 
-    // Illustration Backdrop (Right Side)
-    const illustrationW = 140;
-    const illustrationX = contentInner.x + contentInner.width - illustrationW - 8;
-    createPanel(scene, illustrationX, contentInner.y + 8, illustrationW, 126, 0x1a3342, undefined, this.container);
-
-    const eventIcon = scene.textures.exists("event-analyst") ? "event-analyst" : "event-terminal";
-    if (scene.textures.exists(eventIcon)) {
-      const img = makeImage(scene, illustrationX + illustrationW / 2, contentInner.y + 70, eventIcon, this.container).setOrigin(0.5);
-      img.displayHeight = 110;
-      img.scaleX = img.scaleY;
-    }
-
-    this.headerContainer = scene.add.container(0, 0);
-    this.optionsLayer = scene.add.container(0, 0);
+    this.headerContainer = this.scene.add.container(0, 0);
+    this.optionsLayer = this.scene.add.container(0, 0);
     this.container.add([this.headerContainer, this.optionsLayer]);
   }
 
@@ -46,7 +34,32 @@ export class EventPhaseView extends PhaseView {
     const { scene, width, contentInner } = this.ctx;
     const event = state.event!;
 
-    this.headerContainer.removeAll(true);
+    // 1. Re-render Illustration Backdrop & Dynamic Icon/Illustration
+    const illustrationW = 140;
+    const illustrationX = contentInner.x + contentInner.width - illustrationW - 8;
+    const illustrationY = contentInner.y + 8;
+    
+    // Clear old illustration elements (hack: simple way is to manage a sub-container or just redraw)
+    // Here we'll just add it to the headerContainer since it's wiped every update
+    createPanel(scene, illustrationX, illustrationY, illustrationW, 126, 0x1a3342, undefined, this.headerContainer);
+
+    let illustrationKey = "event-analyst";
+    const title = event.title.toLowerCase();
+    
+    if (title.includes("signal") || title.includes("storm") || title.includes("ion")) {
+      illustrationKey = "illustration-ion-storm";
+    } else if (title.includes("vault") || title.includes("echo") || title.includes("ancient")) {
+      illustrationKey = "illustration-echo-vault";
+    } else if (!scene.textures.exists(illustrationKey)) {
+      illustrationKey = "event-terminal";
+    }
+
+    if (scene.textures.exists(illustrationKey)) {
+      const img = makeImage(scene, illustrationX + illustrationW / 2, illustrationY + 62, illustrationKey, this.headerContainer).setOrigin(0.5);
+      img.displayHeight = 110;
+      img.scaleX = img.scaleY;
+    }
+
     renderSectionHeader(
       scene,
       contentInner.x + 4,
