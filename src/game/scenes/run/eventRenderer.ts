@@ -65,15 +65,14 @@ export class EventPhaseView extends PhaseView {
     const totalOptionsH = (event.options.length * choiceH) + ((event.options.length - 1) * gap);
     const optionsStartY = contentInner.y + contentInner.height - totalOptionsH - 36;
 
-    // Background for choice area 
     const panelPadding = 16;
+    // Simple, reliable order-based layering in the container
     createPanel(scene, contentInner.x + 32, optionsStartY - panelPadding, optionsW + 32, totalOptionsH + panelPadding * 2, 0x1a3342, LAB_THEME.borderSoft, this.optionsLayer);
     
     event.options.forEach((option, index) => {
       const choiceY = optionsStartY + index * (choiceH + gap);
       const choice = this.scene.add.uiEventChoice(contentInner.x + 48, choiceY, optionsW, choiceH);
       choice.setChoice(option);
-      choice.setDepth(1); // Higher than the panel within the same layer
       this.optionsLayer.add(choice);
     });
   }
