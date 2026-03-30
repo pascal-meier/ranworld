@@ -1,11 +1,12 @@
 import { LAB_THEME, textStyle } from "../theme.js";
-import { makeImage, makeText } from "../display.js";
+import { makeFrameImage, makeImage, makeText } from "../display.js";
 import { getMechanicDefinition } from "../../mechanics/index.js";
 import type { MechanicId } from "../../types.js";
 
 export class UIResourceBar extends Phaser.GameObjects.Container {
   private suppliesText: Phaser.GameObjects.Text;
   private archiveText: Phaser.GameObjects.Text;
+  private researchText: Phaser.GameObjects.Text;
   private upgradeTitle: Phaser.GameObjects.Text;
   private upgradeListLayer: Phaser.GameObjects.Container;
 
@@ -21,24 +22,23 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     // Resources Section
     makeText(this.scene, 16, 12, "RESOURCES", textStyle(8, LAB_THEME.textMuted), this);
     
-    if (this.scene.textures.exists("archive-shard")) {
-      makeImage(this.scene, 118, 22, "archive-shard", this)
-        .setTint(0x8ce5c2)
-        .setScale(0.62)
-        .setOrigin(0.5);
-    }
-    this.archiveText = makeText(this.scene, 184, 12, "", textStyle(8, LAB_THEME.positive), this);
+    let curX = 16;
+    const drawRes = (key: string, color: string) => {
+      curX += 48;
+      if (this.scene.textures.get("ui-icons").has(key)) {
+        makeFrameImage(this.scene, curX, 22, "ui-icons", key, this).setDisplaySize(16, 16).setOrigin(0.5);
+      }
+      curX += 14;
+      return makeText(this.scene, curX, 12, "0", textStyle(9, color), this);
+    };
 
-    if (this.scene.textures.exists("supply-token")) {
-      makeImage(this.scene, 234, 22, "supply-token", this)
-        .setScale(0.66)
-        .setOrigin(0.5);
-    }
-    this.suppliesText = makeText(this.scene, 304, 12, "", textStyle(8, LAB_THEME.accent), this);
+    this.archiveText = drawRes("icon-archive", LAB_THEME.positive);
+    this.suppliesText = drawRes("icon-supplies", LAB_THEME.accent);
+    this.researchText = drawRes("icon-research", LAB_THEME.accentSoft);
 
     // Upgrades Section
-    this.upgradeTitle = makeText(this.scene, 16, 60, "ACTIVE MODULES", textStyle(9, LAB_THEME.text), this);
-    this.upgradeListLayer = this.scene.add.container(0, 0);
+    this.upgradeTitle = makeText(this.scene, 16, 68, "ACTIVE MODULES", textStyle(9, LAB_THEME.text), this);
+    this.upgradeListLayer = this.scene.add.container(0, 8); // Added internal offset
     this.add(this.upgradeListLayer);
 
     // Initial Sync
@@ -47,10 +47,12 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     // Registry Listeners
     this.scene.registry.events.on("changedata-player-supplies", this.refresh, this);
     this.scene.registry.events.on("changedata-player-archive-gain", this.refresh, this);
+    this.scene.registry.events.on("changedata-player-research", this.refresh, this);
 
     this.on(Phaser.GameObjects.Events.DESTROY, () => {
       this.scene.registry.events.off("changedata-player-supplies", this.refresh, this);
       this.scene.registry.events.off("changedata-player-archive-gain", this.refresh, this);
+      this.scene.registry.events.off("changedata-player-research", this.refresh, this);
     });
   }
 
@@ -58,9 +60,11 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     const r = this.scene.registry;
     const supplies = r.get("player-supplies") ?? 0;
     const archive = r.get("player-archive-gain") ?? 0;
+    const research = r.get("player-research") ?? 0;
 
     this.suppliesText.setText(`${supplies}`);
     this.archiveText.setText(`${archive}`);
+    this.researchText.setText(`${research}`);
   }
 
   public updateUpgrades(mechanics: MechanicId[]): void {

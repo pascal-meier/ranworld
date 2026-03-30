@@ -161,7 +161,10 @@ export class RunScene extends BaseScene {
 
     // Start ambient laboratory atmosphere if not already playing
     if (!this.sound.get("amb-lab")?.isPlaying) {
-        this.sound.play("amb-lab", { loop: true, volume: 0.2 });
+        if (this.sound instanceof Phaser.Sound.WebAudioSoundManager) {
+            this.sound.context.resume();
+        }
+        this.sound.play("amb-lab", { loop: true, volume: 0.18 });
     }
   }
 
@@ -173,6 +176,8 @@ export class RunScene extends BaseScene {
     r.set("player-focus", state.player.focus);
     r.set("player-supplies", state.player.supplies);
     r.set("player-charges", state.player.mitigationCharges);
+    r.set("player-research", state.player.research);
+    r.set("player-archive-gain", state.player.archiveGain);
     r.set("planet-name", state.planetName);
     r.set("current-site", state.currentSite);
   }

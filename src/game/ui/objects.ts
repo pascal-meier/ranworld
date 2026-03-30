@@ -75,13 +75,14 @@ export class UIPanel extends Phaser.GameObjects.Container {
 export class UIButton extends Phaser.GameObjects.Container {
   public label: Phaser.GameObjects.Text;
   public detail?: Phaser.GameObjects.Text;
+  public readonly config: UIButtonConfig;
   private onHoverExtra?: () => void;
   private onOutExtra?: () => void;
   constructor(scene: Phaser.Scene, config: UIButtonConfig) {
     const disabled = Boolean(config.disabled);
     const compact = config.height <= 36;
     const medium = config.height > 36 && config.height <= 50;
-    const showDetail = Boolean(config.detail) && !compact;
+    const showDetail = config.detail !== undefined && !compact;
     const labelSize = compact ? 8 : medium ? 10 : 12;
     const detailSize = medium ? 7 : 8;
     const labelY = compact ? config.y + 9 : showDetail ? config.y + 6 : config.y + 10;
@@ -164,6 +165,7 @@ export class UIButton extends Phaser.GameObjects.Container {
 
     super(scene, config.x, config.y, children);
     
+    this.config = config;
     this.label = labelObj;
     this.detail = detailObj;
 
@@ -192,7 +194,9 @@ export class UIButton extends Phaser.GameObjects.Container {
       if (this.onOutExtra) this.onOutExtra();
     });
     background.on("pointerdown", () => {
-        scene.sound.play("sfx-click");
+        if (scene.cache.audio.exists("sfx-click")) {
+            scene.sound.play("sfx-click");
+        }
         config.onClick();
     });
   }

@@ -63,10 +63,10 @@ export class UIStatBar extends Phaser.GameObjects.Container {
     const planetName = r.get("planet-name") ?? "Unknown";
 
     this.primaryText.setText(
-      `SITE ${site}  |  HP ${hp}/${maxHp}  |  FOC ${focus}  |  CHG ${charges}`
+      `SITE ${site}   /   HP ${hp}/${maxHp}   /   FOCUS ${focus}   /   CHARGES ${charges}`
     );
     this.secondaryText.setText(
-      `${planetName.toUpperCase()}  |  SYSTEM STABLE`
+      `${planetName.toUpperCase()}   /   SYSTEM STATUS: NOMINAL`
     );
   }
 }

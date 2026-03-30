@@ -40,7 +40,7 @@ export function createRunRenderContext(
     top: 12,
     gap: 12,
     headerHeight: 52,
-    footerHeight: 156,
+    footerHeight: 110,
   });
 
   return {
@@ -307,19 +307,15 @@ export function renderModifiersPanel(ctx: RunRenderContext, onClose: () => void)
 
 export function getNodeSymbolKey(kind: NodeDefinition["kind"]): string | null {
   if (kind === "combat") {
-    return "node-combat-symbol";
+    return "intent-attack";
   }
 
-  if (kind === "event") {
-    return "node-event-symbol";
-  }
-
-  if (kind === "reward") {
-    return "node-reward-symbol";
+  if (kind === "event" || kind === "reward") {
+    return "intent-reward";
   }
 
   if (kind === "flee") {
-    return "node-flee-symbol";
+    return "intent-risk";
   }
 
   return null;
@@ -354,7 +350,7 @@ export function renderNode(
   }
 
   if (scene.textures.exists("ui-icons")) {
-    const base = makeFrameImage(scene, x, y, "ui-icons", "node-base-style", phaseRoot).setDisplaySize(baseSize, baseSize);
+    const base = makeFrameImage(scene, x, y, "ui-icons", "icon-seed", phaseRoot).setDisplaySize(baseSize, baseSize);
 
     if (selectable && !cleared) {
       base.setInteractive({ useHandCursor: true });
@@ -369,12 +365,12 @@ export function renderNode(
   const symbolKey = getNodeSymbolKey(node.kind);
   if (node.kind === "boss" && scene.textures.exists("ui-icons")) {
     const bossSwordSize = selectable ? 32 : 27;
-    const leftSword = makeFrameImage(scene, x - 6, y - 1, "ui-icons", "node-combat-symbol", phaseRoot)
+    const leftSword = makeFrameImage(scene, x - 6, y - 1, "ui-icons", "intent-attack", phaseRoot)
       .setDisplaySize(bossSwordSize, bossSwordSize)
       .setFlipX(true)
       .setAngle(-32)
       .setTint(0xe9f4ff);
-    const rightSword = makeFrameImage(scene, x + 6, y - 1, "ui-icons", "node-combat-symbol", phaseRoot)
+    const rightSword = makeFrameImage(scene, x + 6, y - 1, "ui-icons", "intent-attack", phaseRoot)
       .setDisplaySize(bossSwordSize, bossSwordSize)
       .setAngle(32)
       .setTint(0xe9f4ff);

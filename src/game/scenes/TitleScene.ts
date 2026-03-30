@@ -2,6 +2,7 @@ import { BaseScene } from "./BaseScene.js";
 import { LAB_THEME, textStyle } from "../ui/theme.js";
 import { makeImage, makeRectangle, makeText } from "../ui/display.js";
 import { createButton } from "../ui/widgets.js";
+import { soundGenerator } from "../audio/SoundGenerator.js";
 
 export class TitleScene extends BaseScene {
   constructor() {
@@ -61,7 +62,31 @@ export class TitleScene extends BaseScene {
       height: 54,
       label: "INITIALIZE EXPEDITION",
       onClick: () => {
+        const phaserCtx = (this.sound as Phaser.Sound.WebAudioSoundManager).context;
+        soundGenerator.init(phaserCtx); 
+        if (this.sound instanceof Phaser.Sound.WebAudioSoundManager) {
+          this.sound.context.resume();
+        }
+
+        // Generate and cache synthetic audio on first interaction
+        if (!this.cache.audio.exists("sfx-click")) {
+            this.cache.audio.add("sfx-click", soundGenerator.generateClickBuffer());
+            this.cache.audio.add("sfx-confirm", soundGenerator.generateConfirmBuffer());
+            this.cache.audio.add("sfx-hit", soundGenerator.generateHitBuffer());
+            this.cache.audio.add("sfx-miss", soundGenerator.generateMissBuffer());
+            this.cache.audio.add("sfx-block", soundGenerator.generateBlockBuffer());
+            this.cache.audio.add("sfx-crit", soundGenerator.generateCritBuffer());
+            this.cache.audio.add("sfx-reward", soundGenerator.generateRewardBuffer());
+            this.cache.audio.add("amb-lab", soundGenerator.generateAmbientBuffer());
+        }
+
+        // Start ambient loop
+        if (!this.sound.get("amb-lab")?.isPlaying) {
+            this.sound.play("amb-lab", { loop: true, volume: 0.15 });
+        }
+
         this.sound.play("sfx-click");
+
         this.cameras.main.fadeOut(500, 0, 0, 0);
         this.cameras.main.once("camerafadeoutcomplete", () => {
           this.scene.start("SetupScene");

@@ -3,7 +3,6 @@ import { makeFrameImage, makeImage, makeRectangle, makeText } from "../display.j
 import { createPanel } from "../widgets.js";
 
 export class UICombatActor extends Phaser.GameObjects.Container {
-  private sprite: Phaser.GameObjects.Image;
   private hpText: Phaser.GameObjects.Text;
   private guardText: Phaser.GameObjects.Text;
   private focusText: Phaser.GameObjects.Text;
@@ -25,11 +24,6 @@ export class UICombatActor extends Phaser.GameObjects.Container {
     // Stat Background
     createPanel(scene, 0, 0, width, 64, 0x1a3342, 0x3a6174, this);
     makeText(scene, 12, 10, title, textStyle(8, titleColor), this);
-
-    // Sprite
-    const spriteX = isPlayer ? width * 0.3 : width * 0.74;
-    const spriteY = 100; // Relative to container
-    this.sprite = makeImage(scene, spriteX, spriteY, "player-idle", this).setOrigin(0.5, 1);
     
     // Stats Rows
     let px = 12;
@@ -57,15 +51,6 @@ export class UICombatActor extends Phaser.GameObjects.Container {
     this.hpText.setText(`${hp}/${maxHp}`);
     this.guardText.setText(`${guard}`);
     this.focusText.setText(`${focus}`);
-    return this;
-  }
-
-  public setSprite(texture: string, height: number): this {
-    if (this.scene.textures.exists(texture)) {
-        this.sprite.setTexture(texture);
-        this.sprite.displayHeight = height;
-        this.sprite.scaleX = this.sprite.scaleY;
-    }
     return this;
   }
 }

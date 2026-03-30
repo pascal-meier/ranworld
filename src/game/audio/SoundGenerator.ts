@@ -11,11 +11,19 @@ export class SoundGenerator {
     return SoundGenerator.instance;
   }
 
-  private getCtx(): AudioContext {
-    if (!this.ctx) {
+  public init(externalCtx?: AudioContext): void {
+    if (externalCtx) {
+      this.ctx = externalCtx;
+    } else if (!this.ctx) {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    return this.ctx;
+  }
+
+  private getCtx(): AudioContext {
+    if (!this.ctx) {
+        this.init();
+    }
+    return this.ctx!;
   }
 
   public generateClickBuffer(): AudioBuffer {
@@ -143,30 +151,44 @@ export class SoundGenerator {
 
   public generateAmbientBuffer(): AudioBuffer {
     const ctx = this.getCtx();
-    const duration = 15.0; // Long loop to avoid obvious repetition
+    const duration = 20.0; // Longer loop for cinematic feel
     const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     
+    // G-Minor/Pentatonic palette
+    const G1 = 48.999;
+    const G2 = 97.999;
+    const Bb2 = 116.54;
+    const D3 = 146.83;
+    const F3 = 174.61;
+
     let lastNoise = 0;
     for (let i = 0; i < buffer.length; i++) {
         const t = i / ctx.sampleRate;
         
-        // --- 1. Brownian Noise (Low-pass filtered white noise) ---
+        // --- 1. Brownian Noise (Minimized to a soft whisper) ---
         const white = (Math.random() * 2 - 1);
-        lastNoise = (lastNoise + (0.02 * white)) / 1.02; // Simple integrator
-        const noise = lastNoise * 0.3;
+        lastNoise = (lastNoise + (0.02 * white)) / 1.02;
+        const noise = lastNoise * 0.08;
 
-        // --- 2. Living Drone (Additive Sines with LFO) ---
-        const lfo = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.08 * t); // 0.08Hz Breathe
-        const baseFreq = 45;
-        const foundation = Math.sin(2 * Math.PI * baseFreq * t) * (0.08 * lfo);
-        const harmonic1 = Math.sin(2 * Math.PI * baseFreq * 1.5 * t) * 0.04;
-        const harmonic2 = Math.sin(2 * Math.PI * baseFreq * 2.1 * t + 1) * 0.03;
+        // --- 2. Foundation Drone (Root G1) ---
+        const breathableBase = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.05 * t);
+        const foundation = Math.sin(2 * Math.PI * G1 * t) * (0.15 * breathableBase);
 
-        // --- 3. Seamless Windowing ---
-        const window = t < 0.1 ? t / 0.1 : (t > duration - 0.1 ? (duration - t) / 0.1 : 1.0);
+        // --- 3. Melodic Shifting Pad (G2, Bb2, D3, F3) ---
+        // Each tone has its own slow LFO for a "shifting chord" feel
+        const voice1 = Math.sin(2 * Math.PI * G2 * t) * (0.08 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.08 * t)));
+        const voice2 = Math.sin(2 * Math.PI * Bb2 * t) * (0.06 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.06 * t + 1)));
+        const voice3 = Math.sin(2 * Math.PI * D3 * t) * (0.04 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.04 * t + 2)));
+        const voice4 = Math.sin(2 * Math.PI * F3 * t) * (0.03 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.03 * t + 3)));
 
-        data[i] = (noise + foundation + harmonic1 + harmonic2) * 0.15 * window;
+        // --- 4. Sub-harmonic richness ---
+        const sub = Math.sin(2 * Math.PI * (G1 * 2 / 3) * t) * 0.02; // A fifth below the root
+
+        // --- 5. Seamless Windowing (2s Linear Crossfade) ---
+        const window = t < 2.0 ? t / 2.0 : (t > duration - 2.0 ? (duration - t) / 2.0 : 1.0);
+
+        data[i] = (noise + foundation + sub + voice1 + voice2 + voice3 + voice4) * 0.25 * window;
     }
     return buffer;
   }

@@ -19,16 +19,6 @@ export class BootScene extends BaseScene {
   }
 
   create(): void {
-    // Generate and cache synthetic audio
-    this.cache.audio.add("sfx-click", soundGenerator.generateClickBuffer());
-    this.cache.audio.add("sfx-confirm", soundGenerator.generateConfirmBuffer());
-    this.cache.audio.add("sfx-hit", soundGenerator.generateHitBuffer());
-    this.cache.audio.add("sfx-miss", soundGenerator.generateMissBuffer());
-    this.cache.audio.add("sfx-block", soundGenerator.generateBlockBuffer());
-    this.cache.audio.add("sfx-crit", soundGenerator.generateCritBuffer());
-    this.cache.audio.add("sfx-reward", soundGenerator.generateRewardBuffer());
-    this.cache.audio.add("amb-lab", soundGenerator.generateAmbientBuffer());
-
     this.scene.launch("OverlayScene");
     this.scene.start("TitleScene");
   }
