@@ -8,6 +8,7 @@ const defaultMeta: MetaProgress = {
   bestPlanet: 0,
   lastSeed: 0,
   seenTutorials: {},
+  upgrades: {},
 };
 
 export function loadMeta(): MetaProgress {
@@ -26,6 +27,7 @@ export function loadMeta(): MetaProgress {
       bestPlanet: parsed.bestPlanet ?? (parsed as { bestDepth?: number }).bestDepth ?? 0,
       lastSeed: parsed.lastSeed ?? 0,
       seenTutorials: parsed.seenTutorials ?? {},
+      upgrades: parsed.upgrades ?? {},
     };
   } catch {
     return { ...defaultMeta };

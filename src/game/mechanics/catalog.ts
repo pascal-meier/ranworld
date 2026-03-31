@@ -42,7 +42,8 @@ function entry(
   categoryId: string,
   upgradeTrack: MechanicUpgradeTrack,
   observation: string,
-  runtimeId?: MechanicId
+  runtimeId?: MechanicId,
+  iconKey?: string
 ): MechanicCatalogEntry {
   return {
     tableId,
@@ -54,13 +55,14 @@ function entry(
     observation,
     status: runtimeId ? "implemented" : "planned",
     runtimeId,
+    iconKey,
   };
 }
 
 export const mechanicCatalog: MechanicCatalogEntry[] = [
-  entry("L1A1", "Input Randomness", "Input RNG", "L1A", "world-modifier", "Watch how the action menu changes before decisions.", "input-randomness"),
-  entry("L1A2", "Output Randomness", "Output RNG", "L1A", "world-modifier", "Watch how identical actions resolve differently after you commit.", "output-randomness"),
-  entry("L1A3", "Environmental Randomness", "Env RNG", "L1A", "world-modifier", "Watch how the planet itself shifts the odds around the same tools.", "environmental-randomness"),
+  entry("L1A1", "Input Randomness", "Input RNG", "L1A", "world-modifier", "Watch how the action menu changes before decisions.", "input-randomness", "mechanic-input-randomness"),
+  entry("L1A2", "Output Randomness", "Output RNG", "L1A", "world-modifier", "Watch how identical actions resolve differently after you commit.", "output-randomness", "mechanic-output-randomness"),
+  entry("L1A3", "Environmental Randomness", "Env RNG", "L1A", "world-modifier", "Watch how the planet itself shifts the odds around the same tools.", "environmental-randomness", "mechanic-environmental-randomness"),
   entry("L1A4", "Meta-Progression Randomness", "Meta RNG", "L1A", "ship-upgrade", "Watch how long-term run bonuses randomize what each expedition starts with."),
   entry("L1B1", "Pre-Decision Randomness", "Pre-Decision", "L1B", "world-modifier", "Watch how randomness changes the decision before you act."),
   entry("L1B2", "During-Action Randomness", "Mid-Action", "L1B", "world-modifier", "Watch variance unfold while an action is being executed."),
@@ -86,7 +88,7 @@ export const mechanicCatalog: MechanicCatalogEntry[] = [
   entry("L2B3", "Interactional Fairness", "Feedback Fair", "L2B", "world-modifier", "Watch whether the game explains outcomes respectfully and consistently."),
   entry("L2C1", "Decision Agency", "Decision AG", "L2C", "ship-upgrade", "Watch whether the player still feels they made the meaningful choice."),
   entry("L2C2", "Skill Agency", "Skill AG", "L2C", "ship-upgrade", "Watch whether execution and timing can offset randomness."),
-  entry("L2C3", "Mitigation Agency", "Mitigation", "L2C", "ship-upgrade", "Watch how explicit counter-tools soften risky systems.", "mitigation-agency"),
+  entry("L2C3", "Mitigation Agency", "Mitigation", "L2C", "ship-upgrade", "Watch how explicit counter-tools soften risky systems.", "mitigation-agency", "mechanic-mitigation-agency"),
   entry("L2D1", "Accurate Expectations", "True Odds", "L2D", "world-modifier", "Watch how well shown odds line up with actual outcomes."),
   entry("L2D2", "Biased Expectations", "Bias", "L2D", "world-modifier", "Watch how displayed information bends player expectation.", "biased-expectations"),
   entry("L2D3", "Design-Induced Expectations", "Design Bias", "L2D", "world-modifier", "Watch how visual framing primes beliefs before the roll."),
@@ -98,7 +100,7 @@ export const mechanicCatalog: MechanicCatalogEntry[] = [
   entry("L3B2", "Cognitive Processing Engagement", "Cognition", "L3B", "ship-upgrade", "Watch when randomness forces deeper planning and comparison."),
   entry("L3B3", "Situational Immersion", "Immersion", "L3B", "world-modifier", "Watch when uncertainty makes planets feel alive."),
   entry("L3C1", "Micro Persistence", "Keep Going", "L3C", "ship-upgrade", "Watch what makes the player take one more step."),
-  entry("L3C2", "Session Persistence", "Persistence", "L3C", "ship-upgrade", "Watch how previous runs feed the next run's momentum.", "session-persistence"),
+  entry("L3C2", "Session Persistence", "Persistence", "L3C", "ship-upgrade", "Watch how previous runs feed the next run's momentum.", "session-persistence", "mechanic-persistence"),
   entry("L3C3", "Long-Term Persistence", "Long-Term", "L3C", "ship-upgrade", "Watch what keeps the player returning beyond one session."),
   entry("L3D1", "Outcome Frustration", "Tilt", "L3D", "world-modifier", "Watch frustration created by bad individual rolls."),
   entry("L3D2", "Systemic Frustration", "System Tilt", "L3D", "world-modifier", "Watch frustration with the system as a whole."),
@@ -112,11 +114,11 @@ export const mechanicCatalog: MechanicCatalogEntry[] = [
   entry("L4A2", "Probability Weighting", "Weighting", "L4A", "world-modifier", "Watch behind-the-scenes weighting change odds without changing labels."),
   entry("L4A3", "Randomness Caps", "RNG Caps", "L4A", "world-modifier", "Watch extreme highs and lows get cut off."),
   entry("L4A4", "Dynamic RNG Adjustment", "Dyn Adjust", "L4A", "world-modifier", "Watch the system rebalance odds mid-run."),
-  entry("L4B1", "Re-Roll Mechanics", "Re-Roll", "L4B", "ship-upgrade", "Watch how rerolls change commitment and regret.", "reroll-mechanics"),
+  entry("L4B1", "Re-Roll Mechanics", "Re-Roll", "L4B", "ship-upgrade", "Watch how rerolls change commitment and regret.", "reroll-mechanics", "mechanic-reroll"),
   entry("L4B2", "Build Preparation Systems", "Prep Build", "L4B", "ship-upgrade", "Watch how preparation changes the value of uncertainty."),
   entry("L4B3", "Risk–Reward Choice Design", "Risk Reward", "L4B", "world-modifier", "Watch how the game offers cleaner danger-vs-payoff choices."),
   entry("L4B4", "Control Feedback Signals", "Ctrl Signals", "L4B", "world-modifier", "Watch how feedback can make players feel more in control."),
-  entry("L4C1", "Probability Transparency", "Prob UI", "L4C", "world-modifier", "Watch how visible odds affect trust and planning.", "probability-transparency"),
+  entry("L4C1", "Probability Transparency", "Prob UI", "L4C", "world-modifier", "Watch how visible odds affect trust and planning.", "probability-transparency", "mechanic-transparency"),
   entry("L4C2", "Consistent RNG Feedback", "RNG Feedback", "L4C", "world-modifier", "Watch whether the game explains random outcomes consistently.", "consistent-rng-feedback"),
   entry("L4C3", "Pattern Learnability", "Patterns", "L4C", "world-modifier", "Watch whether the system reveals patterns players can learn."),
   entry("L4C4", "Outcome Causality Clarity", "Cause Clarity", "L4C", "world-modifier", "Watch how clearly actions connect to outcomes."),

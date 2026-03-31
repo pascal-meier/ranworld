@@ -9,6 +9,7 @@ export const probabilityTransparency: MechanicDefinition = {
   detail:
     "This mechanic removes hidden drift from previews and exposes the underlying probabilities directly.",
   effectText: "Combat and event odds display exact actual values instead of framed or biased numbers.",
+  iconKey: "mechanic-transparency",
   onPreviewCombatAction: (_, preview, action) => {
     if (action.kind !== "attack" || preview.actualHitChance === null) {
       return preview;

@@ -36,6 +36,7 @@ export const environmentalRandomness: MechanicDefinition = {
   detail:
     "The surrounding state changes from encounter to encounter and reframes the same action set.",
   effectText: "Each combat rolls one arena modifier that shifts hit chance and guard strength.",
+  iconKey: "mechanic-environmental-randomness",
   onBuildCombat: (context, combat) => {
     const environment = context.rng.pick(environments);
     combat.environmentName = environment.name;

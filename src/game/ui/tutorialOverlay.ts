@@ -2,7 +2,7 @@ import type { NodeKind } from "../types.js";
 import type { TutorialDefinition } from "../tutorials/catalog.js";
 import { LAB_THEME, textStyle } from "./theme.js";
 import { createButton, createPanel } from "./widgets.js";
-import { makeCircle, makeImage, makeRectangle, makeText, type DisplayParent } from "./display.js";
+import { makeCircle, makeFrameImage, makeImage, makeRectangle, makeText, type DisplayParent } from "./display.js";
 
 function getNodeIconKey(kind: NodeKind): string | null {
   if (kind === "combat") {
@@ -33,17 +33,17 @@ function renderTutorialNodeIcon(
 ): void {
   makeCircle(scene, x, y, 18, 0x1d4d6c, 0.35, parent);
 
-  if (scene.textures.exists("node-base")) {
-    makeImage(scene, x, y, "node-base", parent).setDisplaySize(28, 28);
+  if (scene.textures.exists("ui-icons")) {
+    makeFrameImage(scene, x, y, "ui-icons", "node-base-style", parent).setDisplaySize(28, 28);
   }
 
-  if (kind === "boss" && scene.textures.exists("node-combat-symbol")) {
-    makeImage(scene, x - 5, y, "node-combat-symbol", parent)
+  if (kind === "boss" && scene.textures.exists("ui-icons")) {
+    makeFrameImage(scene, x - 5, y, "ui-icons", "node-combat-symbol", parent)
       .setDisplaySize(16, 16)
       .setFlipX(true)
       .setAngle(-32)
       .setTint(0xe9f4ff);
-    makeImage(scene, x + 5, y, "node-combat-symbol", parent)
+    makeFrameImage(scene, x + 5, y, "ui-icons", "node-combat-symbol", parent)
       .setDisplaySize(16, 16)
       .setAngle(32)
       .setTint(0xe9f4ff);
@@ -52,11 +52,11 @@ function renderTutorialNodeIcon(
 
   const iconKey = getNodeIconKey(kind);
 
-  if (!iconKey || !scene.textures.exists(iconKey)) {
+  if (!iconKey || !scene.textures.exists("ui-icons")) {
     return;
   }
 
-  const icon = makeImage(scene, x, y, iconKey, parent);
+  const icon = makeFrameImage(scene, x, y, "ui-icons", iconKey, parent);
 
   if (kind === "flee") {
     icon.setCrop(2, 3, 60, 58).setDisplaySize(16, 16).setTint(0xe9f4ff);

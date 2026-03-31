@@ -1,4 +1,6 @@
 import { BaseScene } from "./BaseScene.js";
+import { soundGenerator } from "../audio/SoundGenerator.js";
+import { ASSET_MANIFEST } from "../AssetManifest.js";
 
 export class BootScene extends BaseScene {
   constructor() {
@@ -6,99 +8,18 @@ export class BootScene extends BaseScene {
   }
 
   preload(): void {
-    this.load.image(
-      "player-idle",
-      "assets/actors/player/static/player-idle-static-v1.png"
-    );
-    this.load.image(
-      "enemy-calibration-drone",
-      "assets/actors/enemies/enemy-calibration-drone-idle-v1.png"
-    );
-    this.load.image(
-      "event-terminal",
-      "assets/actors/events/event-terminal-v1.png"
-    );
-    this.load.image(
-      "reward-cache-sheet",
-      "assets/actors/rewards/reward-cache-sheet-v1.png"
-    );
-    this.load.image(
-      "node-base",
-      "assets/ui/icons/nodes/node-base-style-v1.png"
-    );
-    this.load.image(
-      "node-combat-symbol",
-      "assets/ui/icons/nodes/node-combat-symbol-v1.png"
-    );
-    this.load.image(
-      "node-event-symbol",
-      "assets/ui/icons/nodes/node-event-symbol-v1.png"
-    );
-    this.load.image(
-      "node-reward-symbol",
-      "assets/ui/icons/nodes/node-reward-symbol-v1.png"
-    );
-    this.load.image(
-      "node-flee-symbol",
-      "assets/ui/icons/nodes/node-flee-symbol-v1.png"
-    );
-    this.load.image(
-      "feedback-win",
-      "assets/ui/feedback/win-popup-v1.png"
-    );
-    this.load.image(
-      "feedback-fail",
-      "assets/ui/feedback/fail-popup-v1.png"
-    );
-    this.load.image(
-      "archive-shard",
-      "assets/ui/resources/archive-shard-bw-v1.png"
-    );
-    this.load.image(
-      "archive-bank",
-      "assets/ui/resources/archive-bank-v1.png"
-    );
-    this.load.image(
-      "supply-token",
-      "assets/ui/resources/supply-token-v1.png"
-    );
-    this.load.image(
-      "planet-background",
-      "assets/backgrounds/space/planet-background-v1.png"
-    );
-    this.load.image(
-      "planet-01",
-      "assets/illustrations/planets/planet-01.png"
-    );
-    this.load.image(
-      "planet-02",
-      "assets/illustrations/planets/planet-02.png"
-    );
-    this.load.image(
-      "planet-03",
-      "assets/illustrations/planets/planet-03.png"
-    );
-    this.load.image(
-      "planet-04",
-      "assets/illustrations/planets/planet-04.png"
-    );
-    this.load.image(
-      "planet-05",
-      "assets/illustrations/planets/planet-05.png"
-    );
-    this.load.image(
-      "planet-06",
-      "assets/illustrations/planets/planet-06.png"
-    );
-    this.load.image(
-      "planet-07",
-      "assets/illustrations/planets/planet-07.png"
-    );
+    // Standard Assets from Manifest
+    ASSET_MANIFEST.atlases.forEach(asset => {
+        this.load.atlas(asset.key, asset.path, asset.atlasJson);
+    });
+
+    ASSET_MANIFEST.images.forEach(asset => {
+        this.load.image(asset.key, asset.path);
+    });
   }
 
   create(): void {
-    this.lab.returnToSetup("new");
     this.scene.launch("OverlayScene");
-    this.scene.start("SetupScene");
+    this.scene.start("TitleScene");
   }
 }

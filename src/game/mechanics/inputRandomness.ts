@@ -62,6 +62,7 @@ export const inputRandomness: MechanicDefinition = {
   detail:
     "The decision space shifts before the player acts, making planning less stable but more varied.",
   effectText: "Each combat round redraws 3 non-guard actions from the pool, then keeps Guard available.",
+  iconKey: "mechanic-input-randomness",
   onBuildCombatActions: (context, actions) => {
     const baseGuard = actions.find((action) => action.id === "guard");
     const randomOptions = context.rng

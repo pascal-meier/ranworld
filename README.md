@@ -31,7 +31,7 @@ The randomness mechanics are still the main experiment layer, but they now live 
 
 ## Taxonomy Backbone
 
-The project now treats the local table in `/home/pmeier/Documents/Library/table/Table.html` as the real source of truth.
+This project acts as a playable shell for the randomness mechanics taxonomy.
 
 That means:
 
@@ -45,7 +45,7 @@ The full taxonomy catalog now lives in:
 
 - `src/game/mechanics/catalog.ts`
 
-This catalog contains all mechanics from the table and marks which ones are already playable.
+This catalog contains all mechanics from the design table and marks which ones are already playable.
 
 ## First Orientation
 

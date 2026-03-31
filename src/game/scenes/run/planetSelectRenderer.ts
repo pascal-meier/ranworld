@@ -1,53 +1,75 @@
-import type { RunRenderContext } from "./shared.js";
-import { renderMainPanel, renderPlanetBackdrop, renderPlanetSprite } from "./shared.js";
+import type { PlanetChoice, RunState } from "../../types.js";
+import { PhaseView } from "./PhaseView.js";
+import { UI_EVENTS } from "../../events.js";
+import { renderMainPanel, renderPlanetBackdrop, renderPlanetSprite, type RunRenderContext } from "./shared.js";
 import { renderSectionHeader } from "../../ui/components.js";
 import { createPanel } from "../../ui/widgets.js";
 import { splitRectColumns } from "../../ui/layout.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
-import { makeRectangle, makeText } from "../../ui/display.js";
+import { makeImage, makeRectangle, makeText } from "../../ui/display.js";
+import type { LayoutRect } from "../../ui/layout.js";
 
-export function renderPlanetSelectPhase(
-  ctx: RunRenderContext,
-  onChoosePlanet: (planetId: string) => void
-): void {
-  const { scene, state, contentInner, phaseRoot } = ctx;
-  renderMainPanel(ctx);
-  renderPlanetBackdrop(ctx);
-  renderSectionHeader(
-    scene,
-    contentInner.x + 4,
-    contentInner.y + 6,
-    "SELECT PLANET",
-    `Touch down for site ${state.currentSite}. Clear 3 surface sites, then decide whether to beat the boss or flee to orbit.`,
-    contentInner.width - 8,
-    phaseRoot
-  );
+import type { UIPlanetCard } from "../../ui/components/PlanetCard.js";
 
-  const cards = splitRectColumns(
-    { x: contentInner.x + 4, y: contentInner.y + 62, width: contentInner.width - 8, height: 176 },
-    2,
-    24
-  );
+export class PlanetSelectPhaseView extends PhaseView {
+  private subtitleText!: Phaser.GameObjects.Text;
+  private cards: UIPlanetCard[] = [];
 
-  state.planetChoices.slice(0, 2).forEach((choice, index) => {
-    const rect = cards[index];
-    createPanel(scene, rect.x, rect.y, rect.width, rect.height, LAB_THEME.panelAlt, LAB_THEME.borderSoft, phaseRoot);
-    makeRectangle(scene, rect.x + 8, rect.y + 10, rect.width - 16, 6, LAB_THEME.accentFill, 0.85, phaseRoot).setOrigin(0);
+  constructor(
+    scene: Phaser.Scene,
+    ctx: RunRenderContext
+  ) {
+    super(scene, ctx);
+  }
 
-    const hitbox = makeRectangle(scene, rect.x, rect.y, rect.width, rect.height, 0x000000, 0, phaseRoot).setOrigin(0).setInteractive({ useHandCursor: true });
-    hitbox.on("pointerdown", () => onChoosePlanet(choice.id));
+  public build(): void {
+    const { scene, contentInner } = this.ctx;
+    const localCtx = { ...this.ctx, phaseRoot: this.container };
+    this.cards = [];
 
-    renderPlanetSprite(scene, choice.imageKey, rect.x + 108, rect.y + rect.height / 2, 164, 150, 1, phaseRoot);
-    makeText(scene, rect.x + 198, rect.y + 18, choice.name.toUpperCase(), textStyle(11), phaseRoot);
-    makeText(scene, rect.x + 198, rect.y + 44, choice.description, textStyle(9, LAB_THEME.textMuted, "left", rect.width - 216), phaseRoot);
-    makeText(
+    renderMainPanel(localCtx);
+    renderPlanetBackdrop(localCtx);
+    
+    // Header
+    const headerTitle = makeText(scene, contentInner.x + 4, contentInner.y + 6, "SELECT PLANET", textStyle(14, LAB_THEME.text), this.container);
+    this.subtitleText = makeText(
       scene,
-      rect.x + 198,
-      rect.y + 88,
-      "Surface route: 3 sites before the final approach.",
-      textStyle(8, LAB_THEME.text, "left", rect.width - 216),
-      phaseRoot
+      contentInner.x + 4,
+      contentInner.y + 24,
+      "",
+      textStyle(8, LAB_THEME.textMuted, "left", contentInner.width - 8),
+      this.container
     );
-    makeText(scene, rect.x + 198, rect.y + rect.height - 30, "TOUCH DOWN", textStyle(9, LAB_THEME.accent), phaseRoot);
-  });
+
+    // Cards
+    const cardRects = splitRectColumns(
+      { x: contentInner.x + 4, y: contentInner.y + 62, width: contentInner.width - 8, height: 176 },
+      2,
+      24
+    );
+
+    for (const rect of cardRects) {
+      const card = this.scene.add.uiPlanetCard(rect.x, rect.y, rect.width, rect.height);
+      this.container.add(card);
+      this.cards.push(card);
+    }
+  }
+
+  updateState(state: RunState): void {
+    this.subtitleText.setText(`Touch down for site ${state.currentSite}. Clear 3 surface sites, then decide whether to beat the boss or flee to orbit.`);
+
+    const choices = state.planetChoices.slice(0, 2);
+    
+    for (let i = 0; i < this.cards.length; i++) {
+      const card = this.cards[i];
+      const choice = choices[i];
+
+      if (!choice) {
+        card.setVisible(false);
+        continue;
+      }
+
+      card.setVisible(true).setChoice(choice);
+    }
+  }
 }

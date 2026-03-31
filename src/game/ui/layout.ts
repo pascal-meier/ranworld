@@ -26,9 +26,9 @@ export function createScreenLayout(
 ): ScreenLayout {
   const margin = options.margin ?? 16;
   const top = options.top ?? 12;
-  const gap = options.gap ?? 12;
+  const gap = options.gap ?? 16;
   const headerHeight = options.headerHeight ?? 52;
-  const footerHeight = options.footerHeight ?? 62;
+  const footerHeight = options.footerHeight ?? 80;
   const usableWidth = width - margin * 2;
 
   return {
@@ -78,3 +78,37 @@ export function splitRectRows(rect: LayoutRect, count: number, gap: number): Lay
     height,
   }));
 }
+
+export const UI_ANCHOR = {
+  TOP_LEFT: { x: 0, y: 0 },
+  TOP_CENTER: { x: 0.5, y: 0 },
+  TOP_RIGHT: { x: 1, y: 0 },
+  CENTER: { x: 0.5, y: 0.5 },
+  BOTTOM_LEFT: { x: 0, y: 1 },
+  BOTTOM_CENTER: { x: 0.5, y: 1 },
+  BOTTOM_RIGHT: { x: 1, y: 1 },
+};
+
+export function getAnchorPosition(
+  rect: LayoutRect,
+  anchor: { x: number; y: number },
+  offsetX = 0,
+  offsetY = 0
+): { x: number; y: number } {
+  return {
+    x: rect.x + rect.width * anchor.x + offsetX,
+    y: rect.y + rect.height * anchor.y + offsetY,
+  };
+}
+
+export function getRelativePosition(
+  rect: LayoutRect,
+  percentX: number,
+  percentY: number
+): { x: number; y: number } {
+  return {
+    x: rect.x + rect.width * (percentX / 100),
+    y: rect.y + rect.height * (percentY / 100),
+  };
+}
+

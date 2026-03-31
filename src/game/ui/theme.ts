@@ -11,6 +11,7 @@ export const LAB_THEME = {
   text: "#e9f4ff",
   textMuted: "#91afbf",
   accent: "#ffc857",
+  accentSoft: "#ffd78a",
   positive: "#8ce5c2",
   danger: "#ff8b8b",
   tag: 0x203948,
@@ -34,6 +35,6 @@ export function textStyle(
     lineSpacing: 0,
     resolution: 1,
     padding: { x: 0, y: 1 },
-    ...(wrapWidth ? { wordWrap: { width: wrapWidth, useAdvancedWrap: true } } : {}),
+    ...(wrapWidth ? { wordWrap: { width: Math.max(10, wrapWidth), useAdvancedWrap: true } } : {}),
   };
 }
