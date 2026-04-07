@@ -1,15 +1,10 @@
-import type { PlanetChoice, RunState } from "../../types.js";
+import type { RunState } from "../../types.js";
 import { PhaseView } from "./PhaseView.js";
-import { UI_EVENTS } from "../../events.js";
-import { renderMainPanel, renderPlanetBackdrop, renderPlanetSprite, type RunRenderContext } from "./shared.js";
-import { renderSectionHeader } from "../../ui/components.js";
-import { createPanel } from "../../ui/widgets.js";
+import { renderMainPanel, renderPlanetBackdrop, type RunRenderContext } from "./shared.js";
 import { splitRectColumns } from "../../ui/layout.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
-import { makeImage, makeRectangle, makeText } from "../../ui/display.js";
-import type { LayoutRect } from "../../ui/layout.js";
-
-import type { UIPlanetCard } from "../../ui/components/PlanetCard.js";
+import { makeText } from "../../ui/display.js";
+import { UIPlanetCard } from "../../ui/components/PlanetCard.js";
 
 export class PlanetSelectPhaseView extends PhaseView {
   private subtitleText!: Phaser.GameObjects.Text;
@@ -49,7 +44,7 @@ export class PlanetSelectPhaseView extends PhaseView {
     );
 
     for (const rect of cardRects) {
-      const card = this.scene.add.uiPlanetCard(rect.x, rect.y, rect.width, rect.height);
+      const card = new UIPlanetCard(this.scene, rect.x, rect.y, rect.width, rect.height);
       this.container.add(card);
       this.cards.push(card);
     }

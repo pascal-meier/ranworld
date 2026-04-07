@@ -12,7 +12,7 @@ export function createPanel(
   border = LAB_THEME.borderSoft,
   parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  const panel = scene.add.uiPanel(x, y, width, height, fill, border);
+  const panel = new UIPanel(scene, x, y, width, height, fill, border);
   return attachDisplayObject(scene, panel, parent);
 }
 
@@ -21,7 +21,7 @@ export function createButton(
   config: UIButtonConfig,
   parent?: DisplayParent
 ): UIButton {
-  const btn = scene.add.uiButton(config);
+  const btn = new UIButton(scene, config);
   return attachDisplayObject(scene, btn, parent);
 }
 
@@ -33,7 +33,6 @@ export function createTag(
   fill = LAB_THEME.tag,
   parent?: DisplayParent
 ): Phaser.GameObjects.Container {
-  const tag = scene.add.uiTag(x, y, label, fill);
+  const tag = new UITag(scene, x, y, label, fill);
   return attachDisplayObject(scene, tag, parent);
 }
-

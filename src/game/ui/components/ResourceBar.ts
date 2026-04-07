@@ -2,6 +2,7 @@ import { LAB_THEME, textStyle } from "../theme.js";
 import { makeFrameImage, makeImage, makeText } from "../display.js";
 import { getMechanicDefinition } from "../../mechanics/index.js";
 import type { MechanicId } from "../../types.js";
+import { createPanel } from "../widgets.js";
 
 export class UIResourceBar extends Phaser.GameObjects.Container {
   private suppliesText: Phaser.GameObjects.Text;
@@ -9,6 +10,11 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
   private researchText: Phaser.GameObjects.Text;
   private upgradeTitle: Phaser.GameObjects.Text;
   private upgradeListLayer: Phaser.GameObjects.Container;
+  private noModulesText: Phaser.GameObjects.Text;
+  private upgradeRows: Array<{
+    label: Phaser.GameObjects.Text;
+    effect: Phaser.GameObjects.Text;
+  }> = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -18,6 +24,8 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     height: number
   ) {
     super(scene, x, y);
+    this.setSize(width, height);
+    createPanel(this.scene, 0, 0, width, height, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this);
 
     // Resources Section
     makeText(this.scene, 16, 12, "RESOURCES", textStyle(8, LAB_THEME.textMuted), this);
@@ -38,8 +46,9 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
 
     // Upgrades Section
     this.upgradeTitle = makeText(this.scene, 16, 68, "ACTIVE MODULES", textStyle(9, LAB_THEME.text), this);
-    this.upgradeListLayer = this.scene.add.container(0, 8); // Added internal offset
+    this.upgradeListLayer = new Phaser.GameObjects.Container(this.scene, 0, 8);
     this.add(this.upgradeListLayer);
+    this.noModulesText = makeText(this.scene, 16, 82, "No active modules.", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer);
 
     // Initial Sync
     this.refresh();
@@ -68,18 +77,30 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
   }
 
   public updateUpgrades(mechanics: MechanicId[]): void {
-    this.upgradeListLayer.removeAll(true);
-    
-    if (mechanics.length === 0) {
-      makeText(this.scene, 16, 82, "No active modules.", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer);
-      return;
+    const visibleMechanics = mechanics.slice(0, 3);
+    this.noModulesText.setVisible(visibleMechanics.length === 0);
+
+    while (this.upgradeRows.length < visibleMechanics.length) {
+      const index = this.upgradeRows.length;
+      const rowY = 82 + index * 24;
+      this.upgradeRows.push({
+        label: makeText(this.scene, 16, rowY, "", textStyle(8, LAB_THEME.text), this.upgradeListLayer),
+        effect: makeText(this.scene, 16, rowY + 12, "", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer).setLineSpacing(-2),
+      });
     }
 
-    mechanics.slice(0, 3).forEach((id, index) => {
-      const mechanic = getMechanicDefinition(id);
-      const rowY = 82 + index * 24;
-      makeText(this.scene, 16, rowY, mechanic.shortLabel.toUpperCase(), textStyle(8, LAB_THEME.text), this.upgradeListLayer);
-      makeText(this.scene, 16, rowY + 12, mechanic.effectText, textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer).setLineSpacing(-2);
+    this.upgradeRows.forEach((row, index) => {
+      const mechanicId = visibleMechanics[index];
+
+      if (!mechanicId) {
+        row.label.setVisible(false);
+        row.effect.setVisible(false);
+        return;
+      }
+
+      const mechanic = getMechanicDefinition(mechanicId);
+      row.label.setVisible(true).setText(mechanic.shortLabel.toUpperCase());
+      row.effect.setVisible(true).setText(mechanic.effectText);
     });
   }
 }

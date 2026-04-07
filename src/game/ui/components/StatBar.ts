@@ -13,6 +13,7 @@ export class UIStatBar extends Phaser.GameObjects.Container {
     height: number
   ) {
     super(scene, x, y);
+    this.setSize(width, height);
 
     this.primaryText = makeText(
       this.scene,
