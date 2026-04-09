@@ -11,6 +11,12 @@ export class OverlayScene extends BaseScene {
     this.lab.toggleDevOverlay();
   };
   private overlayRoot?: Phaser.GameObjects.Container;
+  private titleText?: Phaser.GameObjects.Text;
+  private bodyText?: Phaser.GameObjects.Text;
+  private activeText?: Phaser.GameObjects.Text;
+  private probabilityTexts: Phaser.GameObjects.Text[] = [];
+  private debugTexts: Phaser.GameObjects.Text[] = [];
+  private layoutSignature?: string;
 
   constructor() {
     super({ key: "OverlayScene" });
@@ -31,19 +37,25 @@ export class OverlayScene extends BaseScene {
   }
 
   private render(): void {
-    this.overlayRoot?.removeAll(true);
+    if (!this.overlayRoot) {
+      return;
+    }
 
-    if (!this.overlayRoot || !this.lab.isDevOverlayVisible()) {
+    const { width } = this.scale;
+    const signature = `${width}`;
+
+    if (this.layoutSignature !== signature) {
+      this.rebuildUi(width);
+      this.layoutSignature = signature;
+    }
+
+    if (!this.lab.isDevOverlayVisible()) {
+      this.overlayRoot.setVisible(false);
       return;
     }
 
     const state = this.lab.getState();
     const meta = this.lab.getMeta();
-    const { width } = this.scale;
-
-    createPanel(this, width - 248, 16, 232, 146, 0x081723, 0x4cc9f0, this.overlayRoot);
-    makeText(this, width - 228, 30, "DEV OVERLAY", textStyle(10), this.overlayRoot);
-
     const lines = [
       `Queued seed: ${state?.seed ?? this.lab.getSeedPreview()}`,
       `Phase: ${state?.phase ?? "setup"}`,
@@ -52,37 +64,62 @@ export class OverlayScene extends BaseScene {
       `Tab toggles overlay`,
     ];
 
-    makeText(this, width - 228, 48, lines.join("\n"), textStyle(8, LAB_THEME.textMuted), this.overlayRoot);
+    this.overlayRoot.setVisible(true);
+    this.bodyText?.setText(lines.join("\n"));
 
-    let y = 102;
+    const mechanicText =
+      state && state.activeMechanics.length > 0
+        ? state.activeMechanics.map((id) => getMechanicDefinition(id).shortLabel).join(", ")
+        : "none";
 
-    if (state) {
-      const mechanicText =
-        state.activeMechanics.length > 0
-          ? state.activeMechanics
-              .map((id) => getMechanicDefinition(id).shortLabel)
-              .join(", ")
-          : "none";
+    this.activeText?.setText(`Active: ${mechanicText}`).setVisible(Boolean(state));
 
-      makeText(this, width - 228, y, `Active: ${mechanicText}`, textStyle(8), this.overlayRoot);
-      y += 14;
-
-      for (const entry of state.currentProbabilities.slice(0, 2)) {
-        makeText(
-          this,
-          width - 228,
-          y,
-          `${entry.label}: shown ${entry.shown} | actual ${entry.actual}`,
-          textStyle(7, LAB_THEME.accent),
-          this.overlayRoot
-        );
-        y += 12;
+    const probabilities = state?.currentProbabilities.slice(0, 2) ?? [];
+    this.probabilityTexts.forEach((text, index) => {
+      const entry = probabilities[index];
+      if (!entry) {
+        text.setVisible(false);
+        return;
       }
 
-      for (const debugLine of this.lab.getDebugLines().slice(0, 2)) {
-        makeText(this, width - 228, y, debugLine, textStyle(7, LAB_THEME.textMuted), this.overlayRoot);
-        y += 10;
+      text
+        .setVisible(true)
+        .setText(`${entry.label}: shown ${entry.shown} | actual ${entry.actual}`);
+    });
+
+    const debugLines = state ? this.lab.getDebugLines().slice(0, 2) : [];
+    this.debugTexts.forEach((text, index) => {
+      const line = debugLines[index];
+      if (!line) {
+        text.setVisible(false);
+        return;
       }
+
+      text.setVisible(true).setText(line);
+    });
+  }
+
+  private rebuildUi(width: number): void {
+    this.overlayRoot?.removeAll(true);
+    this.probabilityTexts = [];
+    this.debugTexts = [];
+
+    if (!this.overlayRoot) {
+      return;
     }
+
+    createPanel(this, width - 248, 16, 232, 146, 0x081723, 0x4cc9f0, this.overlayRoot);
+    this.titleText = makeText(this, width - 228, 30, "DEV OVERLAY", textStyle(10), this.overlayRoot);
+    this.bodyText = makeText(this, width - 228, 48, "", textStyle(8, LAB_THEME.textMuted), this.overlayRoot);
+    this.activeText = makeText(this, width - 228, 102, "", textStyle(8), this.overlayRoot);
+
+    this.probabilityTexts.push(
+      makeText(this, width - 228, 116, "", textStyle(7, LAB_THEME.accent), this.overlayRoot),
+      makeText(this, width - 228, 128, "", textStyle(7, LAB_THEME.accent), this.overlayRoot)
+    );
+    this.debugTexts.push(
+      makeText(this, width - 228, 140, "", textStyle(7, LAB_THEME.textMuted), this.overlayRoot),
+      makeText(this, width - 228, 150, "", textStyle(7, LAB_THEME.textMuted), this.overlayRoot)
+    );
   }
 }

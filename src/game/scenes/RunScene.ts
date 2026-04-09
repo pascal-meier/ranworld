@@ -1,4 +1,4 @@
-import { createRunRenderContext, renderModifiersPanel } from "./run/shared.js";
+import { createRunRenderContext } from "./run/shared.js";
 import { PlanetSelectPhaseView } from "./run/planetSelectRenderer.js";
 import { DraftPhaseView } from "./run/draftRenderer.js";
 import { MapPhaseView } from "./run/mapRenderer.js";
@@ -8,9 +8,9 @@ import { RewardPhaseView } from "./run/rewardRenderer.js";
 import { RunEndPhaseView } from "./run/runEndRenderer.js";
 import { FeedbackManager } from "./run/FeedbackManager.js";
 import { ChromeManager } from "./run/ChromeManager.js";
+import { RunOverlayManager } from "./run/RunOverlayManager.js";
 import type { MechanicId, RunState, TutorialId } from "../types.js";
 import { getTutorialDefinition } from "../tutorials/catalog.js";
-import { renderTutorialOverlay } from "../ui/tutorialOverlay.js";
 import { BaseScene } from "./BaseScene.js";
 import type { PhaseView } from "./run/PhaseView.js";
 import { UI_EVENTS } from "../events.js";
@@ -30,22 +30,34 @@ export class RunScene extends BaseScene {
     this.showModifiersPanel = false;
     this.render();
   };
+  private readonly handleCloseActiveTutorial = () => {
+    if (this.activeTutorialId) {
+      this.closeTutorial(this.activeTutorialId);
+    }
+  };
+  private readonly handleOpenMapTutorial = () => this.openTutorial("map-basics");
   private showModifiersPanel = false;
   private backgroundLayer?: Phaser.GameObjects.Container;
   private chromeLayer?: Phaser.GameObjects.Container;
   private phaseLayer?: Phaser.GameObjects.Container;
   private overlayLayer?: Phaser.GameObjects.Container;
+  private feedbackLayer?: Phaser.GameObjects.Container;
   private tooltipLayer?: Phaser.GameObjects.Container;
   private bannerLayer?: Phaser.GameObjects.Container;
+  private phaseMaskShape?: Phaser.GameObjects.Graphics;
+  private phaseMask?: Phaser.Display.Masks.GeometryMask;
+  private phaseMaskSignature?: string;
   private activeTutorialId?: TutorialId;
   private lastPhase?: string;
 
   private feedback!: FeedbackManager;
   private chrome!: ChromeManager;
+  private overlays!: RunOverlayManager;
 
   private views: Record<string, PhaseView> = {};
   private activeView: PhaseView | null = null;
   private isViewsBuilt = false;
+  private viewLayoutSignature?: string;
 
   constructor() {
     super({ key: "RunScene" });
@@ -62,37 +74,30 @@ export class RunScene extends BaseScene {
     this.chromeLayer = this.add.container(0, 0);
     this.phaseLayer = this.add.container(0, 0);
     this.overlayLayer = this.add.container(0, 0);
+    this.feedbackLayer = this.add.container(0, 0);
     this.bannerLayer = this.add.container(0, 0);
     this.tooltipLayer = this.add.container(0, 0);
     this.backgroundLayer.setDepth(0);
     this.phaseLayer.setDepth(10);
     this.chromeLayer.setDepth(20);
     this.overlayLayer.setDepth(30);
+    this.feedbackLayer.setDepth(35);
     this.bannerLayer.setDepth(40);
     this.tooltipLayer.setDepth(100);
     
     this.cameras.main.setRoundPixels(true);
 
-    this.feedback = new FeedbackManager(this, () => this.render());
+    this.feedback = new FeedbackManager(this, this.feedbackLayer, () => this.render());
     this.chrome = new ChromeManager(this, this.backgroundLayer, this.chromeLayer, this.tooltipLayer);
+    this.overlays = new RunOverlayManager(this, this.overlayLayer);
 
     const ctx = createRunRenderContext(
       this,
       state,
       this.phaseLayer,
-      this.overlayLayer,
       (nodeId) => this.lab.chooseNode(nodeId)
     );
-
-    this.views = {
-      "planet-select": new PlanetSelectPhaseView(this, ctx),
-      "draft": new DraftPhaseView(this, ctx),
-      "map": new MapPhaseView(this, ctx),
-      "combat": new CombatPhaseView(this, ctx),
-      "event": new EventPhaseView(this, ctx),
-      "reward": new RewardPhaseView(this, ctx),
-      "run-end": new RunEndPhaseView(this, ctx),
-    };
+    this.rebuildViews(ctx);
 
     // Event Listeners for UI Actions
     this.events.on(UI_EVENTS.PLANET_SELECTED, (id: string) => {
@@ -129,9 +134,6 @@ export class RunScene extends BaseScene {
         this.scene.start("SetupScene");
     });
 
-    Object.values(this.views).forEach(view => view.build());
-    this.isViewsBuilt = true;
-
     this.lab.on("changed", this.handleChange);
     this.scale.on(Phaser.Scale.Events.RESIZE, this.handleResize);
 
@@ -154,6 +156,14 @@ export class RunScene extends BaseScene {
 
       this.feedback.destroy();
       this.chrome.destroy();
+      this.overlays.destroy();
+      this.destroyViews();
+      this.phaseLayer?.clearMask(true);
+      this.phaseMask?.destroy();
+      this.phaseMaskShape?.destroy();
+      this.phaseMask = undefined;
+      this.phaseMaskShape = undefined;
+      this.phaseMaskSignature = undefined;
     });
 
     this.syncRegistry(state);
@@ -193,7 +203,7 @@ export class RunScene extends BaseScene {
     this.syncTutorialState(state);
     this.feedback.syncCombatFeedback(state);
 
-    if (!this.phaseLayer || !this.overlayLayer || !this.tooltipLayer || !this.isViewsBuilt) {
+    if (!this.phaseLayer || !this.overlayLayer || !this.tooltipLayer || !this.feedbackLayer || !this.isViewsBuilt) {
       return;
     }
 
@@ -201,16 +211,14 @@ export class RunScene extends BaseScene {
       this,
       state,
       this.phaseLayer,
-      this.overlayLayer,
       (nodeId) => this.lab.chooseNode(nodeId)
     );
+    this.syncViewsForContext(ctx);
+    this.ensurePhaseMask(ctx.layout.content);
     this.feedback.syncFeedbackToast(state);
     this.chrome.ensureChrome(ctx.width, ctx.height, ctx.layout);
     this.chrome.syncChrome(state);
     
-    // We only clear the overlay layer now (for tutorials/toasts). Phase layer holds the views.
-    this.overlayLayer?.removeAll(true);
-
     const viewKey = this.getViewKey(state);
     const view = this.views[viewKey];
 
@@ -235,20 +243,21 @@ export class RunScene extends BaseScene {
 
     if (viewKey === "combat") {
       (this.activeView as CombatPhaseView).updateState(state, !this.feedback.areCombatActionsLocked());
+    } else if (viewKey === "map") {
+      (this.activeView as MapPhaseView).updateState(state, this.handleOpenMapTutorial);
     } else {
       this.activeView?.updateState(state);
     }
 
-    if (this.showModifiersPanel) {
-      // Modifiers panel is placed on the generic phase layer dynamically. It will overlay the active view.
-      renderModifiersPanel(ctx, this.handleCloseModifiers);
-    }
-
-    this.renderActiveTutorial();
+    this.overlays.syncModifiers(ctx, this.showModifiersPanel, this.handleCloseModifiers);
+    this.overlays.syncTutorial(
+      this.activeTutorialId ? getTutorialDefinition(this.activeTutorialId) : undefined,
+      this.handleCloseActiveTutorial
+    );
     if (state.phase === "combat") {
-      this.feedback.renderCombatFeedback(ctx, this.overlayLayer);
+      this.feedback.renderCombatFeedback(ctx);
     } else {
-      this.feedback.renderFeedbackToast(ctx.width, this.overlayLayer);
+      this.feedback.renderFeedbackToast(ctx.width);
     }
   }
 
@@ -260,6 +269,66 @@ export class RunScene extends BaseScene {
     if (state.phase === "reward" && state.reward) return "reward";
     if (state.phase === "map") return "map";
     return "run-end";
+  }
+
+  private createViews(ctx: ReturnType<typeof createRunRenderContext>): Record<string, PhaseView> {
+    return {
+      "planet-select": new PlanetSelectPhaseView(this, ctx),
+      "draft": new DraftPhaseView(this, ctx),
+      "map": new MapPhaseView(this, ctx),
+      "combat": new CombatPhaseView(this, ctx),
+      "event": new EventPhaseView(this, ctx),
+      "reward": new RewardPhaseView(this, ctx),
+      "run-end": new RunEndPhaseView(this, ctx),
+    };
+  }
+
+  private destroyViews(): void {
+    Object.values(this.views).forEach((view) => view.destroy());
+    this.views = {};
+    this.activeView = null;
+    this.isViewsBuilt = false;
+    this.viewLayoutSignature = undefined;
+  }
+
+  private rebuildViews(ctx: ReturnType<typeof createRunRenderContext>): void {
+    this.destroyViews();
+    this.views = this.createViews(ctx);
+    Object.values(this.views).forEach((view) => view.build());
+    this.isViewsBuilt = true;
+    this.viewLayoutSignature = this.getViewLayoutSignature(ctx);
+  }
+
+  private syncViewsForContext(ctx: ReturnType<typeof createRunRenderContext>): void {
+    const signature = this.getViewLayoutSignature(ctx);
+
+    if (!this.isViewsBuilt || this.viewLayoutSignature !== signature) {
+      this.rebuildViews(ctx);
+      return;
+    }
+
+    Object.values(this.views).forEach((view) => view.setContext(ctx));
+  }
+
+  private getViewLayoutSignature(ctx: ReturnType<typeof createRunRenderContext>): string {
+    const { width, height, layout } = ctx;
+
+    return [
+      width,
+      height,
+      layout.header.x,
+      layout.header.y,
+      layout.header.width,
+      layout.header.height,
+      layout.content.x,
+      layout.content.y,
+      layout.content.width,
+      layout.content.height,
+      layout.footer.x,
+      layout.footer.y,
+      layout.footer.width,
+      layout.footer.height,
+    ].join(":");
   }
 
   // ── Tutorial ───────────────────────────────────────────
@@ -294,18 +363,6 @@ export class RunScene extends BaseScene {
     this.render();
   }
 
-  private renderActiveTutorial(): void {
-    if (!this.activeTutorialId) {
-      return;
-    }
-
-    if (!this.overlayLayer) {
-      return;
-    }
-
-    renderTutorialOverlay(this, getTutorialDefinition(this.activeTutorialId), () => this.closeTutorial(this.activeTutorialId!), this.overlayLayer);
-  }
-
   private showPhaseBanner(key: string): void {
     if (!this.bannerLayer || !this.textures.exists(key)) return;
 
@@ -332,5 +389,32 @@ export class RunScene extends BaseScene {
         });
       }
     });
+  }
+
+  private ensurePhaseMask(contentRect: { x: number; y: number; width: number; height: number }): void {
+    if (!this.phaseLayer) {
+      return;
+    }
+
+    if (!this.phaseMaskShape) {
+      this.phaseMaskShape = this.add.graphics();
+      this.phaseMaskShape.setVisible(false);
+    }
+
+    if (!this.phaseMask) {
+      this.phaseMask = this.phaseMaskShape.createGeometryMask();
+      this.phaseLayer.setMask(this.phaseMask);
+    }
+
+    const signature = [contentRect.x, contentRect.y, contentRect.width, contentRect.height].join(":");
+
+    if (this.phaseMaskSignature === signature && this.phaseMaskShape) {
+      return;
+    }
+
+    this.phaseMaskShape.clear();
+    this.phaseMaskShape.fillStyle(0xffffff, 1);
+    this.phaseMaskShape.fillRect(contentRect.x, contentRect.y, contentRect.width, contentRect.height);
+    this.phaseMaskSignature = signature;
   }
 }

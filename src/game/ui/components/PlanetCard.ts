@@ -17,8 +17,9 @@ export class UIPlanetCard extends Phaser.GameObjects.Container {
     width: number,
     height: number
   ) {
-    const cardContainer = scene.add.container(0, 0);
+    const cardContainer = new Phaser.GameObjects.Container(scene, 0, 0);
     super(scene, x, y, [cardContainer]);
+    this.setSize(width, height);
 
     createPanel(scene, 0, 0, width, height, LAB_THEME.panelAlt, LAB_THEME.borderSoft, cardContainer);
     

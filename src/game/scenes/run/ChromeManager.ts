@@ -1,7 +1,7 @@
 import { makeRectangle } from "../../ui/display.js";
 import type { ScreenLayout } from "../../ui/layout.js";
-import type { UIStatBar } from "../../ui/components/StatBar.js";
-import type { UIResourceBar } from "../../ui/components/ResourceBar.js";
+import { UIStatBar } from "../../ui/components/StatBar.js";
+import { UIResourceBar } from "../../ui/components/ResourceBar.js";
 import { LAB_THEME } from "../../ui/theme.js";
 
 export class ChromeManager {
@@ -49,10 +49,10 @@ export class ChromeManager {
     makeRectangle(this.scene, 0, 0, width, height, LAB_THEME.background, 1, this.backgroundLayer).setOrigin(0);
     makeRectangle(this.scene, 0, 0, width, 40, 0x0b1a26, 1, this.backgroundLayer).setOrigin(0);
 
-    this.statBar = this.scene.add.uiStatBar(layout.header.x, layout.header.y, layout.header.width, layout.header.height);
+    this.statBar = new UIStatBar(this.scene, layout.header.x, layout.header.y, layout.header.width, layout.header.height);
     this.chromeLayer.add(this.statBar);
 
-    this.resourceBar = this.scene.add.uiResourceBar(layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height);
+    this.resourceBar = new UIResourceBar(this.scene, layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height);
     this.chromeLayer.add(this.resourceBar);
   }
 

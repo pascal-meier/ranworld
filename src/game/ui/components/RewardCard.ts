@@ -1,5 +1,5 @@
-import { LAB_THEME, textStyle } from "../theme.js";
-import { makeImage, makeText } from "../display.js";
+import { UIButton } from "../objects.js";
+import { makeImage } from "../display.js";
 import { createButton } from "../widgets.js";
 import type { RewardChoice } from "../../types.js";
 import { UI_EVENTS } from "../../events.js";
@@ -7,7 +7,7 @@ import { UI_EVENTS } from "../../events.js";
 export class UIRewardCard extends Phaser.GameObjects.Container {
   private choice?: RewardChoice;
   private icon?: Phaser.GameObjects.Image;
-  private button: any;
+  private button: UIButton;
 
   constructor(
     scene: Phaser.Scene,
@@ -17,6 +17,7 @@ export class UIRewardCard extends Phaser.GameObjects.Container {
     height: number
   ) {
     super(scene, x, y);
+    this.setSize(width, height);
 
     this.button = createButton(scene, {
       x: 0,
@@ -40,10 +41,9 @@ export class UIRewardCard extends Phaser.GameObjects.Container {
 
   public setReward(choice: RewardChoice): this {
     this.choice = choice;
-    this.button.label.setText(choice.label.toUpperCase());
-    this.button.detail.setText(choice.description);
-
-    if (this.icon) this.icon.destroy();
+    this.button
+      .setLabelText(choice.label.toUpperCase())
+      .setDetailText(choice.description);
 
     const iconMap: Record<string, string> = {
       "heal": "reward-medkit",
@@ -55,14 +55,25 @@ export class UIRewardCard extends Phaser.GameObjects.Container {
 
     const iconKey = iconMap[choice.type];
     if (iconKey && this.scene.textures.exists(iconKey)) {
-      this.icon = makeImage(this.scene, this.button.config.width - 28, 32, iconKey, this.button)
-        .setDisplaySize(32, 32)
-        .setOrigin(0.5);
-      
-      if (choice.type === "archive") {
-          this.icon.setTint(0x8ce5c2);
+      if (!this.icon) {
+        this.icon = makeImage(this.scene, this.button.config.width - 28, 32, iconKey, this.button)
+          .setDisplaySize(32, 32)
+          .setOrigin(0.5);
+      } else {
+        this.icon
+          .setTexture(iconKey)
+          .setVisible(true)
+          .setDisplaySize(32, 32);
       }
+
+      this.icon.clearTint();
+      if (choice.type === "archive") {
+        this.icon.setTint(0x8ce5c2);
+      }
+    } else if (this.icon) {
+      this.icon.setVisible(false).clearTint();
     }
+
     return this;
   }
 }

@@ -10,7 +10,7 @@ export class CombatVFX {
 
     // Spark Particles
     const particles = this.scene.add.particles(x, y, "ui-icons", {
-        frame: "node-base-style",
+        frame: "icon-research",
         scale: { start: 0.15, end: 0 },
         speed: speed,
         lifespan: 400,
@@ -62,10 +62,12 @@ export class CombatVFX {
 
     this.scene.tweens.add({
         targets: txt,
-        y: y - 50,
-        alpha: 0,
-        duration: 800,
-        ease: "Cubic.out",
+        y: y - 60,
+        x: x + (Math.random() * 40 - 20),
+        scale: { start: 0.5, to: 1.2 },
+        alpha: { start: 1, to: 0 },
+        duration: 1000,
+        ease: "Back.easeOut",
         onComplete: () => txt.destroy()
     });
   }
