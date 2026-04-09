@@ -32,7 +32,7 @@ export class UICombatActor extends Phaser.GameObjects.Container {
     this.focusText = this.drawStatIcon(120, 28, "icon-focus", "0");
     
     if (!isPlayer) {
-        this.roundText = makeText(scene, 180, 27, "Round 1", textStyle(8, LAB_THEME.textMuted), this);
+        this.roundText = makeText(scene, width - 12, 27, "Round 1", textStyle(8, LAB_THEME.textMuted), this).setOrigin(1, 0);
         this.intentText = makeText(scene, 12, 43, "Intent 0", textStyle(8, LAB_THEME.textMuted), this);
     } else {
         makeText(scene, 12, 44, "Charges: 0", textStyle(8, LAB_THEME.textMuted), this);

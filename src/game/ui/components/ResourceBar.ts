@@ -1,6 +1,8 @@
 import { LAB_THEME, textStyle } from "../theme.js";
-import { makeFrameImage, makeImage, makeText } from "../display.js";
+import { makeFrameImage, makeImage, makeRectangle, makeText } from "../display.js";
+import { createPanel } from "../widgets.js";
 import { getMechanicDefinition } from "../../mechanics/index.js";
+import { getUpgradeTrackLabel } from "../../mechanics/catalog.js";
 import type { MechanicId } from "../../types.js";
 
 export class UIResourceBar extends Phaser.GameObjects.Container {
@@ -9,6 +11,7 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
   private researchText: Phaser.GameObjects.Text;
   private upgradeTitle: Phaser.GameObjects.Text;
   private upgradeListLayer: Phaser.GameObjects.Container;
+  private readonly barWidth: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -18,6 +21,7 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     height: number
   ) {
     super(scene, x, y);
+    this.barWidth = width;
 
     // Resources Section
     makeText(this.scene, 16, 12, "RESOURCES", textStyle(8, LAB_THEME.textMuted), this);
@@ -38,7 +42,7 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
 
     // Upgrades Section
     this.upgradeTitle = makeText(this.scene, 16, 68, "ACTIVE MODULES", textStyle(9, LAB_THEME.text), this);
-    this.upgradeListLayer = this.scene.add.container(0, 8); // Added internal offset
+    this.upgradeListLayer = this.scene.add.container(0, 0);
     this.add(this.upgradeListLayer);
 
     // Initial Sync
@@ -71,15 +75,64 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     this.upgradeListLayer.removeAll(true);
     
     if (mechanics.length === 0) {
-      makeText(this.scene, 16, 82, "No active modules.", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer);
+      makeText(this.scene, 16, 86, "No active modules.", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer);
       return;
     }
 
+    const columns = mechanics.length;
+    const gap = 10;
+    const cardY = 80;
+    const cardH = 28;
+    const cardW = Math.floor((this.barWidth - 32 - gap * (columns - 1)) / columns);
+
+    makeText(
+      this.scene,
+      16,
+      68,
+      "ACTIVE MODULES",
+      textStyle(9, LAB_THEME.text),
+      this.upgradeListLayer
+    );
+    makeText(
+      this.scene,
+      this.barWidth - 16,
+      68,
+      "M FOR DETAILS",
+      textStyle(7, LAB_THEME.textMuted, "right"),
+      this.upgradeListLayer
+    ).setOrigin(1, 0);
+
     mechanics.slice(0, 3).forEach((id, index) => {
       const mechanic = getMechanicDefinition(id);
-      const rowY = 82 + index * 24;
-      makeText(this.scene, 16, rowY, mechanic.shortLabel.toUpperCase(), textStyle(8, LAB_THEME.text), this.upgradeListLayer);
-      makeText(this.scene, 16, rowY + 12, mechanic.effectText, textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer).setLineSpacing(-2);
+      const cardX = 16 + index * (cardW + gap);
+      const card = createPanel(this.scene, cardX, cardY, cardW, cardH, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this.upgradeListLayer);
+      card.setAlpha(0.98);
+
+      makeRectangle(this.scene, cardX + 4, cardY + 4, 4, cardH - 8, LAB_THEME.accentFill, 1, this.upgradeListLayer);
+
+      makeText(
+        this.scene,
+        cardX + 16,
+        cardY + 4,
+        mechanic.shortLabel.toUpperCase(),
+        textStyle(8, LAB_THEME.text),
+        this.upgradeListLayer
+      );
+
+      makeText(
+        this.scene,
+        cardX + 16,
+        cardY + 15,
+        `${mechanic.tableId}  /  ${getUpgradeTrackLabel(mechanic.upgradeTrack).toUpperCase()}`,
+        textStyle(7, LAB_THEME.textMuted),
+        this.upgradeListLayer
+      );
+
+      if (mechanic.iconKey && this.scene.textures.exists("ui-icons")) {
+        makeFrameImage(this.scene, cardX + cardW - 16, cardY + 14, "ui-icons", mechanic.iconKey, this.upgradeListLayer)
+          .setDisplaySize(14, 14)
+          .setOrigin(0.5);
+      }
     });
   }
 }

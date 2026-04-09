@@ -64,7 +64,7 @@ export class CombatPhaseView extends PhaseView {
     const playerStatX = arenaX + 12;
     const enemyStatX = arenaX + arenaW - statW - 12;
     const statY = arenaY + 8;
-    const topInfoY = contentInner.y + 44;
+    const topInfoY = contentInner.y + 22;
 
     // Static Arena Panels
     createPanel(scene, arenaX, arenaY, arenaW, arenaH, 0x0a1d2a, 0x35586d, this.container);
@@ -121,9 +121,13 @@ export class CombatPhaseView extends PhaseView {
     const playerSpriteX = arenaX + arenaW * 0.28;
     const enemySpriteX = arenaX + arenaW * 0.72;
     const floorY = arenaY + arenaH - 12; // Dedicated baseline for robots
-    const actionW = Math.floor((contentInner.width - 48) / 2);
     const actionGap = 12;
-    const topInfoY = contentInner.y + 44;
+    const actionCount = combat.actions.length;
+    const columns = actionCount > 4 ? 3 : 2;
+    const rows = Math.max(1, Math.ceil(actionCount / columns));
+    const actionW = Math.floor((contentInner.width - 32 - actionGap * (columns - 1)) / columns);
+    const actionH = 48;
+    const topInfoY = contentInner.y + 22;
 
     this.headerContainer.removeAll(true);
     this.arenaContainer.removeAll(true);
@@ -219,19 +223,12 @@ export class CombatPhaseView extends PhaseView {
     renderRerollButton(tempCtx, contentInner.x + contentInner.width - 180, arenaY + arenaH + 6, 152, () => this.scene.events.emit(UI_EVENTS.REROLL_REQUESTED), !actionsEnabled);
 
     const actionPanelY = arenaY + arenaH + 12;
-    const actionPanelH = contentInner.height - (actionPanelY - contentInner.y) + 4; // Reset to reasonable fill
+    const actionPanelMinH = rows * actionH + (rows - 1) * actionGap + 24;
+    const actionPanelH = Math.max(contentInner.height - (actionPanelY - contentInner.y) + 4, actionPanelMinH);
     createPanel(scene, contentInner.x, actionPanelY, contentInner.width, actionPanelH, 0x1a3342, LAB_THEME.borderSoft, this.optionsLayer);
     this.optionsLayer.setDepth(5);
 
-    const actionH = 36;
     const gridY = actionPanelY + 12;
-    
-    const actionPositions = [
-      { x: contentInner.x + 16, y: gridY },
-      { x: contentInner.x + 16 + actionW + actionGap, y: gridY },
-      { x: contentInner.x + 16, y: gridY + actionH + actionGap },
-      { x: contentInner.x + 16 + actionW + actionGap, y: gridY + actionH + actionGap },
-    ];
 
     const actionIconMap: Record<string, string> = {
       "strike": "intent-attack",
@@ -241,17 +238,20 @@ export class CombatPhaseView extends PhaseView {
     };
 
     combat.actions.forEach((action, index) => {
-      const position = actionPositions[index];
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      const positionX = contentInner.x + 16 + column * (actionW + actionGap);
+      const positionY = gridY + row * (actionH + actionGap);
       const preview = combat.previews.find(p => p.actionId === action.id) || null;
       const detail = getCombatActionDetail(action, preview);
 
       const actionIcon = actionIconMap[action.id] || actionIconMap[action.kind];
 
       const button = createButton(scene, {
-        x: position.x,
-        y: position.y,
+        x: positionX,
+        y: positionY,
         width: actionW,
-        height: 40,
+        height: actionH,
         label: action.label.toUpperCase(),
         detail: detail,
         onClick: () => this.scene.events.emit(UI_EVENTS.COMBAT_ACTION_RESOLVE, action.id),
@@ -259,7 +259,7 @@ export class CombatPhaseView extends PhaseView {
       }, this.optionsLayer);
 
       if (actionIcon && scene.textures.exists("ui-icons")) {
-          makeFrameImage(scene, actionW - 24, 20, "ui-icons", actionIcon, button)
+          makeFrameImage(scene, actionW - 24, actionH / 2, "ui-icons", actionIcon, button)
               .setDisplaySize(20, 20)
               .setOrigin(0.5);
       }
