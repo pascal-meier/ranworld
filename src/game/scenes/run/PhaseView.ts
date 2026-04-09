@@ -16,6 +16,10 @@ export abstract class PhaseView {
   public abstract build(): void;
   public abstract updateState(state: RunState, extra?: any): void;
 
+  public setContext(ctx: RunRenderContext): void {
+    this.ctx = ctx;
+  }
+
   show(animated = false): void {
     this.scene.tweens.killTweensOf(this.container);
     

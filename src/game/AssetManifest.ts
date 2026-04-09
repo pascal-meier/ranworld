@@ -11,6 +11,7 @@ export const ASSET_MANIFEST = {
   
   images: [
     { key: "enemy-warden", path: "assets/actors/enemies/enemy-warden-clean.png" },
+    { key: "enemy-calibration-drone", path: "assets/actors/enemies/enemy-calibration-drone.png" },
     { key: "enemy-scrap-hound", path: "assets/actors/enemies/enemy-scrap-hound-clean.png" },
     { key: "enemy-glass-engine", path: "assets/actors/enemies/enemy-glass-engine-clean.png" },
     { key: "enemy-drone-swarm", path: "assets/actors/enemies/enemy-drone-swarm.png" },

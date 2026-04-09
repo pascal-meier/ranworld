@@ -59,6 +59,7 @@ export class UIPanel extends Phaser.GameObjects.Container {
     }
 
     super(scene, x, y, [shadow, background]);
+    this.setSize(width, height);
     
     // Add original stylistic elements if not using the texture
     if (!useTexture) {
@@ -76,8 +77,13 @@ export class UIButton extends Phaser.GameObjects.Container {
   public label: Phaser.GameObjects.Text;
   public detail?: Phaser.GameObjects.Text;
   public readonly config: UIButtonConfig;
+  private background: Phaser.GameObjects.NineSlice | Phaser.GameObjects.Rectangle;
+  private icon?: Phaser.GameObjects.Image;
   private onHoverExtra?: () => void;
   private onOutExtra?: () => void;
+  private readonly localContentX: number;
+  private readonly localLabelY: number;
+  private readonly localDetailY: number;
   constructor(scene: Phaser.Scene, config: UIButtonConfig) {
     const disabled = Boolean(config.disabled);
     const compact = config.height <= 36;
@@ -150,7 +156,7 @@ export class UIButton extends Phaser.GameObjects.Container {
     }
 
     if (config.iconKey && scene.textures.exists(config.iconKey)) {
-      const icon = scene.add.image(config.width / 2, 38, config.iconKey).setOrigin(0.5);
+      const icon = new Phaser.GameObjects.Image(scene, config.width / 2, 38, config.iconKey).setOrigin(0.5);
       icon.setScale(Math.min(0.6, 60 / icon.height));
       children.push(icon);
 
@@ -164,10 +170,21 @@ export class UIButton extends Phaser.GameObjects.Container {
     }
 
     super(scene, config.x, config.y, children);
+    this.setSize(config.width, config.height);
     
     this.config = config;
+    this.background = background;
     this.label = labelObj;
     this.detail = detailObj;
+    this.localContentX = localContentX;
+    this.localLabelY = localLabelY;
+    this.localDetailY = localDetailY;
+
+    if (config.iconKey && scene.textures.exists(config.iconKey)) {
+      this.icon = children[children.length - 1] instanceof Phaser.GameObjects.Image
+        ? children[children.length - 1] as Phaser.GameObjects.Image
+        : undefined;
+    }
 
     if (disabled) {
       this.setAlpha(0.7);
@@ -206,6 +223,67 @@ export class UIButton extends Phaser.GameObjects.Container {
     this.onOutExtra = onOut;
     return this;
   }
+
+  public setLabelText(text: string): this {
+    this.config.label = text;
+    this.label.setText(text);
+    return this;
+  }
+
+  public setDetailText(text: string): this {
+    this.config.detail = text;
+    this.detail?.setText(text);
+    return this;
+  }
+
+  public setClickHandler(onClick: () => void): this {
+    this.config.onClick = onClick;
+    return this;
+  }
+
+  public setIconKey(iconKey?: string): this {
+    this.config.iconKey = iconKey;
+
+    if (iconKey && this.scene.textures.exists(iconKey)) {
+      if (!this.icon) {
+        this.icon = new Phaser.GameObjects.Image(this.scene, this.config.width / 2, 38, iconKey).setOrigin(0.5);
+        this.add(this.icon);
+      } else {
+        this.icon.setTexture(iconKey).setVisible(true);
+      }
+
+      this.icon.setScale(Math.min(0.6, 60 / this.icon.height));
+      this.label.setY(68).setOrigin(0.5, 0).setX(this.config.width / 2);
+      this.label.setStyle({ align: "center" });
+
+      if (this.detail) {
+        this.detail.setY(82).setOrigin(0.5, 0).setX(this.config.width / 2);
+        this.detail.setWordWrapWidth(this.config.width - 20).setStyle({ align: "center" });
+      }
+    } else {
+      this.icon?.setVisible(false);
+      this.label.setPosition(this.localContentX, this.localLabelY).setOrigin(0, 0);
+      this.label.setStyle({ align: "left" });
+
+      if (this.detail) {
+        this.detail.setPosition(this.localContentX, this.localDetailY).setOrigin(0, 0);
+        this.detail.setWordWrapWidth(this.config.width - 28).setStyle({ align: "left" });
+      }
+    }
+
+    return this;
+  }
+
+  public setDisabled(disabled: boolean): this {
+    this.config.disabled = disabled;
+    this.setAlpha(disabled ? 0.7 : 1);
+
+    if (this.background.input) {
+      this.background.input.enabled = !disabled;
+    }
+
+    return this;
+  }
 }
 
 export class UITag extends Phaser.GameObjects.Container {
@@ -216,6 +294,7 @@ export class UITag extends Phaser.GameObjects.Container {
     const text = makeText(scene, 16, 4, label, textStyle(8), null);
 
     super(scene, x, y, [background, marker, text]);
+    this.setSize(width, 22);
   }
 }
 
@@ -237,6 +316,7 @@ export class UIInfoCard extends Phaser.GameObjects.Container {
     const bodyText = makeText(scene, 12, 28, bodyCopy, textStyle(8, LAB_THEME.text, "left", width - 24), null).setLineSpacing(-2);
 
     super(scene, x, y, [panel, titleText, bodyText]);
+    this.setSize(width, height);
   }
 }
 

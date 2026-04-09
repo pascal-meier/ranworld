@@ -1,5 +1,4 @@
 import type { EventChoice, NodeDefinition, RewardChoice, RunState } from "../../types.js";
-import { getCategoryName, getLayerName, getUpgradeTrackLabel } from "../../mechanics/catalog.js";
 import { getMechanicDefinition } from "../../mechanics/index.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import { createPanel, createButton } from "../../ui/widgets.js";
@@ -15,7 +14,6 @@ export interface RunRenderContext {
   layout: ScreenLayout;
   contentInner: LayoutRect;
   phaseRoot: DisplayParent;
-  overlayRoot: DisplayParent;
   onSelectNode: (nodeId: string) => void;
 }
 
@@ -31,7 +29,6 @@ export function createRunRenderContext(
   scene: Phaser.Scene,
   state: RunState,
   phaseRoot: DisplayParent,
-  overlayRoot: DisplayParent,
   onSelectNode: (nodeId: string) => void
 ): RunRenderContext {
   const { width, height } = scene.scale;
@@ -51,7 +48,6 @@ export function createRunRenderContext(
     layout,
     contentInner: insetRect(layout.content, 12),
     phaseRoot,
-    overlayRoot,
     onSelectNode,
   };
 }
@@ -239,72 +235,6 @@ export function renderActiveMechanicEffects(
   makeText(scene, x, y, lines.join("\n"), textStyle(8, LAB_THEME.textMuted, "left", width), phaseRoot);
 }
 
-export function renderModifiersPanel(ctx: RunRenderContext, onClose: () => void): void {
-  const { scene, state, width, height, overlayRoot } = ctx;
-
-  makeRectangle(scene, 0, 0, width, height, 0x02060a, 0.72, overlayRoot)
-    .setOrigin(0)
-    .setInteractive({ useHandCursor: false })
-    .on("pointerdown", onClose);
-  const panel = createPanel(scene, 34, 52, width - 68, height - 104, 0x0c1c27, LAB_THEME.border, overlayRoot);
-  panel
-    .setSize(width - 68, height - 104)
-    .setInteractive(new Phaser.Geom.Rectangle(0, 0, width - 68, height - 104), Phaser.Geom.Rectangle.Contains)
-    .on("pointerdown", onClose);
-
-  makeText(scene, 52, 72, "ACTIVE MODIFIERS", textStyle(13), overlayRoot);
-  makeText(scene, 52, 96, "Press M or Esc to close.", textStyle(8, LAB_THEME.textMuted), overlayRoot);
-  createButton(scene, {
-    x: width - 176,
-    y: 68,
-    width: 120,
-    height: 26,
-    label: "SCHLIESSEN",
-    detail: "",
-    onClick: onClose,
-    fill: 0x284861,
-    border: LAB_THEME.borderSoft,
-  }, overlayRoot);
-
-  if (state.activeMechanics.length === 0) {
-    makeText(scene, 52, 126, "No active modifiers yet.", textStyle(10, LAB_THEME.textMuted), overlayRoot);
-    return;
-  }
-
-  let y = 122;
-  for (const mechanicId of state.activeMechanics) {
-    const mechanic = getMechanicDefinition(mechanicId);
-
-    createPanel(scene, 48, y, width - 96, 76, LAB_THEME.panelAlt, LAB_THEME.borderSoft, overlayRoot);
-    makeText(
-      scene,
-      62,
-      y + 8,
-      `${mechanic.shortLabel.toUpperCase()}  /  ${mechanic.tableId}  /  ${getUpgradeTrackLabel(mechanic.upgradeTrack).toUpperCase()}`,
-      textStyle(9, LAB_THEME.text),
-      overlayRoot
-    );
-    makeText(
-      scene,
-      62,
-      y + 24,
-      `${getLayerName(mechanic.layerId)} / ${getCategoryName(mechanic.categoryId)}`,
-      textStyle(8, LAB_THEME.accent, "left", width - 128),
-      overlayRoot
-    );
-    makeText(
-      scene,
-      62,
-      y + 42,
-      mechanic.effectText,
-      textStyle(9, LAB_THEME.textMuted, "left", width - 128),
-      overlayRoot
-    );
-
-    y += 84;
-  }
-}
-
 export function getNodeSymbolKey(kind: NodeDefinition["kind"]): string | null {
   if (kind === "combat") {
     return "intent-attack";
@@ -345,7 +275,11 @@ export function renderNode(
   );
 
   if (selectable && !cleared) {
-    circle.setInteractive({ useHandCursor: true });
+    circle.setInteractive({
+      hitArea: new Phaser.Geom.Circle(nodeRadius, nodeRadius, nodeRadius),
+      hitAreaCallback: Phaser.Geom.Circle.Contains,
+      useHandCursor: true,
+    });
     circle.on("pointerdown", () => onSelectNode(node.id));
   }
 
@@ -396,7 +330,12 @@ export function renderNode(
     }
   }
 
-  const labelY = node.lane === 0 ? y - 48 : y + 40;
-  const labelOriginY = node.lane === 0 ? 1 : 0;
-  makeText(scene, x, labelY, node.title, textStyle(8, LAB_THEME.textMuted, "center", 120), phaseRoot).setOrigin(0.5, labelOriginY);
+  const labelX = x + 35;
+  const label = makeText(scene, labelX, y, node.title, textStyle(8, selectable ? LAB_THEME.text : LAB_THEME.textMuted, "left", 120), phaseRoot)
+    .setOrigin(0, 0.5);
+
+  if (selectable && !cleared) {
+    label.setInteractive({ useHandCursor: true });
+    label.on("pointerdown", () => onSelectNode(node.id));
+  }
 }

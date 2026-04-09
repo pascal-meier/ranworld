@@ -37,7 +37,7 @@ export function createScreenLayout(
       x: margin,
       y: top + headerHeight + gap,
       width: usableWidth,
-      height: height - top - headerHeight - gap * 2 - footerHeight,
+      height: height - top - headerHeight - gap * 2 - footerHeight - margin,
     },
     footer: {
       x: margin,
@@ -111,4 +111,3 @@ export function getRelativePosition(
     y: rect.y + rect.height * (percentY / 100),
   };
 }
-

@@ -6,6 +6,7 @@ export class UICombatActor extends Phaser.GameObjects.Container {
   private hpText: Phaser.GameObjects.Text;
   private guardText: Phaser.GameObjects.Text;
   private focusText: Phaser.GameObjects.Text;
+  private chargesText?: Phaser.GameObjects.Text;
   private roundText?: Phaser.GameObjects.Text;
   private intentText?: Phaser.GameObjects.Text;
 
@@ -20,6 +21,7 @@ export class UICombatActor extends Phaser.GameObjects.Container {
     isPlayer: boolean
   ) {
     super(scene, x, y);
+    this.setSize(width, height);
 
     // Stat Background
     createPanel(scene, 0, 0, width, 64, 0x1a3342, 0x3a6174, this);
@@ -35,7 +37,7 @@ export class UICombatActor extends Phaser.GameObjects.Container {
         this.roundText = makeText(scene, width - 12, 27, "Round 1", textStyle(8, LAB_THEME.textMuted), this).setOrigin(1, 0);
         this.intentText = makeText(scene, 12, 43, "Intent 0", textStyle(8, LAB_THEME.textMuted), this);
     } else {
-        makeText(scene, 12, 44, "Charges: 0", textStyle(8, LAB_THEME.textMuted), this);
+        this.chargesText = makeText(scene, 12, 44, "Charges: 0", textStyle(8, LAB_THEME.textMuted), this);
     }
   }
 
@@ -51,6 +53,21 @@ export class UICombatActor extends Phaser.GameObjects.Container {
     this.hpText.setText(`${hp}/${maxHp}`);
     this.guardText.setText(`${guard}`);
     this.focusText.setText(`${focus}`);
+    if (this.chargesText && charges !== undefined) {
+      this.chargesText.setText(`Charges: ${charges}`);
+    }
+    return this;
+  }
+
+  public updateEnemyReadout(round: number, intent: number): this {
+    if (this.roundText) {
+      this.roundText.setText(`Round ${round}`);
+    }
+
+    if (this.intentText) {
+      this.intentText.setText(`Intent ${intent}`);
+    }
+
     return this;
   }
 }

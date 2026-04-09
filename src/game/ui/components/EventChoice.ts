@@ -1,11 +1,11 @@
-import { LAB_THEME, textStyle } from "../theme.js";
+import { UIButton } from "../objects.js";
 import { createButton } from "../widgets.js";
 import type { EventChoice } from "../../types.js";
 import { UI_EVENTS } from "../../events.js";
 
 export class UIEventChoice extends Phaser.GameObjects.Container {
   private choice?: EventChoice;
-  private button: any;
+  private button: UIButton;
 
   constructor(
     scene: Phaser.Scene,
@@ -15,6 +15,7 @@ export class UIEventChoice extends Phaser.GameObjects.Container {
     height: number
   ) {
     super(scene, x, y);
+    this.setSize(width, height);
 
     this.button = createButton(scene, {
       x: 0,
@@ -38,16 +39,15 @@ export class UIEventChoice extends Phaser.GameObjects.Container {
 
   public setChoice(option: EventChoice): this {
     this.choice = option;
-    
-    const chanceCopy =
-        option.shownChance !== undefined || option.actualChance !== undefined
-          ? ` ${option.shownChance ?? option.actualChance}% / ${option.actualChance ?? option.shownChance}%`
-          : "";
 
-    this.button.label.setText(option.label.toUpperCase());
-    if (this.button.detail) {
-      this.button.detail.setText(`${option.description}${chanceCopy}`);
-    }
+    const chanceCopy =
+      option.shownChance !== undefined || option.actualChance !== undefined
+        ? ` ${option.shownChance ?? option.actualChance}% / ${option.actualChance ?? option.shownChance}%`
+        : "";
+
+    this.button
+      .setLabelText(option.label.toUpperCase())
+      .setDetailText(`${option.description}${chanceCopy}`);
 
     return this;
   }

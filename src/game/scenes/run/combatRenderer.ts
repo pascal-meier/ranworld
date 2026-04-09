@@ -1,12 +1,15 @@
 import type { CombatAction, CombatActionPreview, RunState } from "../../types.js";
 import { PhaseView } from "./PhaseView.js";
 import { UI_EVENTS } from "../../events.js";
-import { renderMainPanel, renderRerollButton, type RunRenderContext } from "./shared.js";
-import { renderSectionHeader } from "../../ui/components.js";
-import { createButton, createPanel, createTag } from "../../ui/widgets.js";
+import type { RunRenderContext } from "./shared.js";
+import { renderMainPanel } from "./shared.js";
+import { createButton, createPanel } from "../../ui/widgets.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import { makeFrameImage, makeImage, makeText } from "../../ui/display.js";
-import type { UICombatActor } from "../../ui/components/CombatActorView.js";
+import { UIButton } from "../../ui/objects.js";
+import { UICombatActor } from "../../ui/components/CombatActorView.js";
+import type { LayoutRect } from "../../ui/layout.js";
+import { REROLL_SUPPLY_COST } from "../../core/balance.js";
 import { CombatVFX } from "../../vfx/CombatVFX.js";
 
 function getCombatActionDetail(
@@ -15,19 +18,107 @@ function getCombatActionDetail(
 ): string {
   if (actionPreview) {
     let detail = action.description;
-    
+
     if (actionPreview.shownHitChance !== null) {
-      const breakdownStr = actionPreview.breakdown && actionPreview.breakdown.length > 0 
-        ? ` (${actionPreview.breakdown.join(" / ")})` 
+      const breakdownStr = actionPreview.breakdown && actionPreview.breakdown.length > 0
+        ? ` (${actionPreview.breakdown.join(" / ")})`
         : "";
       detail += ` [${actionPreview.shownHitChance}%${breakdownStr}]`;
     }
-    
-    if (actionPreview.expectedDamage) detail += ` [${actionPreview.expectedDamage} DMG]`;
+
+    if (actionPreview.expectedDamage) detail += ` (${actionPreview.expectedDamage} DMG)`;
     if (actionPreview.note) detail += ` (${actionPreview.note})`;
     return detail;
   }
+
   return action.description;
+}
+
+interface CombatLayout {
+  titleX: number;
+  titleY: number;
+  roundX: number;
+  roundY: number;
+  summaryRect: LayoutRect;
+  arenaRect: LayoutRect;
+  playerCardX: number;
+  enemyCardX: number;
+  cardY: number;
+  playerSpriteX: number;
+  enemySpriteX: number;
+  floorY: number;
+  rerollX: number;
+  rerollY: number;
+  actionPanelRect: LayoutRect;
+  actionButtons: Array<{ x: number; y: number; width: number; height: number }>;
+}
+
+function getCombatLayout(contentInner: LayoutRect): CombatLayout {
+  const titleX = contentInner.x + 4;
+  const titleY = contentInner.y + 12;
+  const roundY = titleY + 22;
+  const summaryRect = {
+    x: contentInner.x + 4,
+    y: roundY + 18,
+    width: contentInner.width - 8,
+    height: 30,
+  };
+  const arenaRect = {
+    x: contentInner.x + 4,
+    y: summaryRect.y + summaryRect.height + 14,
+    width: contentInner.width - 8,
+    height: 120,
+  };
+  const cardWidth = 210;
+  const cardY = arenaRect.y + 8;
+  const rerollX = contentInner.x + contentInner.width - 180;
+  const rerollY = arenaRect.y + arenaRect.height + 8;
+  const actionPanelRect = {
+    x: contentInner.x,
+    y: rerollY + 34,
+    width: contentInner.width,
+    height: Math.max(136, contentInner.y + contentInner.height - (rerollY + 34)),
+  };
+  const actionGap = 12;
+  const actionWidth = Math.floor((contentInner.width - 48) / 2);
+  const actionHeight = 52;
+  const buttonY = actionPanelRect.y + 12;
+
+  return {
+    titleX,
+    titleY,
+    roundX: titleX,
+    roundY,
+    summaryRect,
+    arenaRect,
+    playerCardX: arenaRect.x + 8,
+    enemyCardX: arenaRect.x + arenaRect.width - cardWidth - 8,
+    cardY,
+    playerSpriteX: arenaRect.x + arenaRect.width * 0.28,
+    enemySpriteX: arenaRect.x + arenaRect.width * 0.72,
+    floorY: arenaRect.y + arenaRect.height - 12,
+    rerollX,
+    rerollY,
+    actionPanelRect,
+    actionButtons: [
+      { x: contentInner.x + 16, y: buttonY, width: actionWidth, height: actionHeight },
+      { x: contentInner.x + 16 + actionWidth + actionGap, y: buttonY, width: actionWidth, height: actionHeight },
+      { x: contentInner.x + 16, y: buttonY + actionHeight + actionGap, width: actionWidth, height: actionHeight },
+      { x: contentInner.x + 16 + actionWidth + actionGap, y: buttonY + actionHeight + actionGap, width: actionWidth, height: actionHeight },
+    ],
+  };
+}
+
+function getActionIconFrame(action: CombatAction): string | null {
+  const actionIconMap: Record<string, string> = {
+    strike: "intent-attack",
+    guard: "intent-guard",
+    focus: "icon-focus",
+    calibrate: "icon-archive",
+    attack: "intent-attack",
+  };
+
+  return actionIconMap[action.id] ?? actionIconMap[action.kind] ?? null;
 }
 
 export class CombatPhaseView extends PhaseView {
@@ -35,10 +126,16 @@ export class CombatPhaseView extends PhaseView {
   private arenaContainer!: Phaser.GameObjects.Container;
   private effectsLayer!: Phaser.GameObjects.Container;
   private optionsLayer!: Phaser.GameObjects.Container;
+  private headerTitle!: Phaser.GameObjects.Text;
+  private roundText!: Phaser.GameObjects.Text;
+  private summaryText!: Phaser.GameObjects.Text;
   private playerView!: UICombatActor;
   private enemyView!: UICombatActor;
   private playerSprite!: Phaser.GameObjects.Image;
   private enemySprite!: Phaser.GameObjects.Image;
+  private rerollButton!: UIButton;
+  private actionButtons: UIButton[] = [];
+  private actionIcons: Phaser.GameObjects.Image[] = [];
   private vfx: CombatVFX;
   private lastCombatSignature?: string;
 
@@ -51,115 +148,167 @@ export class CombatPhaseView extends PhaseView {
   }
 
   public build(): void {
-    const { scene, width, contentInner } = this.ctx;
+    const { scene, contentInner } = this.ctx;
     const localCtx = { ...this.ctx, phaseRoot: this.container };
-    
+    const layout = getCombatLayout(contentInner);
+
     renderMainPanel(localCtx);
 
-    const arenaX = contentInner.x + 4;
-    const arenaY = contentInner.y + 72;
-    const arenaW = contentInner.width - 8;
-    const arenaH = 110;
-    const statW = 210;
-    const playerStatX = arenaX + 12;
-    const enemyStatX = arenaX + arenaW - statW - 12;
-    const statY = arenaY + 8;
-    const topInfoY = contentInner.y + 22;
+    this.headerContainer = new Phaser.GameObjects.Container(scene, 0, 0);
+    this.arenaContainer = new Phaser.GameObjects.Container(scene, 0, 0);
+    this.effectsLayer = new Phaser.GameObjects.Container(scene, 0, 0);
+    this.optionsLayer = new Phaser.GameObjects.Container(scene, 0, 0);
+    this.optionsLayer.setDepth(5);
+    this.container.add([this.headerContainer, this.arenaContainer, this.effectsLayer, this.optionsLayer]);
 
-    // Static Arena Panels
-    createPanel(scene, arenaX, arenaY, arenaW, arenaH, 0x0a1d2a, 0x35586d, this.container);
-    
+    this.headerTitle = makeText(
+      scene,
+      layout.titleX,
+      layout.titleY,
+      "COMBAT ANALYTICS",
+      textStyle(13, LAB_THEME.text),
+      this.headerContainer
+    );
+    this.roundText = makeText(
+      scene,
+      layout.roundX,
+      layout.roundY,
+      "Round 1",
+      textStyle(10, LAB_THEME.textMuted),
+      this.headerContainer
+    );
+    createPanel(
+      scene,
+      layout.summaryRect.x,
+      layout.summaryRect.y,
+      layout.summaryRect.width,
+      layout.summaryRect.height,
+      0x162d3d,
+      0x35586d,
+      this.headerContainer
+    );
+    this.summaryText = makeText(
+      scene,
+      layout.summaryRect.x + 12,
+      layout.summaryRect.y + 7,
+      "",
+      textStyle(8, LAB_THEME.textMuted, "left", layout.summaryRect.width - 24),
+      this.headerContainer
+    ).setLineSpacing(-2);
+
+    createPanel(
+      scene,
+      layout.arenaRect.x,
+      layout.arenaRect.y,
+      layout.arenaRect.width,
+      layout.arenaRect.height,
+      0x0a1d2a,
+      0x35586d,
+      this.arenaContainer
+    );
+
     if (scene.textures.exists("arena-floor")) {
-      makeImage(scene, arenaX + arenaW / 2, arenaY + arenaH / 2, "arena-floor", this.container)
-        .setDisplaySize(arenaW - 4, arenaH - 4)
+      makeImage(
+        scene,
+        layout.arenaRect.x + layout.arenaRect.width / 2,
+        layout.arenaRect.y + layout.arenaRect.height / 2,
+        "arena-floor",
+        this.arenaContainer
+      )
+        .setDisplaySize(layout.arenaRect.width - 4, layout.arenaRect.height - 4)
         .setAlpha(0.4)
         .setOrigin(0.5);
     }
 
     if (scene.textures.exists("prop-console")) {
-      const prop = makeImage(scene, arenaX + 45, arenaY + arenaH - 25, "prop-console", this.container);
+      const prop = makeImage(scene, layout.arenaRect.x + 45, layout.arenaRect.y + layout.arenaRect.height - 25, "prop-console", this.arenaContainer);
       prop.displayHeight = 70;
       prop.scaleX = prop.scaleY;
       prop.setAlpha(0.6).setOrigin(0.5, 1);
     }
-    
+
     if (scene.textures.exists("prop-barrier")) {
-      const prop = makeImage(scene, arenaX + arenaW - 55, arenaY + arenaH - 20, "prop-barrier", this.container);
+      const prop = makeImage(scene, layout.arenaRect.x + layout.arenaRect.width - 55, layout.arenaRect.y + layout.arenaRect.height - 20, "prop-barrier", this.arenaContainer);
       prop.displayHeight = 55;
       prop.scaleX = prop.scaleY;
       prop.setAlpha(0.4).setOrigin(0.5, 1);
     }
 
-    this.playerView = scene.add.uiCombatActor(playerStatX, statY, statW, arenaH, "YOU", LAB_THEME.accent, true);
-    this.enemyView = scene.add.uiCombatActor(enemyStatX, statY, statW, arenaH, "ENEMY", LAB_THEME.danger, false);
-    
-    // Independent sprites for floor alignment
-    this.playerSprite = makeImage(scene, 0, 0, "player-idle", this.container).setOrigin(0.5, 1);
-    this.enemySprite = makeImage(scene, 0, 0, "enemy-calibration-drone", this.container).setOrigin(0.5, 1);
+    this.playerView = new UICombatActor(scene, layout.playerCardX, layout.cardY, 210, layout.arenaRect.height, "YOU", LAB_THEME.accent, true);
+    this.enemyView = new UICombatActor(scene, layout.enemyCardX, layout.cardY, 210, layout.arenaRect.height, "ENEMY", LAB_THEME.danger, false);
+    this.arenaContainer.add([this.playerView, this.enemyView]);
 
-    this.container.add([this.playerView, this.enemyView]);
+    this.playerSprite = makeImage(scene, layout.playerSpriteX, layout.floorY, "player-idle", this.arenaContainer).setOrigin(0.5, 1);
+    this.enemySprite = makeImage(scene, layout.enemySpriteX, layout.floorY, "enemy-calibration-drone", this.arenaContainer).setOrigin(0.5, 1);
 
-    // Dynamic layers
-    this.headerContainer = scene.add.container(0, 0);
-    this.arenaContainer = scene.add.container(0, 0);
-    this.effectsLayer = scene.add.container(0, 0);
-    this.optionsLayer = scene.add.container(0, 0);
-    this.container.add([this.headerContainer, this.arenaContainer, this.effectsLayer, this.optionsLayer]);
+    this.rerollButton = createButton(scene, {
+      x: layout.rerollX,
+      y: layout.rerollY,
+      width: 152,
+      height: 26,
+      label: `REROLL 0 / ${REROLL_SUPPLY_COST} SUP`,
+      detail: "",
+      onClick: () => undefined,
+      fill: 0x284861,
+      border: LAB_THEME.borderSoft,
+    }, this.optionsLayer);
+
+    createPanel(
+      scene,
+      layout.actionPanelRect.x,
+      layout.actionPanelRect.y,
+      layout.actionPanelRect.width,
+      layout.actionPanelRect.height,
+      0x1a3342,
+      LAB_THEME.borderSoft,
+      this.optionsLayer
+    );
+
+    this.actionButtons = [];
+    this.actionIcons = [];
+
+    for (const rect of layout.actionButtons) {
+      const button = createButton(scene, {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        label: "",
+        detail: "",
+        onClick: () => undefined,
+      }, this.optionsLayer);
+
+      this.actionButtons.push(button);
+
+      const icon = makeFrameImage(scene, rect.width - 24, Math.floor(rect.height / 2), "ui-icons", "intent-attack", button)
+        .setDisplaySize(20, 20)
+        .setOrigin(0.5);
+      this.actionIcons.push(icon);
+    }
   }
 
   updateState(state: RunState, actionsEnabled: boolean): void {
-    const { scene, width, contentInner } = this.ctx;
     const combat = state.combat!;
-
-    const arenaX = contentInner.x + 4;
-    const arenaY = contentInner.y + 54; // Moved slightly more up
-    const arenaW = contentInner.width - 8;
-    const arenaH = 120; // Increased height for robots
-    const statW = 210;
-    const playerStatX = arenaX + 4;
-    const enemyStatX = arenaX + arenaW - statW - 4;
-    const playerSpriteX = arenaX + arenaW * 0.28;
-    const enemySpriteX = arenaX + arenaW * 0.72;
-    const floorY = arenaY + arenaH - 12; // Dedicated baseline for robots
-    const actionGap = 12;
-    const actionCount = combat.actions.length;
-    const columns = actionCount > 4 ? 3 : 2;
-    const rows = Math.max(1, Math.ceil(actionCount / columns));
-    const actionW = Math.floor((contentInner.width - 32 - actionGap * (columns - 1)) / columns);
-    const actionH = 48;
-    const topInfoY = contentInner.y + 22;
-
-    this.headerContainer.removeAll(true);
-    this.arenaContainer.removeAll(true);
-    this.optionsLayer.removeAll(true);
-
+    const layout = getCombatLayout(this.ctx.contentInner);
     const summary = combat.lastSummary.length > 0 ? combat.lastSummary[combat.lastSummary.length - 1] : "Waiting for player action...";
-    renderSectionHeader(scene, arenaX, topInfoY, "COMBAT ANALYTICS", `Round ${combat.round}`, arenaW, this.headerContainer);
-    
-    // Shifted right to avoid title overlap
-    createTag(scene, contentInner.x + 210, topInfoY, "ACTIVE NODE", 0x1d4d6c, this.headerContainer);
-    
-    createPanel(scene, contentInner.x + 332, topInfoY, contentInner.width - 336, 26, 0x162d3d, 0x35586d, this.headerContainer);
-    makeText(scene, contentInner.x + 344, topInfoY + 6, summary, textStyle(8, LAB_THEME.textMuted, "left", contentInner.width - 360), this.headerContainer).setLineSpacing(-2);
 
-    const actorY = floorY;
-    const playerImgX = playerSpriteX;
-    const enemyImgX = enemySpriteX;
-    
-    // Cards at top corners
-    this.playerView.setPosition(playerStatX, arenaY + 8);
-    this.enemyView.setPosition(enemyStatX, arenaY + 8);
-    
-    // Sprites on floor
-    this.playerSprite.setPosition(playerImgX, floorY);
-    this.enemySprite.setPosition(enemyImgX, floorY);
+    this.roundText.setText(`Round ${combat.round}`);
+    this.summaryText.setText(summary);
 
-    this.playerView.updateStats(state.player.hp, state.player.maxHp, state.player.guard, state.player.focus, state.player.mitigationCharges);
-    this.enemyView.updateStats(combat.enemyHp, combat.enemyMaxHp, 0, 0); 
+    this.playerView
+      .setPosition(layout.playerCardX, layout.cardY)
+      .updateStats(state.player.hp, state.player.maxHp, state.player.guard, state.player.focus, state.player.mitigationCharges);
+    this.enemyView
+      .setPosition(layout.enemyCardX, layout.cardY)
+      .updateStats(combat.enemyHp, combat.enemyMaxHp, 0, 0)
+      .updateEnemyReadout(combat.round, combat.enemyAttack);
+
+    this.playerSprite.setPosition(layout.playerSpriteX, layout.floorY);
+    this.enemySprite.setPosition(layout.enemySpriteX, layout.floorY);
 
     let playerKey = "player-idle";
     const lastSummaryText = (combat.lastSummary[combat.lastSummary.length - 1] ?? "").toLowerCase();
-    
+
     if (lastSummaryText.includes("damage")) {
       playerKey = "player-hit";
     } else if (state.player.hp < state.player.maxHp * 0.25) {
@@ -169,7 +318,7 @@ export class CombatPhaseView extends PhaseView {
     } else if (combat.lastActionKind === "focus") {
       playerKey = "player-focus";
     }
-    
+
     this.playerSprite.setTexture(playerKey);
     this.playerSprite.displayHeight = 110;
     this.playerSprite.scaleX = this.playerSprite.scaleY;
@@ -188,80 +337,131 @@ export class CombatPhaseView extends PhaseView {
     } else if (combat.enemyRole === "boss") {
       enemyKey = "enemy-warden";
     }
-    
+
     this.enemySprite.setTexture(enemyKey);
     this.enemySprite.displayHeight = combat.enemyRole === "boss" ? 120 : 95;
     this.enemySprite.scaleX = this.enemySprite.scaleY;
 
-    // --- VFX Trigger Logic ---
     const currentSignature = combat.lastSummary.join("|");
     if (currentSignature !== this.lastCombatSignature) {
       const lowerSum = lastSummaryText;
-      
+
       if (lowerSum.includes("damage")) {
-        // Player got hit
         this.scene.sound.play("sfx-hit");
-        this.vfx.playHit(playerImgX, actorY - 60, false);
+        this.vfx.playHit(layout.playerSpriteX, layout.floorY - 60, false);
+        this.playDamageEffect(this.playerSprite);
       } else if (lowerSum.includes("hit for") || lowerSum.includes("critical")) {
-        // Enemy got hit
         const isCrit = lowerSum.includes("critical");
         this.scene.sound.play(isCrit ? "sfx-crit" : "sfx-hit");
-        this.vfx.playHit(enemyImgX, actorY - 60, isCrit);
+        this.vfx.playHit(layout.enemySpriteX, layout.floorY - 60, isCrit);
+        this.playDamageEffect(this.enemySprite);
+        this.lungeAttack(this.playerSprite, layout.enemySpriteX);
       } else if (lowerSum.includes("missed")) {
         this.scene.sound.play("sfx-miss");
         const isPlayerMiss = lowerSum.startsWith("you");
-        this.vfx.playMiss(isPlayerMiss ? enemyImgX : playerImgX, actorY - 80);
+        this.vfx.playMiss(isPlayerMiss ? layout.enemySpriteX : layout.playerSpriteX, layout.floorY - 80);
+        if (isPlayerMiss) {
+          this.lungeAttack(this.playerSprite, layout.enemySpriteX, true);
+        }
       } else if (lowerSum.includes("fully blocked") || lowerSum.includes("blocked")) {
         this.scene.sound.play("sfx-block");
         const isPlayerBlock = lowerSum.startsWith("enemy");
-        this.vfx.playBlock(isPlayerBlock ? playerImgX : enemyImgX, actorY - 80);
+        this.vfx.playBlock(isPlayerBlock ? layout.playerSpriteX : layout.enemySpriteX, layout.floorY - 80);
       }
     }
     this.lastCombatSignature = currentSignature;
 
-    const tempCtx = { ...this.ctx, phaseRoot: this.optionsLayer };
-    renderRerollButton(tempCtx, contentInner.x + contentInner.width - 180, arenaY + arenaH + 6, 152, () => this.scene.events.emit(UI_EVENTS.REROLL_REQUESTED), !actionsEnabled);
+    this.ensureIdleBobbing();
 
-    const actionPanelY = arenaY + arenaH + 12;
-    const actionPanelMinH = rows * actionH + (rows - 1) * actionGap + 24;
-    const actionPanelH = Math.max(contentInner.height - (actionPanelY - contentInner.y) + 4, actionPanelMinH);
-    createPanel(scene, contentInner.x, actionPanelY, contentInner.width, actionPanelH, 0x1a3342, LAB_THEME.borderSoft, this.optionsLayer);
-    this.optionsLayer.setDepth(5);
+    const hasReroll = state.activeMechanics.includes("reroll-mechanics");
+    const rerollUnavailable =
+      !hasReroll ||
+      !actionsEnabled ||
+      state.player.rerollCharges <= 0 ||
+      state.player.supplies < REROLL_SUPPLY_COST;
 
-    const gridY = actionPanelY + 12;
+    this.rerollButton
+      .setVisible(hasReroll)
+      .setLabelText(`REROLL ${state.player.rerollCharges} / ${REROLL_SUPPLY_COST} SUP`)
+      .setClickHandler(() => this.scene.events.emit(UI_EVENTS.REROLL_REQUESTED))
+      .setDisabled(rerollUnavailable);
 
-    const actionIconMap: Record<string, string> = {
-      "strike": "intent-attack",
-      "guard": "intent-guard",
-      "focus": "icon-focus",
-      "calibrate": "icon-archive",
-    };
+    for (let index = 0; index < this.actionButtons.length; index += 1) {
+      const button = this.actionButtons[index];
+      const icon = this.actionIcons[index];
+      const action = combat.actions[index];
 
-    combat.actions.forEach((action, index) => {
-      const column = index % columns;
-      const row = Math.floor(index / columns);
-      const positionX = contentInner.x + 16 + column * (actionW + actionGap);
-      const positionY = gridY + row * (actionH + actionGap);
-      const preview = combat.previews.find(p => p.actionId === action.id) || null;
+      if (!action) {
+        button.setVisible(false);
+        icon.setVisible(false);
+        continue;
+      }
+
+      const preview = combat.previews.find((entry) => entry.actionId === action.id) ?? null;
       const detail = getCombatActionDetail(action, preview);
+      const frame = getActionIconFrame(action);
 
-      const actionIcon = actionIconMap[action.id] || actionIconMap[action.kind];
+      button
+        .setVisible(true)
+        .setLabelText(action.label.toUpperCase())
+        .setDetailText(detail)
+        .setClickHandler(() => this.scene.events.emit(UI_EVENTS.COMBAT_ACTION_RESOLVE, action.id))
+        .setDisabled(!actionsEnabled);
 
-      const button = createButton(scene, {
-        x: positionX,
-        y: positionY,
-        width: actionW,
-        height: actionH,
-        label: action.label.toUpperCase(),
-        detail: detail,
-        onClick: () => this.scene.events.emit(UI_EVENTS.COMBAT_ACTION_RESOLVE, action.id),
-        disabled: !actionsEnabled,
-      }, this.optionsLayer);
+      if (frame && this.scene.textures.exists("ui-icons")) {
+        icon.setVisible(true);
+        icon.setFrame(frame);
+      } else {
+        icon.setVisible(false);
+      }
+    }
+  }
 
-      if (actionIcon && scene.textures.exists("ui-icons")) {
-          makeFrameImage(scene, actionW - 24, actionH / 2, "ui-icons", actionIcon, button)
-              .setDisplaySize(20, 20)
-              .setOrigin(0.5);
+  private lungeAttack(sprite: Phaser.GameObjects.Image, targetX: number, wasMissed = false): void {
+    const originalX = sprite.x;
+    const distance = Math.abs(targetX - originalX) * 0.4;
+    const direction = targetX > originalX ? 1 : -1;
+
+    this.scene.tweens.add({
+      targets: sprite,
+      x: originalX + distance * direction,
+      duration: 150,
+      ease: "Cubic.out",
+      yoyo: true,
+      hold: wasMissed ? 50 : 0,
+    });
+  }
+
+  private playDamageEffect(sprite: Phaser.GameObjects.Image): void {
+    const originalX = sprite.x;
+
+    sprite.setTint(0xff0000);
+    this.scene.time.delayedCall(150, () => sprite.clearTint());
+
+    this.scene.tweens.add({
+      targets: sprite,
+      x: originalX + 5,
+      duration: 40,
+      repeat: 3,
+      yoyo: true,
+      ease: "Sine.easeInOut",
+      onComplete: () => sprite.setX(originalX),
+    });
+  }
+
+  private ensureIdleBobbing(): void {
+    const actors = [this.playerSprite, this.enemySprite];
+
+    actors.forEach((actor) => {
+      if (!this.scene.tweens.isTweening(actor)) {
+        this.scene.tweens.add({
+          targets: actor,
+          y: "+=4",
+          duration: 1800 + Math.random() * 400,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
       }
     });
   }
