@@ -1,5 +1,4 @@
 import { BaseScene } from "./BaseScene.js";
-import { soundGenerator } from "../audio/SoundGenerator.js";
 import { ASSET_MANIFEST } from "../AssetManifest.js";
 
 export class BootScene extends BaseScene {

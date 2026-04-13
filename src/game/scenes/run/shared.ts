@@ -1,10 +1,9 @@
-import type { EventChoice, NodeDefinition, RewardChoice, RunState } from "../../types.js";
+import type { RunState } from "../../types.js";
 import { getMechanicDefinition } from "../../mechanics/index.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
-import { createPanel, createButton } from "../../ui/widgets.js";
+import { createPanel } from "../../ui/widgets.js";
 import { createScreenLayout, insetRect, type LayoutRect, type ScreenLayout } from "../../ui/layout.js";
-import { makeCircle, makeFrameImage, makeGraphics, makeImage, makeRectangle, makeText, type DisplayParent } from "../../ui/display.js";
-import { REROLL_SUPPLY_COST } from "../../core/balance.js";
+import { makeFrameImage, makeImage, makeRectangle, makeText, type DisplayParent } from "../../ui/display.js";
 
 export interface RunRenderContext {
   scene: Phaser.Scene;
@@ -19,10 +18,6 @@ export interface RunRenderContext {
 
 export function getCenteredX(totalWidth: number, parentWidth: number): number {
   return Math.floor((parentWidth - totalWidth) / 2);
-}
-
-export function getVerticalStackY(index: number, height: number, gap: number, startY: number): number {
-  return startY + index * (height + gap);
 }
 
 export function createRunRenderContext(
@@ -108,31 +103,6 @@ export function renderMainPanel(ctx: RunRenderContext, fill = LAB_THEME.panel): 
   createPanel(scene, layout.content.x, layout.content.y, layout.content.width, layout.content.height, fill, LAB_THEME.borderSoft, phaseRoot);
 }
 
-export function renderUpgradePanel(ctx: RunRenderContext): void {
-  const { scene, state, width, layout, phaseRoot } = ctx;
-  createPanel(scene, layout.footer.x, layout.footer.y, layout.footer.width, layout.footer.height, LAB_THEME.panelAlt, LAB_THEME.borderSoft, phaseRoot);
-  makeText(scene, layout.footer.x + 16, layout.footer.y + 12, "ACTIVE UPGRADES", textStyle(9), phaseRoot);
-
-  const copy =
-    state.activeMechanics.length > 0
-      ? state.activeMechanics
-          .map((id) => {
-            const mechanic = getMechanicDefinition(id);
-            return `${mechanic.shortLabel}: ${mechanic.effectText}`;
-          })
-          .join("  |  ")
-      : "No active upgrades yet.";
-
-  makeText(
-    scene,
-    layout.footer.x + 16,
-    layout.footer.y + 36,
-    copy,
-    textStyle(8, LAB_THEME.textMuted, "left", width - 64),
-    phaseRoot
-  );
-}
-
 export function renderPlanetBackdrop(ctx: RunRenderContext): void {
   const { scene, contentInner, phaseRoot } = ctx;
   const frame: LayoutRect = {
@@ -176,166 +146,4 @@ export function renderPlanetSprite(
   const scale = Math.min(maxWidth / texture.width, maxHeight / texture.height);
 
   makeImage(scene, x, y, key, parent).setScale(scale).setAlpha(alpha).setOrigin(0.5);
-}
-
-export function renderRerollButton(
-  ctx: RunRenderContext,
-  x: number,
-  y: number,
-  width: number,
-  onClick: () => void,
-  disabled = false
-): boolean {
-  const { state, scene, phaseRoot } = ctx;
-
-  if (!state.activeMechanics.includes("reroll-mechanics")) {
-    return false;
-  }
-
-  const unavailable =
-    disabled ||
-    state.player.rerollCharges <= 0 ||
-    state.player.supplies < REROLL_SUPPLY_COST;
-
-  createButton(scene, {
-    x,
-    y,
-    width,
-    height: 26,
-    label: `REROLL ${state.player.rerollCharges} / ${REROLL_SUPPLY_COST} SUP`,
-    detail: "",
-    onClick,
-    fill: 0x284861,
-    border: LAB_THEME.borderSoft,
-    disabled: unavailable,
-  }, phaseRoot);
-
-  return true;
-}
-
-export function renderActiveMechanicEffects(
-  ctx: RunRenderContext,
-  x: number,
-  y: number,
-  width: number,
-  maxLines: number
-): void {
-  const { scene, state, phaseRoot, onSelectNode } = ctx;
-
-  if (state.activeMechanics.length === 0) {
-    makeText(scene, x, y, "No active modules.", textStyle(8, LAB_THEME.textMuted, "left", width), phaseRoot);
-    return;
-  }
-
-  const lines = state.activeMechanics.slice(0, maxLines).map((id) => {
-    const mechanic = getMechanicDefinition(id);
-    return `${mechanic.shortLabel} [${mechanic.tableId} / ${mechanic.upgradeTrack === "ship-upgrade" ? "ship" : "world"}]: ${mechanic.effectText}`;
-  });
-
-  makeText(scene, x, y, lines.join("\n"), textStyle(8, LAB_THEME.textMuted, "left", width), phaseRoot);
-}
-
-export function getNodeSymbolKey(kind: NodeDefinition["kind"]): string | null {
-  if (kind === "combat") {
-    return "intent-attack";
-  }
-
-  if (kind === "event" || kind === "reward") {
-    return "intent-reward";
-  }
-
-  if (kind === "flee") {
-    return "intent-risk";
-  }
-
-  return null;
-}
-
-export function renderNode(
-  ctx: RunRenderContext,
-  node: NodeDefinition,
-  x: number,
-  y: number
-): void {
-  const { scene, state, phaseRoot, onSelectNode } = ctx;
-  const selectable = node.column === state.currentColumn;
-  const cleared = node.cleared || node.column < state.currentColumn;
-  const nodeRadius = selectable ? 29 : 25;
-  const baseSize = selectable ? 60 : 50;
-  const symbolSize = selectable ? 32 : 26;
-
-  const circle = makeCircle(
-    scene,
-    x,
-    y,
-    nodeRadius,
-    cleared ? 0x254a44 : selectable ? 0x1d4d6c : 0x152636,
-    0.35,
-    phaseRoot
-  );
-
-  if (selectable && !cleared) {
-    circle.setInteractive({
-      hitArea: new Phaser.Geom.Circle(nodeRadius, nodeRadius, nodeRadius),
-      hitAreaCallback: Phaser.Geom.Circle.Contains,
-      useHandCursor: true,
-    });
-    circle.on("pointerdown", () => onSelectNode(node.id));
-  }
-
-  if (scene.textures.exists("ui-icons")) {
-    const base = makeFrameImage(scene, x, y, "ui-icons", "icon-seed", phaseRoot).setDisplaySize(baseSize, baseSize);
-
-    if (selectable && !cleared) {
-      base.setInteractive({ useHandCursor: true });
-      base.on("pointerdown", () => onSelectNode(node.id));
-    }
-
-    if (cleared) {
-      base.setAlpha(0.65);
-    }
-  }
-
-  const symbolKey = getNodeSymbolKey(node.kind);
-  if (node.kind === "boss" && scene.textures.exists("ui-icons")) {
-    const bossSwordSize = selectable ? 32 : 27;
-    const leftSword = makeFrameImage(scene, x - 6, y - 1, "ui-icons", "intent-attack", phaseRoot)
-      .setDisplaySize(bossSwordSize, bossSwordSize)
-      .setFlipX(true)
-      .setAngle(-32)
-      .setTint(0xe9f4ff);
-    const rightSword = makeFrameImage(scene, x + 6, y - 1, "ui-icons", "intent-attack", phaseRoot)
-      .setDisplaySize(bossSwordSize, bossSwordSize)
-      .setAngle(32)
-      .setTint(0xe9f4ff);
-
-    if (cleared) {
-      leftSword.setAlpha(0.65);
-      rightSword.setAlpha(0.65);
-    }
-  } else if (symbolKey) {
-    const symbol = makeFrameImage(scene, x, y, "ui-icons", symbolKey, phaseRoot);
-
-    if (node.kind === "flee") {
-      symbol
-        .setCrop(2, 3, 60, 58)
-        .setDisplaySize(selectable ? 30 : 25, selectable ? 30 : 25)
-        .setTint(0xe9f4ff);
-    } else {
-      symbol.setDisplaySize(symbolSize, symbolSize);
-    }
-
-    if (cleared) {
-      symbol.setAlpha(0.65);
-    }
-  }
-
-  const labelX = x + 35;
-  const label = makeText(scene, labelX, y, node.title, textStyle(8, selectable ? LAB_THEME.text : LAB_THEME.textMuted, "left", 120), phaseRoot)
-    .setOrigin(0, 0.5);
-
-  if (selectable && !cleared) {
-    label.setInteractive({ useHandCursor: true });
-    label.on("pointerdown", () => onSelectNode(node.id));
-  }
 }

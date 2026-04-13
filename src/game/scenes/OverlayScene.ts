@@ -11,7 +11,6 @@ export class OverlayScene extends BaseScene {
     this.lab.toggleDevOverlay();
   };
   private overlayRoot?: Phaser.GameObjects.Container;
-  private titleText?: Phaser.GameObjects.Text;
   private bodyText?: Phaser.GameObjects.Text;
   private activeText?: Phaser.GameObjects.Text;
   private probabilityTexts: Phaser.GameObjects.Text[] = [];
@@ -108,18 +107,18 @@ export class OverlayScene extends BaseScene {
       return;
     }
 
-    createPanel(this, width - 248, 16, 232, 146, 0x081723, 0x4cc9f0, this.overlayRoot);
-    this.titleText = makeText(this, width - 228, 30, "DEV OVERLAY", textStyle(10), this.overlayRoot);
-    this.bodyText = makeText(this, width - 228, 48, "", textStyle(8, LAB_THEME.textMuted), this.overlayRoot);
-    this.activeText = makeText(this, width - 228, 102, "", textStyle(8), this.overlayRoot);
+    createPanel(this, width - 260, 16, 244, 164, 0x081723, 0x4cc9f0, this.overlayRoot);
+    makeText(this, width - 240, 30, "DEV OVERLAY", textStyle(10), this.overlayRoot);
+    this.bodyText = makeText(this, width - 240, 48, "", textStyle(8, LAB_THEME.textMuted, "left", 212), this.overlayRoot);
+    this.activeText = makeText(this, width - 240, 108, "", textStyle(8, LAB_THEME.text, "left", 212), this.overlayRoot);
 
     this.probabilityTexts.push(
-      makeText(this, width - 228, 116, "", textStyle(7, LAB_THEME.accent), this.overlayRoot),
-      makeText(this, width - 228, 128, "", textStyle(7, LAB_THEME.accent), this.overlayRoot)
+      makeText(this, width - 240, 126, "", textStyle(7, LAB_THEME.accent, "left", 212), this.overlayRoot),
+      makeText(this, width - 240, 138, "", textStyle(7, LAB_THEME.accent, "left", 212), this.overlayRoot)
     );
     this.debugTexts.push(
-      makeText(this, width - 228, 140, "", textStyle(7, LAB_THEME.textMuted), this.overlayRoot),
-      makeText(this, width - 228, 150, "", textStyle(7, LAB_THEME.textMuted), this.overlayRoot)
+      makeText(this, width - 240, 150, "", textStyle(7, LAB_THEME.textMuted, "left", 212), this.overlayRoot),
+      makeText(this, width - 240, 160, "", textStyle(7, LAB_THEME.textMuted, "left", 212), this.overlayRoot)
     );
   }
 }

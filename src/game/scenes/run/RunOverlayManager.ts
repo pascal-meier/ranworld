@@ -74,7 +74,6 @@ export class RunOverlayManager {
     const panelHeight = Math.min(436, height - 100);
     const panelX = Math.floor((width - panelWidth) / 2);
     const panelY = Math.floor((height - panelHeight) / 2);
-    const contentX = 20;
 
     this.ensureTutorialUi(signature, tutorial, panelX, panelY, panelWidth, panelHeight);
     if (!this.tutorialUi) {

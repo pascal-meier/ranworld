@@ -5,7 +5,27 @@ import { renderMainPanel, type RunRenderContext } from "./shared.js";
 import { createButton } from "../../ui/widgets.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import { makeText } from "../../ui/display.js";
-import type { UIButton } from "../../ui/objects.js";
+import type { LayoutRect } from "../../ui/layout.js";
+
+interface RunEndLayout {
+  titleX: number;
+  titleY: number;
+  statsX: number;
+  statsY: number;
+  buttonY: number;
+}
+
+function getRunEndLayout(contentInner: LayoutRect): RunEndLayout {
+  const bottomY = contentInner.y + contentInner.height;
+
+  return {
+    titleX: contentInner.x + 4,
+    titleY: contentInner.y + 6,
+    statsX: contentInner.x + 4,
+    statsY: contentInner.y + 38,
+    buttonY: Math.max(contentInner.y + 124, bottomY - 86),
+  };
+}
 
 export class RunEndPhaseView extends PhaseView {
   private statsText!: Phaser.GameObjects.Text;
@@ -19,17 +39,18 @@ export class RunEndPhaseView extends PhaseView {
 
   build(): void {
     const { scene, contentInner } = this.ctx;
+    const layout = getRunEndLayout(contentInner);
     
     // Create a local context that mounts to this view's container instead of the global phaseRoot
     const localCtx = { ...this.ctx, phaseRoot: this.container };
     renderMainPanel(localCtx);
 
-    makeText(scene, contentInner.x + 4, contentInner.y + 6, "EXPEDITION FAILED", textStyle(16, LAB_THEME.danger), this.container);
+    makeText(scene, layout.titleX, layout.titleY, "EXPEDITION FAILED", textStyle(16, LAB_THEME.danger), this.container);
     
     this.statsText = makeText(
       scene,
-      contentInner.x + 4,
-      contentInner.y + 38,
+      layout.statsX,
+      layout.statsY,
       "",
       textStyle(10, LAB_THEME.text, "left", contentInner.width - 8),
       this.container
@@ -37,7 +58,7 @@ export class RunEndPhaseView extends PhaseView {
 
     createButton(scene, {
       x: contentInner.x + 4,
-      y: contentInner.y + 140,
+      y: layout.buttonY,
       width: 220,
       height: 54,
       label: "SAME SEED",
@@ -48,7 +69,7 @@ export class RunEndPhaseView extends PhaseView {
 
     createButton(scene, {
       x: contentInner.x + 240,
-      y: contentInner.y + 140,
+      y: layout.buttonY,
       width: 220,
       height: 54,
       label: "NEW SEED",

@@ -26,7 +26,7 @@ export class PlanetSelectPhaseView extends PhaseView {
     renderPlanetBackdrop(localCtx);
     
     // Header
-    const headerTitle = makeText(scene, contentInner.x + 4, contentInner.y + 6, "SELECT PLANET", textStyle(14, LAB_THEME.text), this.container);
+    makeText(scene, contentInner.x + 4, contentInner.y + 6, "SELECT PLANET", textStyle(14, LAB_THEME.text), this.container);
     this.subtitleText = makeText(
       scene,
       contentInner.x + 4,

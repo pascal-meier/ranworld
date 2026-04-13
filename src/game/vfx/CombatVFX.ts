@@ -1,5 +1,3 @@
-import { LAB_THEME } from "../ui/theme.js";
-
 export class CombatVFX {
   constructor(private scene: Phaser.Scene) {}
 

@@ -1,6 +1,6 @@
 import type { RunState } from "../../types.js";
 import { PhaseView } from "./PhaseView.js";
-import { renderMainPanel, renderPlanetBackdrop, type RunRenderContext } from "./shared.js";
+import { renderMainPanel, renderPlanetBackdrop } from "./shared.js";
 import { LAB_THEME, textStyle } from "../../ui/theme.js";
 import type { NodeDefinition, NodeKind } from "../../types.js";
 import { createPanel } from "../../ui/widgets.js";

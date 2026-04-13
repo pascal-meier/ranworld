@@ -1,5 +1,5 @@
 import { LAB_THEME, textStyle } from "../theme.js";
-import { makeFrameImage, makeImage, makeRectangle, makeText } from "../display.js";
+import { makeFrameImage, makeText } from "../display.js";
 import { createPanel } from "../widgets.js";
 
 export class UICombatActor extends Phaser.GameObjects.Container {
@@ -28,7 +28,6 @@ export class UICombatActor extends Phaser.GameObjects.Container {
     makeText(scene, 12, 10, title, textStyle(8, titleColor), this);
     
     // Stats Rows
-    let px = 12;
     this.hpText = this.drawStatIcon(12, 28, "icon-hp", "0/0");
     this.guardText = this.drawStatIcon(70, 28, "icon-guard", "0");
     this.focusText = this.drawStatIcon(120, 28, "icon-focus", "0");

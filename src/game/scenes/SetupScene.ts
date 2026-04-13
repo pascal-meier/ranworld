@@ -42,13 +42,16 @@ export class SetupScene extends BaseScene {
   private archiveValueText?: Phaser.GameObjects.Text;
   private persistenceText?: Phaser.GameObjects.Text;
   private archiveTooltipText?: Phaser.GameObjects.Text;
-  private startButton?: UIButton;
-  private rerollButton?: UIButton;
   private researchSubtitleText?: Phaser.GameObjects.Text;
-  private playerSprite?: Phaser.GameObjects.Image | null;
   private upgradeRows: UpgradeRow[] = [];
   private footerStatusObjects: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible> = [];
   private footerDevObjects: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible> = [];
+
+  private isUsableText(
+    text: Phaser.GameObjects.Text | undefined
+  ): text is Phaser.GameObjects.Text {
+    return Boolean(text && text.scene && text.active);
+  }
 
   constructor() {
     super({ key: "SetupScene" });
@@ -77,6 +80,27 @@ export class SetupScene extends BaseScene {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.handleResize);
       this.input.keyboard?.off("keydown-ENTER", this.handleEnter);
       this.input.keyboard?.off("keydown-R", this.handleReroll);
+
+      this.layoutSignature = undefined;
+      this.isUiBuilt = false;
+      this.backgroundLayer = undefined;
+      this.chromeLayer = undefined;
+      this.contentLayer = undefined;
+      this.footerLayer = undefined;
+      this.tooltipLayer = undefined;
+
+      this.titleText = undefined;
+      this.subtitleText = undefined;
+      this.seedText = undefined;
+      this.runsText = undefined;
+      this.bestPlanetText = undefined;
+      this.archiveValueText = undefined;
+      this.persistenceText = undefined;
+      this.archiveTooltipText = undefined;
+      this.researchSubtitleText = undefined;
+      this.upgradeRows = [];
+      this.footerStatusObjects = [];
+      this.footerDevObjects = [];
     });
 
     this.render();
@@ -93,7 +117,7 @@ export class SetupScene extends BaseScene {
       top: 64,
       gap: 14,
       headerHeight: 154,
-      footerHeight: 62,
+      footerHeight: 72,
     });
     const signature = this.getLayoutSignature(layout);
 
@@ -116,8 +140,15 @@ export class SetupScene extends BaseScene {
     this.footerStatusObjects = [];
     this.footerDevObjects = [];
     this.upgradeRows = [];
-    this.playerSprite = null;
+    this.titleText = undefined;
+    this.subtitleText = undefined;
+    this.seedText = undefined;
+    this.runsText = undefined;
+    this.bestPlanetText = undefined;
+    this.archiveValueText = undefined;
+    this.persistenceText = undefined;
     this.archiveTooltipText = undefined;
+    this.researchSubtitleText = undefined;
 
     if (!this.backgroundLayer || !this.chromeLayer || !this.contentLayer || !this.footerLayer || !this.tooltipLayer) {
       return;
@@ -223,12 +254,12 @@ export class SetupScene extends BaseScene {
       this.archiveTooltipText = undefined;
     }
 
-    this.playerSprite = this.buildPlayerSprite(layout);
+    this.buildPlayerSprite(layout);
 
     const buttonWidth = 214;
     const buttonX = layout.header.x + layout.header.width - buttonWidth - 16;
 
-    this.startButton = createButton(this, {
+    createButton(this, {
       x: buttonX,
       y: layout.header.y + 18,
       width: buttonWidth,
@@ -242,7 +273,7 @@ export class SetupScene extends BaseScene {
       fill: 0x1d4d6c,
     }, this.chromeLayer);
 
-    this.rerollButton = createButton(this, {
+    createButton(this, {
       x: buttonX,
       y: layout.header.y + 76,
       width: buttonWidth,
@@ -336,16 +367,28 @@ export class SetupScene extends BaseScene {
     const seed = this.lab.getSeedPreview();
     const showDevVisualPass = this.lab.isDevOverlayVisible();
 
-    this.seedText?.setText(`Seed ${seed}`);
-    this.runsText?.setText(`Runs ${meta.completedRuns}`);
-    this.bestPlanetText?.setText(`Best planet ${meta.bestPlanet}`);
-    this.archiveValueText?.setText(`${meta.archive}`);
-    this.persistenceText?.setText(
-      `IF PERSISTENCE: +${persistenceBonus.hpBoost} HP / +${persistenceBonus.supplyBoost} SUP`
-    );
-    this.archiveTooltipText?.setText(
-      `Stored from past runs. If Session Persistence is drafted: +${persistenceBonus.hpBoost} max HP and +${persistenceBonus.supplyBoost} supplies at run start.`
-    );
+    if (this.isUsableText(this.seedText)) {
+      this.seedText.setText(`Seed ${seed}`);
+    }
+    if (this.isUsableText(this.runsText)) {
+      this.runsText.setText(`Runs ${meta.completedRuns}`);
+    }
+    if (this.isUsableText(this.bestPlanetText)) {
+      this.bestPlanetText.setText(`Best planet ${meta.bestPlanet}`);
+    }
+    if (this.isUsableText(this.archiveValueText)) {
+      this.archiveValueText.setText(`${meta.archive}`);
+    }
+    if (this.isUsableText(this.persistenceText)) {
+      this.persistenceText.setText(
+        `IF PERSISTENCE: +${persistenceBonus.hpBoost} HP / +${persistenceBonus.supplyBoost} SUP`
+      );
+    }
+    if (this.isUsableText(this.archiveTooltipText)) {
+      this.archiveTooltipText.setText(
+        `Stored from past runs. If Session Persistence is drafted: +${persistenceBonus.hpBoost} max HP and +${persistenceBonus.supplyBoost} supplies at run start.`
+      );
+    }
 
     this.upgradeRows.forEach((row) => {
       const upgrade = META_UPGRADES.find((entry) => entry.id === row.upgradeId);
@@ -369,13 +412,13 @@ export class SetupScene extends BaseScene {
     this.footerStatusObjects.forEach((object) => object.setVisible(!showDevVisualPass));
     this.footerDevObjects.forEach((object) => object.setVisible(showDevVisualPass));
 
-    if (this.titleText) {
+    if (this.isUsableText(this.titleText)) {
       this.titleText.setWordWrapWidth(this.scale.width - 48);
     }
-    if (this.subtitleText) {
+    if (this.isUsableText(this.subtitleText)) {
       this.subtitleText.setWordWrapWidth(this.scale.width - 48);
     }
-    if (this.researchSubtitleText) {
+    if (this.isUsableText(this.researchSubtitleText)) {
       const content = insetRect(layout.content, 12);
       this.researchSubtitleText.setWordWrapWidth(content.width - 8);
     }

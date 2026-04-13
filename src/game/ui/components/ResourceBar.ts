@@ -1,5 +1,5 @@
 import { LAB_THEME, textStyle } from "../theme.js";
-import { makeFrameImage, makeImage, makeText } from "../display.js";
+import { makeFrameImage, makeText } from "../display.js";
 import { getMechanicDefinition } from "../../mechanics/index.js";
 import type { MechanicId } from "../../types.js";
 import { createPanel } from "../widgets.js";
@@ -8,13 +8,7 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
   private suppliesText: Phaser.GameObjects.Text;
   private archiveText: Phaser.GameObjects.Text;
   private researchText: Phaser.GameObjects.Text;
-  private upgradeTitle: Phaser.GameObjects.Text;
-  private upgradeListLayer: Phaser.GameObjects.Container;
-  private noModulesText: Phaser.GameObjects.Text;
-  private upgradeRows: Array<{
-    label: Phaser.GameObjects.Text;
-    effect: Phaser.GameObjects.Text;
-  }> = [];
+  private upgradeSummaryText: Phaser.GameObjects.Text;
 
   constructor(
     scene: Phaser.Scene,
@@ -30,14 +24,15 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     // Resources Section
     makeText(this.scene, 16, 12, "RESOURCES", textStyle(8, LAB_THEME.textMuted), this);
     
-    let curX = 16;
+    let curX = 18;
     const drawRes = (key: string, color: string) => {
-      curX += 48;
       if (this.scene.textures.get("ui-icons").has(key)) {
-        makeFrameImage(this.scene, curX, 22, "ui-icons", key, this).setDisplaySize(16, 16).setOrigin(0.5);
+        makeFrameImage(this.scene, curX, 29, "ui-icons", key, this).setDisplaySize(16, 16).setOrigin(0, 0.5);
       }
-      curX += 14;
-      return makeText(this.scene, curX, 12, "0", textStyle(9, color), this);
+      curX += 22;
+      const text = makeText(this.scene, curX, 20, "0", textStyle(9, color), this);
+      curX += 58;
+      return text;
     };
 
     this.archiveText = drawRes("icon-archive", LAB_THEME.positive);
@@ -45,10 +40,15 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
     this.researchText = drawRes("icon-research", LAB_THEME.accentSoft);
 
     // Upgrades Section
-    this.upgradeTitle = makeText(this.scene, 16, 68, "ACTIVE MODULES", textStyle(9, LAB_THEME.text), this);
-    this.upgradeListLayer = new Phaser.GameObjects.Container(this.scene, 0, 8);
-    this.add(this.upgradeListLayer);
-    this.noModulesText = makeText(this.scene, 16, 82, "No active modules.", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer);
+    makeText(this.scene, 16, 56, "ACTIVE MODULES", textStyle(9, LAB_THEME.text), this);
+    this.upgradeSummaryText = makeText(
+      this.scene,
+      16,
+      72,
+      "No active modules.",
+      textStyle(8, LAB_THEME.textMuted, "left", width - 32),
+      this
+    ).setLineSpacing(-2);
 
     // Initial Sync
     this.refresh();
@@ -77,31 +77,17 @@ export class UIResourceBar extends Phaser.GameObjects.Container {
   }
 
   public updateUpgrades(mechanics: MechanicId[]): void {
-    const visibleMechanics = mechanics.slice(0, 3);
-    this.noModulesText.setVisible(visibleMechanics.length === 0);
-
-    while (this.upgradeRows.length < visibleMechanics.length) {
-      const index = this.upgradeRows.length;
-      const rowY = 82 + index * 24;
-      this.upgradeRows.push({
-        label: makeText(this.scene, 16, rowY, "", textStyle(8, LAB_THEME.text), this.upgradeListLayer),
-        effect: makeText(this.scene, 16, rowY + 12, "", textStyle(8, LAB_THEME.textMuted), this.upgradeListLayer).setLineSpacing(-2),
-      });
+    if (mechanics.length === 0) {
+      this.upgradeSummaryText.setText("No active modules.");
+      return;
     }
 
-    this.upgradeRows.forEach((row, index) => {
-      const mechanicId = visibleMechanics[index];
+    const summary = mechanics
+      .slice(0, 3)
+      .map((mechanicId) => getMechanicDefinition(mechanicId).shortLabel.toUpperCase())
+      .join(" / ");
 
-      if (!mechanicId) {
-        row.label.setVisible(false);
-        row.effect.setVisible(false);
-        return;
-      }
-
-      const mechanic = getMechanicDefinition(mechanicId);
-      row.label.setVisible(true).setText(mechanic.shortLabel.toUpperCase());
-      row.effect.setVisible(true).setText(mechanic.effectText);
-    });
+    this.upgradeSummaryText.setText(summary);
   }
 }
 

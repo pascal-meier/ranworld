@@ -22,7 +22,8 @@ interface EventLayout {
 
 function getEventLayout(contentInner: LayoutRect): EventLayout {
   const illustrationWidth = 140;
-  const illustrationHeight = 126;
+  const illustrationHeight = Phaser.Math.Clamp(Math.floor(contentInner.height * 0.42), 104, 126);
+  const optionsY = contentInner.y + illustrationHeight + 18;
 
   return {
     titleX: contentInner.x + 4,
@@ -36,9 +37,9 @@ function getEventLayout(contentInner: LayoutRect): EventLayout {
     illustrationHeight,
     optionsRect: {
       x: contentInner.x + 24,
-      y: contentInner.y + 112,
+      y: optionsY,
       width: contentInner.width - 48,
-      height: contentInner.height - 136,
+      height: Math.max(96, contentInner.y + contentInner.height - optionsY - 12),
     },
   };
 }
@@ -153,7 +154,7 @@ export class EventPhaseView extends PhaseView {
           );
       }
 
-      this.illustrationImage.displayHeight = 110;
+      this.illustrationImage.displayHeight = Math.min(110, layout.illustrationHeight - 12);
       this.illustrationImage.scaleX = this.illustrationImage.scaleY;
     } else if (this.illustrationImage) {
       this.illustrationImage.setVisible(false);
@@ -165,8 +166,13 @@ export class EventPhaseView extends PhaseView {
       this.choices.push(choice);
     }
 
-    const gap = 12;
     const choiceHeight = 42;
+    const gapSlots = Math.max(1, event.options.length - 1);
+    const gap = Phaser.Math.Clamp(
+      Math.floor((layout.optionsRect.height - 32 - event.options.length * choiceHeight) / gapSlots),
+      4,
+      12
+    );
     const totalHeight = (event.options.length * choiceHeight) + (Math.max(0, event.options.length - 1) * gap);
     const startY = layout.optionsRect.y + Math.max(16, Math.floor((layout.optionsRect.height - totalHeight) / 2));
     const choiceX = layout.optionsRect.x + 16;

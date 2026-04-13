@@ -21,6 +21,9 @@ interface RewardLayout {
 }
 
 function getRewardLayout(contentInner: LayoutRect): RewardLayout {
+  const selectionHeight = Phaser.Math.Clamp(Math.floor(contentInner.height * 0.34), 92, 108);
+  const backdropHeight = Phaser.Math.Clamp(Math.floor(contentInner.height * 0.36), 92, 110);
+
   return {
     titleX: contentInner.x + 4,
     titleY: contentInner.y + 6,
@@ -28,14 +31,14 @@ function getRewardLayout(contentInner: LayoutRect): RewardLayout {
     descriptionY: contentInner.y + 28,
     descriptionWidth: contentInner.width - 180,
     backdropX: contentInner.x + contentInner.width - 140,
-    backdropY: contentInner.y + 60,
+    backdropY: contentInner.y + 56,
     backdropWidth: 120,
-    backdropHeight: 110,
+    backdropHeight,
     selectionRect: {
       x: contentInner.x + 8,
-      y: contentInner.y + contentInner.height - 116,
+      y: contentInner.y + contentInner.height - selectionHeight - 8,
       width: contentInner.width - 16,
-      height: 108,
+      height: selectionHeight,
     },
   };
 }
@@ -119,8 +122,8 @@ export class RewardPhaseView extends PhaseView {
     }
 
     const cardWidth = 160;
-    const cardHeight = 92;
-    const gap = 16;
+    const cardHeight = Math.min(92, layout.selectionRect.height - 16);
+    const gap = reward.choices.length >= 3 ? 12 : 16;
     const totalWidth = (reward.choices.length * cardWidth) + (Math.max(0, reward.choices.length - 1) * gap);
     let x = layout.selectionRect.x + getCenteredX(totalWidth, layout.selectionRect.width);
     const y = layout.selectionRect.y + Math.floor((layout.selectionRect.height - cardHeight) / 2);

@@ -17,7 +17,6 @@ import type {
   NodeKind,
   PlanetChoice,
   PlayerState,
-  ProbabilityEntry,
   RewardChoice,
   RewardState,
   RunState,

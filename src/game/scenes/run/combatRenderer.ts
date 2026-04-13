@@ -55,34 +55,56 @@ interface CombatLayout {
 
 function getCombatLayout(contentInner: LayoutRect): CombatLayout {
   const titleX = contentInner.x + 4;
-  const titleY = contentInner.y + 12;
-  const roundY = titleY + 22;
+  const titleY = contentInner.y + 8;
+  const roundY = titleY + 18;
   const summaryRect = {
     x: contentInner.x + 4,
-    y: roundY + 18,
+    y: roundY + 12,
     width: contentInner.width - 8,
-    height: 30,
+    height: 28,
   };
+  const actionPanelGap = 8;
+  const actionPanelPadding = 8;
+  const actionRowGap = 8;
+  const minButtonHeight = 37;
+  const maxButtonHeight = 44;
+  const actionPanelMinHeight = actionPanelPadding * 2 + actionRowGap + minButtonHeight * 2;
+  const actionPanelMaxHeight = actionPanelPadding * 2 + actionRowGap + maxButtonHeight * 2;
+  const arenaMinHeight = 96;
+  const arenaMaxHeight = 118;
+  const bottomY = contentInner.y + contentInner.height;
   const arenaRect = {
     x: contentInner.x + 4,
-    y: summaryRect.y + summaryRect.height + 14,
+    y: summaryRect.y + summaryRect.height + 12,
     width: contentInner.width - 8,
-    height: 120,
+    height: Phaser.Math.Clamp(
+      bottomY - (summaryRect.y + summaryRect.height + 12) - actionPanelGap - actionPanelMinHeight,
+      arenaMinHeight,
+      arenaMaxHeight
+    ),
   };
   const cardWidth = 210;
   const cardY = arenaRect.y + 8;
   const rerollX = contentInner.x + contentInner.width - 180;
-  const rerollY = arenaRect.y + arenaRect.height + 8;
+  const rerollY = titleY - 2;
   const actionPanelRect = {
     x: contentInner.x,
-    y: rerollY + 34,
+    y: arenaRect.y + arenaRect.height + actionPanelGap,
     width: contentInner.width,
-    height: Math.max(136, contentInner.y + contentInner.height - (rerollY + 34)),
+    height: Phaser.Math.Clamp(
+      bottomY - (arenaRect.y + arenaRect.height + actionPanelGap),
+      actionPanelMinHeight,
+      actionPanelMaxHeight
+    ),
   };
   const actionGap = 12;
   const actionWidth = Math.floor((contentInner.width - 48) / 2);
-  const actionHeight = 52;
-  const buttonY = actionPanelRect.y + 12;
+  const actionHeight = Phaser.Math.Clamp(
+    Math.floor((actionPanelRect.height - actionPanelPadding * 2 - actionRowGap) / 2),
+    minButtonHeight,
+    maxButtonHeight
+  );
+  const buttonY = actionPanelRect.y + actionPanelPadding;
 
   return {
     titleX,
@@ -96,15 +118,15 @@ function getCombatLayout(contentInner: LayoutRect): CombatLayout {
     cardY,
     playerSpriteX: arenaRect.x + arenaRect.width * 0.28,
     enemySpriteX: arenaRect.x + arenaRect.width * 0.72,
-    floorY: arenaRect.y + arenaRect.height - 12,
+    floorY: arenaRect.y + arenaRect.height - 4,
     rerollX,
     rerollY,
     actionPanelRect,
     actionButtons: [
       { x: contentInner.x + 16, y: buttonY, width: actionWidth, height: actionHeight },
       { x: contentInner.x + 16 + actionWidth + actionGap, y: buttonY, width: actionWidth, height: actionHeight },
-      { x: contentInner.x + 16, y: buttonY + actionHeight + actionGap, width: actionWidth, height: actionHeight },
-      { x: contentInner.x + 16 + actionWidth + actionGap, y: buttonY + actionHeight + actionGap, width: actionWidth, height: actionHeight },
+      { x: contentInner.x + 16, y: buttonY + actionHeight + actionRowGap, width: actionWidth, height: actionHeight },
+      { x: contentInner.x + 16 + actionWidth + actionGap, y: buttonY + actionHeight + actionRowGap, width: actionWidth, height: actionHeight },
     ],
   };
 }
@@ -126,7 +148,6 @@ export class CombatPhaseView extends PhaseView {
   private arenaContainer!: Phaser.GameObjects.Container;
   private effectsLayer!: Phaser.GameObjects.Container;
   private optionsLayer!: Phaser.GameObjects.Container;
-  private headerTitle!: Phaser.GameObjects.Text;
   private roundText!: Phaser.GameObjects.Text;
   private summaryText!: Phaser.GameObjects.Text;
   private playerView!: UICombatActor;
@@ -161,7 +182,7 @@ export class CombatPhaseView extends PhaseView {
     this.optionsLayer.setDepth(5);
     this.container.add([this.headerContainer, this.arenaContainer, this.effectsLayer, this.optionsLayer]);
 
-    this.headerTitle = makeText(
+    makeText(
       scene,
       layout.titleX,
       layout.titleY,

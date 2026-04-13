@@ -33,7 +33,7 @@ export class TitleScene extends BaseScene {
     });
 
     // Title
-    const title = makeText(
+    makeText(
       this, 
       width / 2, 
       height / 2 - 40, 
@@ -55,7 +55,7 @@ export class TitleScene extends BaseScene {
 
     // Initialize Button
     const btnWidth = 240;
-    const startBtn = createButton(this, {
+    createButton(this, {
       x: width / 2 - btnWidth / 2,
       y: height - 120,
       width: btnWidth,
