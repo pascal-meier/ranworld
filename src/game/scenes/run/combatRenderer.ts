@@ -63,15 +63,15 @@ function getCombatLayout(contentInner: LayoutRect): CombatLayout {
     width: contentInner.width - 8,
     height: 28,
   };
-  const actionPanelGap = 8;
-  const actionPanelPadding = 8;
-  const actionRowGap = 8;
-  const minButtonHeight = 37;
-  const maxButtonHeight = 44;
+  const actionPanelGap = 10;
+  const actionPanelPadding = 10;
+  const actionRowGap = 10;
+  const minButtonHeight = 54;
+  const maxButtonHeight = 54;
   const actionPanelMinHeight = actionPanelPadding * 2 + actionRowGap + minButtonHeight * 2;
   const actionPanelMaxHeight = actionPanelPadding * 2 + actionRowGap + maxButtonHeight * 2;
-  const arenaMinHeight = 96;
-  const arenaMaxHeight = 118;
+  const arenaMinHeight = 84;
+  const arenaMaxHeight = 108;
   const bottomY = contentInner.y + contentInner.height;
   const arenaRect = {
     x: contentInner.x + 4,

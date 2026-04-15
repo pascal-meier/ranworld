@@ -159,11 +159,10 @@ export class DraftPhaseView extends PhaseView {
   private syncChoiceButton(button: UIButton, mechanicId: MechanicId): void {
     const mechanic = getMechanicDefinition(mechanicId);
 
-    button
-      .setVisible(true)
-      .setLabelText(mechanic.shortLabel.toUpperCase())
-      .setDetailText(`${getUpgradeTrackLabel(mechanic.upgradeTrack)}. ${mechanic.effectText}`)
-      .setIconKey(mechanic.iconKey)
-      .setClickHandler(() => this.scene.events.emit(UI_EVENTS.MECHANIC_SELECTED, mechanicId));
+      button
+        .setVisible(true)
+        .setLabelText(mechanic.shortLabel.toUpperCase())
+        .setDetailText(`${getUpgradeTrackLabel(mechanic.upgradeTrack)}. ${mechanic.effectText}`)
+        .setClickHandler(() => this.scene.events.emit(UI_EVENTS.MECHANIC_SELECTED, mechanicId));
   }
 }

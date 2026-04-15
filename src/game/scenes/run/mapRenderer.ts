@@ -69,7 +69,6 @@ interface MapNodeSlot {
   symbol?: Phaser.GameObjects.Image;
   bossLeft?: Phaser.GameObjects.Image;
   bossRight?: Phaser.GameObjects.Image;
-  label: Phaser.GameObjects.Text;
 }
 
 interface MapChoiceCard {
@@ -140,15 +139,6 @@ function updateNodeSlot(
     slot.base.on("pointerdown", () => onSelectNode(node.id));
   } else {
     slot.base.disableInteractive();
-  }
-
-  slot.label.setText(node.title).setColor(selectable ? LAB_THEME.text : LAB_THEME.textMuted).setAlpha(cleared ? 0.65 : 1);
-  if (selectable && !cleared) {
-    slot.label.setInteractive({ useHandCursor: true });
-    slot.label.removeAllListeners("pointerdown");
-    slot.label.on("pointerdown", () => onSelectNode(node.id));
-  } else {
-    slot.label.disableInteractive();
   }
 
   const symbolKey = getNodeSymbolKey(node.kind);
@@ -267,11 +257,13 @@ export class MapPhaseView extends PhaseView {
         .setAngle(32)
         .setTint(0xe9f4ff)
         .setVisible(false);
-      const label = makeText(scene, 35, -4, "", textStyle(8, LAB_THEME.text, "left", 120), root).setOrigin(0, 0.5);
+      const label = makeText(scene, 35, -4, "", textStyle(8, LAB_THEME.text, "left", 120), root)
+        .setOrigin(0, 0.5)
+        .setVisible(false);
 
       root.setVisible(false);
       this.mapContainer.add(root);
-      this.nodeSlots.push({ root, circle, base, symbol, bossLeft, bossRight, label });
+      this.nodeSlots.push({ root, circle, base, symbol, bossLeft, bossRight });
 
       const panel = createPanel(scene, 0, 0, 210, 62, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this.mapContainer);
       const title = makeText(scene, 12, 10, "", textStyle(8, LAB_THEME.text), panel);

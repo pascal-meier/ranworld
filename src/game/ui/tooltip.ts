@@ -7,6 +7,7 @@ interface TooltipConfig {
   y: number;
   text: string;
   width?: number;
+  minHeight?: number;
 }
 
 export function attachImageTooltip(
@@ -25,7 +26,7 @@ export function attachImageTooltip(
     textStyle(8, LAB_THEME.textMuted, "left", width - 24),
     null
   ).setLineSpacing(-2);
-  const height = Math.max(42, Math.ceil(copy.height) + 18);
+  const height = Math.max(config.minHeight ?? 42, Math.ceil(copy.height) + 18);
 
   createPanel(scene, 0, 0, width, height, 0x0f2230, LAB_THEME.borderSoft, tooltip);
   tooltip.add(copy);

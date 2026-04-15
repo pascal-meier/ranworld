@@ -347,10 +347,21 @@ export class FeedbackManager {
       return;
     }
 
-    const popupWidth = Math.min(360, ctx.contentInner.width - 120);
-    const popupHeight = 84;
+    const previewText = new Phaser.GameObjects.Text(
+      this.scene,
+      0,
+      0,
+      this.combatFeedback.message,
+      textStyle(13, LAB_THEME.text, "left", Math.min(420, ctx.width - 240))
+    );
+    const measuredWidth = Math.ceil(previewText.width);
+    const measuredHeight = Math.ceil(previewText.height);
+    previewText.destroy();
+
+    const popupWidth = Math.max(420, Math.min(620, measuredWidth + 208));
+    const popupHeight = Math.max(40, Math.min(64, measuredHeight + 20));
     const x = Math.floor((ctx.width - popupWidth) / 2);
-    const y = Math.floor(ctx.layout.header.y + ctx.layout.header.height + 8);
+    const y = 4;
     const accentColor = Phaser.Display.Color.HexStringToColor(this.combatFeedback.accent).color;
     const badge = this.combatFeedback.actor === "enemy" ? "ENEMY" : "YOU";
     const remainingSeconds = Math.max(0, this.combatFeedbackTimer?.getRemainingSeconds() ?? 0);
@@ -364,11 +375,12 @@ export class FeedbackManager {
     this.combatUi.root.setVisible(true).setPosition(x, y);
     this.combatUi.accentBar.setFillStyle(accentColor, 1);
     this.combatUi.badgeText.setText(badge).setColor(this.combatFeedback.accent);
-    this.combatUi.timerText.setText(`${remainingSeconds.toFixed(1)}s`).setPosition(popupWidth - 82, 10);
+    this.combatUi.timerText.setText(`${remainingSeconds.toFixed(1)}s`).setPosition(popupWidth - 132, 12);
     this.combatUi.messageText
       .setText(this.combatFeedback.message)
-      .setWordWrapWidth(popupWidth - 52);
-    this.combatUi.closeButton.setPosition(popupWidth - 42, 8);
+      .setWordWrapWidth(popupWidth - 208)
+      .setPosition(74, Math.max(10, Math.floor((popupHeight - this.combatUi.messageText.height) / 2)));
+    this.combatUi.closeButton.setPosition(popupWidth - 78, 8);
     this.combatUi.panel
       .setSize(popupWidth, popupHeight)
       .setInteractive(new Phaser.Geom.Rectangle(0, 0, popupWidth, popupHeight), Phaser.Geom.Rectangle.Contains);
@@ -384,16 +396,16 @@ export class FeedbackManager {
     const root = new Phaser.GameObjects.Container(this.scene, x, y);
     this.layer.add(root);
 
-    makeRectangle(this.scene, -4, 4, width + 8, height + 8, 0x02060a, 0.5, root).setOrigin(0);
+    makeRectangle(this.scene, -3, 3, width + 6, height + 6, 0x02060a, 0.45, root).setOrigin(0);
     const panel = createPanel(this.scene, 0, 0, width, height, 0x13212b, LAB_THEME.borderSoft, root);
-    const accentBar = makeRectangle(this.scene, 10, 10, 6, height - 20, LAB_THEME.accentFill, 1, root).setOrigin(0);
-    const badgeText = makeText(this.scene, 26, 10, "YOU", textStyle(8, LAB_THEME.accent), root);
-    const timerText = makeText(this.scene, width - 82, 10, "0.0s", textStyle(8, LAB_THEME.textMuted), root);
-    const messageText = makeText(this.scene, 26, 34, "", textStyle(8, LAB_THEME.text, "left", width - 52), root).setLineSpacing(-2);
+    const accentBar = makeRectangle(this.scene, 8, 8, 5, height - 16, LAB_THEME.accentFill, 1, root).setOrigin(0);
+    const badgeText = makeText(this.scene, 20, 8, "YOU", textStyle(8, LAB_THEME.accent), root);
+    const timerText = makeText(this.scene, width - 132, 12, "0.0s", textStyle(8, LAB_THEME.textMuted), root);
+    const messageText = makeText(this.scene, 74, 12, "", textStyle(13, LAB_THEME.text, "left", width - 208), root);
     const closeButton = createButton(this.scene, {
-      x: width - 42,
+      x: width - 78,
       y: 8,
-      width: 24,
+      width: 70,
       height: 24,
       label: "X",
       detail: "",

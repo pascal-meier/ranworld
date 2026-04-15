@@ -6,6 +6,7 @@ import { createScreenLayout, insetRect } from "../ui/layout.js";
 import { makeImage, makeRectangle, makeText } from "../ui/display.js";
 import { attachImageTooltip } from "../ui/tooltip.js";
 import { UIButton } from "../ui/objects.js";
+import { VerticalScrollViewport } from "../ui/scroll.js";
 import { BaseScene } from "./BaseScene.js";
 import { META_UPGRADES, getUpgradeLevel, canAffordUpgrade, getUpgradeCost } from "../core/metaUpgrades.js";
 
@@ -31,6 +32,7 @@ export class SetupScene extends BaseScene {
   private contentLayer?: Phaser.GameObjects.Container;
   private footerLayer?: Phaser.GameObjects.Container;
   private tooltipLayer?: Phaser.GameObjects.Container;
+  private researchScroll?: VerticalScrollViewport;
   private layoutSignature?: string;
   private isUiBuilt = false;
 
@@ -83,6 +85,8 @@ export class SetupScene extends BaseScene {
 
       this.layoutSignature = undefined;
       this.isUiBuilt = false;
+      this.researchScroll?.destroy();
+      this.researchScroll = undefined;
       this.backgroundLayer = undefined;
       this.chromeLayer = undefined;
       this.contentLayer = undefined;
@@ -131,6 +135,9 @@ export class SetupScene extends BaseScene {
   }
 
   private rebuildUi(layout: SetupLayout): void {
+    this.researchScroll?.destroy();
+    this.researchScroll = undefined;
+
     this.backgroundLayer?.removeAll(true);
     this.chromeLayer?.removeAll(true);
     this.contentLayer?.removeAll(true);
@@ -205,9 +212,9 @@ export class SetupScene extends BaseScene {
 
     if (this.textures.exists("archive-bank")) {
       const resourcesX = layout.header.x + 236;
-      const resourcesY = layout.header.y + 88;
+      const resourcesY = layout.header.y + 50;
       const resourcesW = 196;
-      const resourcesH = 58;
+      const resourcesH = 90;
 
       createPanel(this, resourcesX, resourcesY, resourcesW, resourcesH, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this.chromeLayer);
       makeText(this, resourcesX + 12, resourcesY + 8, "RESOURCES", textStyle(7, LAB_THEME.textMuted), this.chromeLayer);
@@ -234,7 +241,7 @@ export class SetupScene extends BaseScene {
       this.persistenceText = makeText(
         this,
         resourcesX + 12,
-        resourcesY + 38,
+        resourcesY + 50,
         "",
         textStyle(7, LAB_THEME.textMuted, "left", resourcesW - 24),
         this.chromeLayer
@@ -243,7 +250,8 @@ export class SetupScene extends BaseScene {
       const tooltip = attachImageTooltip(this, archiveIcon, this.tooltipLayer, {
         x: resourcesX,
         y: resourcesY + resourcesH + 6,
-        width: 214,
+        width: 260,
+        minHeight: 90,
         text: "",
       });
       const tooltipCopy = tooltip.list.find((child): child is Phaser.GameObjects.Text => child instanceof Phaser.GameObjects.Text);
@@ -293,31 +301,33 @@ export class SetupScene extends BaseScene {
       LAB_THEME.borderSoft,
       this.contentLayer
     );
-    makeText(this, content.x + 4, content.y + 6, "RESEARCH TERMINAL", textStyle(13, LAB_THEME.text), this.contentLayer);
+    this.researchScroll = new VerticalScrollViewport(this, content.x, content.y, content.width, content.height, this.contentLayer);
+    const researchContent = this.researchScroll.content;
+    makeText(this, 4, 6, "RESEARCH TERMINAL", textStyle(13, LAB_THEME.text), researchContent);
     this.researchSubtitleText = makeText(
       this,
-      content.x + 4,
-      content.y + 28,
+      4,
+      28,
       "Invest Archive Shards to permanently upgrade your next expedition.",
       textStyle(10, LAB_THEME.textMuted, "left", content.width - 8),
-      this.contentLayer
+      researchContent
     );
 
-    let upgradeY = content.y + 44;
+    let upgradeY = 44;
     META_UPGRADES.forEach((upgrade) => {
-      createPanel(this, content.x + 4, upgradeY, content.width - 8, 48, LAB_THEME.panelAlt, LAB_THEME.borderSoft, this.contentLayer);
+      createPanel(this, 4, upgradeY, content.width - 8, 48, LAB_THEME.panelAlt, LAB_THEME.borderSoft, researchContent);
 
-      const nameText = makeText(this, content.x + 16, upgradeY + 12, "", textStyle(9, LAB_THEME.text), this.contentLayer);
-      const descriptionText = makeText(this, content.x + 16, upgradeY + 28, upgrade.description, textStyle(8, LAB_THEME.textMuted), this.contentLayer);
+      const nameText = makeText(this, 16, upgradeY + 12, "", textStyle(9, LAB_THEME.text), researchContent);
+      const descriptionText = makeText(this, 16, upgradeY + 28, upgrade.description, textStyle(8, LAB_THEME.textMuted), researchContent);
       const button = createButton(this, {
-        x: content.x + content.width - 150,
+        x: content.width - 158,
         y: upgradeY + 8,
         width: 140,
         height: 32,
         label: "",
         onClick: () => this.lab.purchaseMetaUpgrade(upgrade.id),
         fill: 0x1d4d6c,
-      }, this.contentLayer);
+      }, researchContent);
 
       this.upgradeRows.push({
         nameText,
@@ -328,6 +338,8 @@ export class SetupScene extends BaseScene {
 
       upgradeY += 56;
     });
+
+    this.researchScroll.setContentHeight(upgradeY + 8);
 
     const footerPanel = createPanel(
       this,
@@ -419,8 +431,8 @@ export class SetupScene extends BaseScene {
       this.subtitleText.setWordWrapWidth(this.scale.width - 48);
     }
     if (this.isUsableText(this.researchSubtitleText)) {
-      const content = insetRect(layout.content, 12);
-      this.researchSubtitleText.setWordWrapWidth(content.width - 8);
+      const contentWidth = layout.content.width - 24;
+      this.researchSubtitleText.setWordWrapWidth(contentWidth - 8);
     }
   }
 

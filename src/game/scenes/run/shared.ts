@@ -115,16 +115,37 @@ export function renderPlanetBackdrop(ctx: RunRenderContext): void {
   makeRectangle(scene, frame.x, frame.y, frame.width, frame.height, 0x08121a, 1, phaseRoot).setOrigin(0);
 
   if (scene.textures.exists("planet-background")) {
-    renderPlanetSprite(
-      scene,
-      "planet-background",
-      frame.x + frame.width / 2,
-      frame.y + frame.height / 2,
-      frame.width - 24,
-      frame.height - 28,
-      0.28,
-      phaseRoot
-    );
+    renderTiledTexture(scene, "planet-background", frame, 0.28, phaseRoot);
+  }
+}
+
+function renderTiledTexture(
+  scene: Phaser.Scene,
+  key: string,
+  frame: LayoutRect,
+  alpha: number,
+  parent?: DisplayParent
+): void {
+  if (!scene.textures.exists(key)) {
+    return;
+  }
+
+  const texture = scene.textures.get(key).getSourceImage() as { width: number; height: number };
+  const cols = Math.max(1, Math.ceil(frame.width / texture.width));
+  const rows = Math.max(1, Math.ceil(frame.height / texture.height));
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      makeImage(
+        scene,
+        frame.x + col * texture.width,
+        frame.y + row * texture.height,
+        key,
+        parent
+      )
+        .setOrigin(0)
+        .setAlpha(alpha);
+    }
   }
 }
 
